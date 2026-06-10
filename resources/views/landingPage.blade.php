@@ -44,11 +44,11 @@
          HERO
     ═══════════════════════════════════════════════ --}}
     <section class="relative pt-48 pb-56 px-6 md:px-8 overflow-hidden"
-             style="background-image: url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1920&q=80');
+             style="background-image: url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D');
                     background-size: cover; background-position: center;">
 
         {{-- Navy overlay so text stays legible over the photo --}}
-        <div class="absolute inset-0 bg-primary/70 mix-blend-multiply"></div>
+        <div class="absolute inset-0 bg-primary/50 mix-blend-multiply"></div>
 
         <div class="relative max-w-[1280px] mx-auto">
             <div class="max-w-3xl mx-auto text-center">
@@ -67,7 +67,7 @@
                 </p>
 
                 <a href="/auth/google"
-                   class="inline-flex items-center gap-2.5 px-8 py-4 rounded-button bg-gold text-on-gold font-semibold text-base hover:opacity-90 transition-opacity shadow-sm">
+                   class="inline-flex items-center gap-2.5 px-8 py-4 rounded-button bg-gold text-white/75 font-semibold text-base hover:opacity-90 transition-opacity shadow-sm">
                     Get Started with Google
                     <span class="material-symbols-outlined text-[18px] leading-none">arrow_forward</span>
                 </a>

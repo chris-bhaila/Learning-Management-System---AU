@@ -87,7 +87,7 @@
                 Support
             </a>
 
-            <form method="POST" action="">
+            <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                 @csrf
                 <button type="submit" class="nav-item w-full text-left">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
@@ -160,9 +160,12 @@
                         @else
                             <span class="text-xs font-semibold text-on-primary"
                                   style="font-family: var(--font-display);">
-                                {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                                {{ strtoupper(substr(auth()->user()->name ?? 'ST', 0, 2)) }}
                             </span>
                         @endif
+                    @else
+                        <span class="text-xs font-semibold text-on-primary"
+                              style="font-family: var(--font-display);">ST</span>
                     @endauth
                 </div>
             </div>
@@ -170,7 +173,7 @@
 
         {{-- ─── SCROLLABLE CONTENT ─── --}}
         <main class="flex-1 overflow-y-auto p-4 md:p-8">
-            <div class="max-w-[1280px] mx-auto space-y-8">
+            <div class="max-w-full space-y-8">
                 @yield('content')
             </div>
         </main>

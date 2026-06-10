@@ -13,9 +13,10 @@ No payments, no subscriptions, no public marketplace. Private tool only.
 - **Design:** Stitch AI (connected via MCP)
 
 ## Architecture
-- Repository Design Pattern — always use interfaces and repositories, never query Eloquent directly in controllers
-- Controllers must be thin — business logic belongs in repositories or service classes
-- Route model binding for all resource routes
+- Repository Design Pattern — controllers receive repository interfaces via dependency injection, never interact with Eloquent or the database directly
+- Interfaces live in App\Repositories\Contracts, implementations in App\Repositories\Eloquent
+- Bindings are registered in App\Providers\RepositoryServiceProvider
+- Controllers stay thin — no business logic, no queries, only handle request input and return responses
 
 ## Directory Structure
 ```
@@ -56,6 +57,11 @@ resources/
 - Students are read-only — no uploads, no posts
 - File downloads must go through a controller (never direct public URLs) to enforce enrollment-based access
 - All rich-text input must be sanitized with HTMLPurifier before storing
+- Two-layer enrollment: student first joins a teacher's class via a class token, then joins individual courses via course tokens
+- Both token types live in the same tokens table differentiated by a type column (class | course)
+- Teachers can organize courses into CourseGroups by any basis they choose (grade, subject, period, etc.)
+- Activity logs serve dual purpose — full audit trail for Admins, filtered notifications for Teachers
+- Notifications support both individual read tracking and clear all via the NotificationRead pivot
 
 ## Auth Flow
 - Google SSO only via Laravel Socialite
@@ -69,6 +75,8 @@ resources/
 - Fonts: Plus Jakarta Sans (headings), Inter (body)
 - Border radius: Cards 20px, Buttons 24px, Inputs 16px
 - Sidebar: light gray background, navy text, gold left-border on active item
+- Mobile: fully responsive
+- All layouts use Tailwind responsive prefixes (sm:, md:, lg:) — no fixed pixel widths
 
 ## Commands
 ```bash
@@ -95,3 +103,19 @@ npm run dev                # Compile assets
 - Policies enforce ownership — always check before mutating a resource
 - Never use raw SQL — Eloquent and query builder only
 - Stitch MCP is connected — use it to reference or generate screens when building views
+- All database-driven content must have fallback states — empty states for no data, skeleton loaders while fetching, graceful error messages on failure. Never render a blank or broken UI
+
+## Models
+- User (roles: admin, teacher, student)
+- Role (lookup table for user roles)
+- Course (belongs to teacher/User)
+- Unit (belongs to Course)
+- Token (type: class | course — one table handles both enrollment layers)
+- CourseGroup (teacher-defined groupings — by grade, subject, period, or any basis)
+- TeacherStudent (pivot — teacher/student relationship, has is_active)
+- CourseStudent (pivot — course enrollment, has is_active for access revocation)
+- File (polymorphic — belongs to Course or Unit)
+- ActivityLog (audit trail — admins see all, teachers see student activity as notifications)
+- NotificationRead (pivot — tracks per-notification read state, supports clear all)
+- SiteContent (landing page editable content — hero, subheading, CTA, about text)
+- Page (static editable pages)
