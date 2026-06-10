@@ -34,4 +34,9 @@ class EloquentTokenRepository implements TokenRepositoryInterface
             ->where('expires_at', '>', now())
             ->get();
     }
+
+    public function incrementUses(Token $token): void
+    {
+        $token->incrementUses();
+    }
 }

@@ -17,10 +17,14 @@ class Token extends Model
         'token_value',
         'type',
         'expires_at',
+        'max_uses',
+        'uses_count',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
+        'max_uses' => 'integer',
+        'uses_count' => 'integer',
     ];
 
     public function teacher(): BelongsTo
@@ -33,11 +37,6 @@ class Token extends Model
         return $this->belongsTo(Course::class);
     }
 
-    public function isExpired(): bool
-    {
-        return $this->expires_at->isPast();
-    }
-
     public function isClassToken(): bool
     {
         return $this->type === 'class';
@@ -46,5 +45,15 @@ class Token extends Model
     public function isCourseToken(): bool
     {
         return $this->type === 'course';
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at->isPast() || $this->uses_count >= $this->max_uses;
+    }
+
+    public function incrementUses(): void
+    {
+        $this->increment('uses_count');
     }
 }

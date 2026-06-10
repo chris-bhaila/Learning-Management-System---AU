@@ -59,6 +59,8 @@ resources/
 - All rich-text input must be sanitized with HTMLPurifier before storing
 - Two-layer enrollment: student first joins a teacher's class via a class token, then joins individual courses via course tokens
 - Both token types live in the same tokens table differentiated by a type column (class | course)
+- Tokens expire when either the lifetime (teacher sets: 12, 30, 45 min or 1–24 hours) or the use limit (teacher sets a number) is reached, whichever comes first
+- uses_count increments on each successful enrollment — token is invalid when uses_count >= max_uses or expires_at is past
 - Teachers can organize courses into CourseGroups by any basis they choose (grade, subject, period, etc.)
 - Activity logs serve dual purpose — full audit trail for Admins, filtered notifications for Teachers
 - Notifications support both individual read tracking and clear all via the NotificationRead pivot
