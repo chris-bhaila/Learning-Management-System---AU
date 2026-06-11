@@ -86,8 +86,8 @@
                 System
             </p>
 
-            <a href="{{ Route::has('admin.activity.index') ? route('admin.activity.index') : '#' }}"
-               class="nav-item {{ request()->routeIs('admin.activity.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('admin.logs.index') ? route('admin.logs.index') : '#' }}"
+               class="nav-item {{ request()->routeIs('admin.logs.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">history</span>
                 Activity Log
             </a>

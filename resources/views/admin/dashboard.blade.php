@@ -197,7 +197,7 @@
             <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
                 Recent Activity
             </h2>
-            <a href="{{ Route::has('admin.activity.index') ? route('admin.activity.index') : '#' }}"
+            <a href="{{ Route::has('admin.logs.index') ? route('admin.logs.index') : '#' }}"
                class="text-xs font-medium text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
                 View all
                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -228,7 +228,7 @@
 
 </div>
 
-
+<!-- 
 {{-- ─── Role Distribution ─── --}}
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
 
@@ -253,6 +253,6 @@
         </div>
     @endforeach
 
-</div>
+</div> -->
 
 @endsection

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin;
 use App\Http\Controllers\Teacher;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\ActivityLogController;
 
 // Landing page
 Route::get('/', function () {
@@ -58,6 +59,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/groups', [Admin\CourseGroupController::class, 'store'])->name('groups.store');
     Route::patch('/groups/{id}', [Admin\CourseGroupController::class, 'update'])->name('groups.update');
     Route::delete('/groups/{id}', [Admin\CourseGroupController::class, 'destroy'])->name('groups.destroy');
+
+    // Activity Logs
+    Route::get('/logs', [Admin\ActivityLogController::class, 'index'])->name('logs.index');
 });
 
 // Teacher
