@@ -39,7 +39,7 @@ class EloquentCourseRepository implements CourseRepositoryInterface
         return Course::whereHas(
             'students',
             fn($q) => $q->where('student_id', $studentId)
-                ->where('is_active', true)
+                ->where('course_student.is_active', true)
         )->where('is_published', true)->get();
     }
 
