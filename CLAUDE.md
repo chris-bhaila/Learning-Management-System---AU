@@ -10,6 +10,7 @@ No payments, no subscriptions, no public marketplace. Private tool only.
 - **Frontend:** Blade, Tailwind CSS, Alpine.js
 - **Rich Text:** TipTap
 - **Auth:** Google SSO via Laravel Socialite (no passwords)
+- **Auth (dev):** Email/password via Laravel Auth
 - **Design:** Stitch AI (connected via MCP)
 
 ## Architecture
@@ -21,10 +22,16 @@ No payments, no subscriptions, no public marketplace. Private tool only.
 ## Directory Structure
 ```
 app/
-├── Http/Controllers/
+├── Http/
+│   └── Controllers/
+│       ├── Auth/
+│       ├── Admin/
+│       ├── Teacher/
+│       ├── Student/
+│       └── FileController.php
 ├── Repositories/
-│   ├── Contracts/        # Interfaces
-│   └── Eloquent/         # Implementations
+│   ├── Contracts/
+│   └── Eloquent/
 ├── Models/
 └── Policies/
 resources/
@@ -66,9 +73,10 @@ resources/
 - Notifications support both individual read tracking and clear all via the NotificationRead pivot
 
 ## Auth Flow
-- Google SSO only via Laravel Socialite
+- Traditional email/password auth during development (Google SSO will replace this before production)
 - First login creates user with role: student
-- No password fields anywhere
+- Passwords stored as bcrypt hashes via Laravel's Hash facade
+- Google SSO via Laravel Socialite is the intended production auth method
 
 ## Design System
 - Primary: Navy #1E2A4A (text and headings only, never backgrounds)
@@ -79,6 +87,7 @@ resources/
 - Sidebar: light gray background, navy text, gold left-border on active item
 - Mobile: fully responsive
 - All layouts use Tailwind responsive prefixes (sm:, md:, lg:) — no fixed pixel widths
+- Clickable items, boxes, buttons etc should have cursor-pointer
 
 ## Commands
 ```bash
@@ -106,6 +115,7 @@ npm run dev                # Compile assets
 - Never use raw SQL — Eloquent and query builder only
 - Stitch MCP is connected — use it to reference or generate screens when building views
 - All database-driven content must have fallback states — empty states for no data, skeleton loaders while fetching, graceful error messages on failure. Never render a blank or broken UI
+- CourseRepositoryInterface, TokenRepositoryInterface, and CourseGroupRepositoryInterface each need a getAll() method — used by Admin controllers to fetch all records regardless of ownership
 
 ## Models
 - User (roles: admin, teacher, student)

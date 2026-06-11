@@ -36,13 +36,25 @@ class EloquentCourseRepository implements CourseRepositoryInterface
 
     public function getEnrolledByStudent(int $studentId): Collection
     {
-        return Course::whereHas('students', fn($q) => $q->where('student_id', $studentId)
-            ->where('is_active', true)
+        return Course::whereHas(
+            'students',
+            fn($q) => $q->where('student_id', $studentId)
+                ->where('is_active', true)
         )->where('is_published', true)->get();
     }
 
     public function getByGroup(int $groupId): Collection
     {
         return Course::where('group_id', $groupId)->get();
+    }
+    
+    public function getAll(): Collection
+    {
+        return Course::with('teacher')->get();
+    }
+
+    public function countPublished(): int
+    {
+        return Course::where('is_published', true)->count();
     }
 }

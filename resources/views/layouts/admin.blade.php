@@ -71,7 +71,7 @@
             </p>
 
             <a href="{{ Route::has('admin.users.index') ? route('admin.users.index') : '#' }}"
-               class="nav-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+               class="nav-item {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">group</span>
                 Users
             </a>
@@ -115,7 +115,7 @@
 
             <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                 @csrf
-                <button type="submit" class="nav-item w-full text-left">
+                <button type="submit" class="nav-item cursor-pointer w-full text-left">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
                     Log out
                 </button>

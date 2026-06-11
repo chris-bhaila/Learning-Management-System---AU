@@ -12,4 +12,5 @@ interface TokenRepositoryInterface
     public function create(array $data): Token;
     public function delete(Token $token): bool;
     public function getActiveByTeacher(int $teacherId): Collection;
+    public function getAll(): Collection;
 }

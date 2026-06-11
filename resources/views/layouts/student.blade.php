@@ -89,7 +89,7 @@
 
             <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                 @csrf
-                <button type="submit" class="nav-item w-full text-left">
+                <button type="submit" class="nav-item cursor-pointer w-full text-left">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
                     Log out
                 </button>

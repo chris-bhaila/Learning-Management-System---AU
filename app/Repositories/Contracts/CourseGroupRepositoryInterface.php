@@ -12,4 +12,5 @@ interface CourseGroupRepositoryInterface
     public function update(CourseGroup $group, array $data): CourseGroup;
     public function delete(CourseGroup $group): bool;
     public function getByTeacher(int $teacherId): Collection;
+    public function getAll(): Collection;
 }

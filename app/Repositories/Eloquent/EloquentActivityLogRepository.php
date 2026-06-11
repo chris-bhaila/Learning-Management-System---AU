@@ -29,4 +29,9 @@ class EloquentActivityLogRepository implements ActivityLogRepositoryInterface
             $q->whereHas('teachers', fn($q) => $q->where('teacher_id', $teacherId));
         })->with('user')->latest()->get();
     }
+
+    public function getRecent(int $limit = 15): Collection
+    {
+        return ActivityLog::with('user')->latest()->limit($limit)->get();
+    }
 }

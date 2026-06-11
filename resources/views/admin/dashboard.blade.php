@@ -161,10 +161,11 @@
                                         'teacher' => 'bg-gold/20 text-on-gold',
                                         'student' => 'bg-surface-container text-on-surface-variant',
                                     ];
-                                    $roleColor = $roleColors[$user->role ?? 'student'] ?? $roleColors['student'];
+                                    $roleName  = $user->role?->name ?? 'student';
+                                    $roleColor = $roleColors[$roleName] ?? $roleColors['student'];
                                 @endphp
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $roleColor }}">
-                                    {{ ucfirst($user->role ?? 'student') }}
+                                    {{ ucfirst($roleName) }}
                                 </span>
                             </td>
                             <td class="px-6 py-3.5 text-on-surface-variant text-xs">

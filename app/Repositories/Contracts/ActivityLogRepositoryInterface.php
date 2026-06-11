@@ -11,4 +11,5 @@ interface ActivityLogRepositoryInterface
     public function getAll(): Collection;
     public function getByUser(int $userId): Collection;
     public function getForTeacherNotifications(int $teacherId): Collection;
+    public function getRecent(int $limit = 15): Collection;
 }

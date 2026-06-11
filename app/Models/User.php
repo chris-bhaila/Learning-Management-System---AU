@@ -18,12 +18,19 @@ class User extends Authenticatable
         'google_id',
         'name',
         'email',
+        'password',
         'avatar',
         'is_active',
     ];
 
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'         => 'boolean',
+        'password'          => 'hashed',
     ];
 
     public function role(): BelongsTo

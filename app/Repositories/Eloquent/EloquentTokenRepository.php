@@ -39,4 +39,9 @@ class EloquentTokenRepository implements TokenRepositoryInterface
     {
         $token->incrementUses();
     }
+
+    public function getAll(): Collection
+    {
+        return Token::with('teacher', 'course')->get();
+    }
 }

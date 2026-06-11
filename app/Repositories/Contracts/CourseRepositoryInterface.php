@@ -14,4 +14,6 @@ interface CourseRepositoryInterface
     public function getByTeacher(int $teacherId): Collection;
     public function getEnrolledByStudent(int $studentId): Collection;
     public function getByGroup(int $groupId): Collection;
+    public function getAll(): Collection;
+    public function countPublished(): int;
 }

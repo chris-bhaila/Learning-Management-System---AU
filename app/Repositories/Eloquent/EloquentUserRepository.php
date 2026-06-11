@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class EloquentUserRepository implements UserRepositoryInterface
@@ -53,5 +54,40 @@ class EloquentUserRepository implements UserRepositoryInterface
     {
         $user->update(['role_id' => $roleId]);
         return $user->fresh();
+    }
+
+    public function getFilteredUsers(string $role, string $sort, ?string $search, int $perPage = 20): LengthAwarePaginator
+    {
+        $query = User::with('role')
+            ->whereHas('role', fn($q) => $q->where('name', $role));
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $query->when($sort === 'oldest', fn($q) => $q->oldest())
+              ->when($sort === 'az',     fn($q) => $q->orderBy('name'))
+              ->when($sort === 'recent' || !in_array($sort, ['oldest', 'az']),
+                                         fn($q) => $q->latest());
+
+        return $query->paginate($perPage)->withQueryString();
+    }
+
+    public function getRecent(int $limit = 10): Collection
+    {
+        return User::with('role')->latest()->limit($limit)->get();
+    }
+
+    public function getRoleCounts(): array
+    {
+        return User::selectRaw('roles.name as role_name, count(*) as total')
+            ->join('roles', 'users.role_id', '=', 'roles.id')
+            ->whereNull('users.deleted_at')
+            ->groupBy('roles.name')
+            ->pluck('total', 'role_name')
+            ->toArray();
     }
 }

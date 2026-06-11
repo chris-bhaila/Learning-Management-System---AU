@@ -33,4 +33,9 @@ class EloquentCourseGroupRepository implements CourseGroupRepositoryInterface
     {
         return CourseGroup::where('teacher_id', $teacherId)->get();
     }
+
+    public function getAll(): Collection
+    {
+        return CourseGroup::with('teacher')->get();
+    }
 }
