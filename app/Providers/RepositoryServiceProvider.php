@@ -10,7 +10,6 @@ use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\TokenRepositoryInterface;
 use App\Repositories\Contracts\FileRepositoryInterface;
-use App\Repositories\Contracts\ActivityLogRepositoryInterface;
 use App\Repositories\Contracts\NotificationReadRepositoryInterface;
 use App\Repositories\Eloquent\EloquentUserRepository;
 use App\Repositories\Eloquent\EloquentRoleRepository;
@@ -19,7 +18,6 @@ use App\Repositories\Eloquent\EloquentCourseRepository;
 use App\Repositories\Eloquent\EloquentUnitRepository;
 use App\Repositories\Eloquent\EloquentTokenRepository;
 use App\Repositories\Eloquent\EloquentFileRepository;
-use App\Repositories\Eloquent\EloquentActivityLogRepository;
 use App\Repositories\Eloquent\EloquentNotificationReadRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -33,7 +31,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(UnitRepositoryInterface::class, EloquentUnitRepository::class);
         $this->app->bind(TokenRepositoryInterface::class, EloquentTokenRepository::class);
         $this->app->bind(FileRepositoryInterface::class, EloquentFileRepository::class);
-        $this->app->bind(ActivityLogRepositoryInterface::class, EloquentActivityLogRepository::class);
         $this->app->bind(NotificationReadRepositoryInterface::class, EloquentNotificationReadRepository::class);
     }
 }

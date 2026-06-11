@@ -45,14 +45,6 @@ resources/
     └── admin/
 ```
 
-## Models
-- User (roles: admin, teacher, student)
-- Course (belongs to teacher/User)
-- Unit (belongs to Course)
-- Token (belongs to Course)
-- File (polymorphic — belongs to Course or Unit)
-- Page (static editable pages)
-
 ## User Roles
 - **Admin** — seeded, manages users and role assignment
 - **Teacher** — promoted by Admin, creates courses/units/tokens

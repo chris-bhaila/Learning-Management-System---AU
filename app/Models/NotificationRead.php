@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Models\Activity;
 
 class NotificationRead extends Model
 {
@@ -26,6 +27,6 @@ class NotificationRead extends Model
 
     public function log(): BelongsTo
     {
-        return $this->belongsTo(ActivityLog::class, 'log_id');
+        return $this->belongsTo(Activity::class, 'log_id');
     }
 }

@@ -4,11 +4,11 @@
 
 @section('content')
 @php
-    $users        ??= collect();
-    $roleCounts   ??= ['admin' => 0, 'teacher' => 0, 'student' => 0];
-    $currentRole  = request()->get('role', 'admin');
-    $currentSort  = request()->get('sort', 'recent');
-    $currentSearch = request()->get('search', '');
+    $users         ??= collect();
+    $roleCounts    ??= ['admin' => 0, 'teacher' => 0, 'student' => 0];
+    $currentRole   ??= 'admin';
+    $currentSort   ??= 'recent';
+    $currentSearch ??= '';
 
     $roleTabs = [
         ['key' => 'admin',   'label' => 'Admins',   'icon' => 'admin_panel_settings'],
@@ -48,19 +48,31 @@
 
         {{-- Search --}}
         <form method="GET" action="{{ request()->url() }}" id="filterForm" class="relative flex-1 max-w-sm">
-            <input type="hidden" name="role"  value="{{ $currentRole }}">
-            <input type="hidden" name="sort"  value="{{ $currentSort }}">
+            <input type="hidden" name="role" value="{{ $currentRole }}">
+            <input type="hidden" name="sort" value="{{ $currentSort }}">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2
                          text-outline text-[18px] pointer-events-none">search</span>
             <input
-                type="search"
+                type="text"
+                id="searchInput"
                 name="search"
                 value="{{ $currentSearch }}"
                 placeholder="Search by name or email…"
-                class="w-full pl-10 pr-4 py-2.5 rounded-[16px] text-sm bg-surface-container-low
+                autocomplete="off"
+                oninput="debouncedSearch(this.value)"
+                class="w-full pl-10 pr-9 py-2.5 rounded-[16px] text-sm bg-surface-container-low
                        border border-outline-variant/60 placeholder:text-outline
                        focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             >
+            <button
+                type="button"
+                id="clearSearchBtn"
+                title="Clear search"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 cursor-pointer
+                       text-outline hover:text-primary transition-colors
+                       {{ $currentSearch ? '' : 'hidden' }}">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
         </form>
 
         {{-- Sort select --}}
@@ -108,163 +120,10 @@
 </div>
 
 {{-- ─── Users Table ─── --}}
-<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] overflow-hidden">
-
-    {{-- Card header --}}
-    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
-        <div>
-            <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
-                {{ $roleHeadings[$currentRole] ?? 'Users' }}
-            </h2>
-            <p class="text-xs text-on-surface-variant mt-0.5">
-                @php
-                    $total = method_exists($users, 'total') ? $users->total() : $users->count();
-                @endphp
-                {{ number_format($total) }} {{ Str::plural('user', $total) }} found
-                @if($currentSearch)
-                    for "{{ $currentSearch }}"
-                @endif
-            </p>
-        </div>
-    </div>
-
-    {{-- Table --}}
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead>
-                <tr class="border-b border-outline-variant/30 bg-surface-container-low/50">
-                    <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase">
-                        User
-                    </th>
-                    <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase hidden sm:table-cell">
-                        Email
-                    </th>
-                    <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase">
-                        Role
-                    </th>
-                    <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase hidden md:table-cell">
-                        Joined
-                    </th>
-                    <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase text-center">
-                        Actions
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-outline-variant/20">
-                @forelse($users as $user)
-                    @php $role = $user->role ?? 'student'; @endphp
-                    <tr class="hover:bg-surface-container-low/40 transition-colors">
-
-                        {{-- Avatar + Name --}}
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center
-                                            text-xs font-semibold text-on-primary shrink-0 overflow-hidden select-none">
-                                    @if($user->profile_photo_path ?? false)
-                                        <img src="{{ $user->profile_photo_url }}"
-                                             alt="{{ $user->name }}"
-                                             class="w-full h-full object-cover">
-                                    @else
-                                        {{ strtoupper(substr($user->name ?? '??', 0, 2)) }}
-                                    @endif
-                                </div>
-                                <span class="font-medium text-on-surface truncate max-w-[160px]">
-                                    {{ $user->name }}
-                                </span>
-                            </div>
-                        </td>
-
-                        {{-- Email --}}
-                        <td class="px-6 py-4 text-on-surface-variant hidden sm:table-cell">
-                            {{ $user->email }}
-                        </td>
-
-                        {{-- Role badge --}}
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full
-                                         text-xs font-medium {{ $roleBadge[$user->role->name] ?? $roleBadge['student'] }}">
-                                <span class="material-symbols-outlined text-[12px]">
-                                    {{ $roleIcon[$user->role->name] ?? 'person' }}
-                                </span>
-                                {{ ucfirst($user->role->name) }}
-                            </span>
-                        </td>
-
-                        {{-- Joined --}}
-                        <td class="px-6 py-4 text-on-surface-variant text-xs whitespace-nowrap hidden md:table-cell">
-                            {{ $user->created_at?->format('d M Y') ?? '—' }}
-                        </td>
-
-                        {{-- Actions --}}
-                        <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-0.5">
-
-                                {{-- View --}}
-                                <a href="{{ Route::has('admin.users.show') ? route('admin.users.show', $user) : '#' }}"
-                                   title="View user"
-                                   class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
-                                          text-on-surface-variant hover:bg-surface-container hover:text-primary
-                                          transition-colors">
-                                    <span class="material-symbols-outlined text-[18px]">visibility</span>
-                                </a>
-
-                                {{-- Edit --}}
-                                <a href="{{ Route::has('admin.users.edit') ? route('admin.users.edit', $user) : '#' }}"
-                                   title="Edit user"
-                                   class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
-                                          text-on-surface-variant hover:bg-surface-container hover:text-primary
-                                          transition-colors">
-                                    <span class="material-symbols-outlined text-[18px]">edit</span>
-                                </a>
-
-                                {{-- Delete --}}
-                                <button
-                                    type="button"
-                                    title="Delete user"
-                                    onclick="openDeleteModal({{ $user->id }}, '{{ e($user->name) }}')"
-                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
-                                           text-on-surface-variant hover:bg-error-container hover:text-error
-                                           transition-colors">
-                                    <span class="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
-
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="px-6 py-16 text-center">
-                            <div class="flex flex-col items-center gap-3">
-                                <div class="w-12 h-12 rounded-full bg-surface-container
-                                            flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-outline text-[24px]">group_off</span>
-                                </div>
-                                <div>
-                                    <p class="text-sm font-medium text-on-surface">No users found</p>
-                                    <p class="text-xs text-on-surface-variant mt-0.5">
-                                        @if($currentSearch)
-                                            No results for "<strong>{{ $currentSearch }}</strong>".
-                                            Try a different search term.
-                                        @else
-                                            No {{ $roleHeadings[$currentRole] ?? 'users' }} registered yet.
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    {{-- Pagination --}}
-    @if($users instanceof \Illuminate\Pagination\LengthAwarePaginator && $users->hasPages())
-        <div class="px-6 py-4 border-t border-outline-variant/30">
-            {{ $users->appends(request()->query())->links() }}
-        </div>
-    @endif
-
+<div id="usersTableContainer"
+     class="bg-surface-white border border-outline-variant/40 rounded-[20px] overflow-hidden
+            transition-opacity duration-150">
+    @include('admin.users._table')
 </div>
 
 {{-- ─── Delete Confirmation Modal ─── --}}
@@ -320,19 +179,57 @@
 
 @push('scripts')
 <script>
-    // ── Filter navigation ──────────────────────────────────────────
+    // ── Full-page filter navigation (role tabs, sort) ─────────────
     function updateFilter(key, value) {
         const url = new URL(window.location.href);
         url.searchParams.set(key, value);
-        url.searchParams.delete('page'); // reset pagination on filter change
+        url.searchParams.delete('page');
         window.location.href = url.toString();
     }
 
-    // Submit the search form on Enter (browser default) or when input is cleared
-    document.getElementById('filterForm').addEventListener('submit', function () {
-        this.querySelector('input[name="search"]').value =
-            this.querySelector('input[name="search"]').value.trim();
+    // ── AJAX live search ──────────────────────────────────────────
+    const tableContainer = document.getElementById('usersTableContainer');
+    let searchTimer;
+
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    function debouncedSearch(value) {
+        clearBtn.classList.toggle('hidden', value.trim() === '');
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => fetchTable(value.trim()), 350);
+    }
+
+    clearBtn.addEventListener('click', function () {
+        const input = document.getElementById('searchInput');
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        input.focus();
+        fetchTable('');
     });
+
+    function fetchTable(search) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('search', search);
+        url.searchParams.delete('page');
+
+        // Update address bar without navigation
+        history.replaceState(null, '', url.toString());
+
+        tableContainer.style.opacity = '0.5';
+
+        fetch(url.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.text())
+        .then(html => {
+            tableContainer.innerHTML = html;
+            tableContainer.style.opacity = '1';
+        })
+        .catch(() => { tableContainer.style.opacity = '1'; });
+    }
+
+    // Prevent form submit on Enter — live search already handles it
+    document.getElementById('filterForm').addEventListener('submit', e => e.preventDefault());
 
     // ── Delete modal ───────────────────────────────────────────────
     function openDeleteModal(userId, userName) {

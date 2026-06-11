@@ -25,11 +25,20 @@ class UserController extends Controller
                     : 'recent';
         $search = $request->get('search');
 
-        return view('admin.users.index', [
-            'users'      => $this->users->getFilteredUsers($role, $sort, $search),
-            'roleCounts' => $this->users->getRoleCounts(),
-            'roles'      => $this->roles->all(),
-        ]);
+        $data = [
+            'users'         => $this->users->getFilteredUsers($role, $sort, $search),
+            'roleCounts'    => $this->users->getRoleCounts(),
+            'roles'         => $this->roles->all(),
+            'currentRole'   => $role,
+            'currentSort'   => $sort,
+            'currentSearch' => $search ?? '',
+        ];
+
+        if ($request->ajax()) {
+            return view('admin.users._table', $data);
+        }
+
+        return view('admin.users.index', $data);
     }
 
     public function update(UpdateUserRoleRequest $request, int $id)

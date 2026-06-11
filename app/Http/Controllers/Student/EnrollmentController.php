@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\EnrollRequest;
+use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\TokenRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
-use App\Repositories\Contracts\CourseRepositoryInterface;
-use App\Repositories\Contracts\ActivityLogRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 
 class EnrollmentController extends Controller
@@ -16,7 +15,6 @@ class EnrollmentController extends Controller
         private TokenRepositoryInterface $tokens,
         private UserRepositoryInterface $users,
         private CourseRepositoryInterface $courses,
-        private ActivityLogRepositoryInterface $logs,
     ) {}
 
     public function store(EnrollRequest $request)
@@ -69,14 +67,6 @@ class EnrollmentController extends Controller
         }
 
         $this->tokens->incrementUses($token);
-
-        $this->logs->create([
-            'user_id'      => $student->id,
-            'action'       => $token->isClassToken() ? 'joined_class' : 'enrolled_course',
-            'subject_type' => $token->isClassToken() ? null : 'App\Models\Course',
-            'subject_id'   => $token->isClassToken() ? null : $token->course_id,
-            'metadata'     => ['token_type' => $token->type],
-        ]);
 
         return back()->with('success', $token->isClassToken()
             ? 'You have joined the class.'

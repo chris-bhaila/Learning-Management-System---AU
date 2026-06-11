@@ -3,16 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
-use App\Repositories\Contracts\ActivityLogRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
+use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
     public function __construct(
         private UserRepositoryInterface $users,
         private CourseRepositoryInterface $courses,
-        private ActivityLogRepositoryInterface $logs,
     ) {}
 
     public function index()
@@ -36,7 +35,7 @@ class DashboardController extends Controller
                 'pct_students'   => $totalUsers > 0 ? round($totalStudents / $totalUsers * 100) : 0,
             ],
             'recentUsers'    => $this->users->getRecent(8),
-            'recentActivity' => $this->logs->getRecent(15),
+            'recentActivity' => Activity::with('causer')->latest()->take(20)->get(),
         ]);
     }
 }
