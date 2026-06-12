@@ -45,6 +45,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/courses', [Admin\CourseController::class, 'index'])->name('courses.index');
     Route::patch('/courses/{id}', [Admin\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [Admin\CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::get('/courses/{id}', [Admin\CourseController::class, 'show'])->name('courses.show');
 
     // Units — no show/edit routes, handled by modals
     Route::patch('/units/{id}', [Admin\UnitController::class, 'update'])->name('units.update');

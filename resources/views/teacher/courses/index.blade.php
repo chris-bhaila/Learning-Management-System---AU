@@ -1,20 +1,39 @@
-@extends('layouts.admin')
+@extends('layouts.teacher')
 
-@section('title', 'All Courses')
+@section('title', 'My Courses')
+
+@section('topbar-actions')
+    <a href="{{ Route::has('teacher.groups.index') ? route('teacher.groups.index') : '#' }}"
+       class="hidden sm:inline-flex items-center gap-1.5 px-4 py-2
+              bg-surface-white border border-outline-variant/60 text-primary
+              text-sm font-medium rounded-[24px]
+              hover:bg-surface-container-low transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-[18px]">folder_managed</span>
+        Manage Groups
+    </a>
+    <a href="{{ Route::has('teacher.courses.create') ? route('teacher.courses.create') : '#' }}"
+       class="inline-flex items-center gap-1.5 px-4 py-2
+              bg-gold text-primary text-sm font-semibold rounded-[24px]
+              hover:bg-gold/90 transition-colors cursor-pointer">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        <span class="hidden sm:inline">Add Course</span>
+        <span class="sm:hidden">Add</span>
+    </a>
+@endsection
 
 @section('content')
 @php
-    $courses     ??= collect();
-    $allTeachers = $courses->pluck('teacher')->filter()->unique('id')->values();
+    $courses   ??= collect();
+    $allGroups = $courses->pluck('courseGroup')->filter()->unique('id')->values();
 @endphp
 
 {{-- ─── Page Header ─── --}}
 <div>
     <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
-        All Courses
+        My Courses
     </h1>
     <p class="mt-1 text-sm text-on-surface-variant">
-        {{ $courses->count() }} {{ Str::plural('course', $courses->count()) }} across all teachers
+        {{ $courses->count() }} {{ Str::plural('course', $courses->count()) }} in your library
     </p>
 </div>
 
@@ -24,18 +43,18 @@
     x-data="{
         search: '',
         status: 'published',
-        teacher: 'all',
+        group: 'all',
         visibleCount: {{ $courses->count() }},
-        matches(title, teacherName, courseStatus) {
-            const searchOk  = this.search.trim() === ''
-                || title.toLowerCase().includes(this.search.toLowerCase().trim())
-                || teacherName.toLowerCase().includes(this.search.toLowerCase().trim());
-            const statusOk  = this.status  === 'all' || courseStatus === this.status;
-            const teacherOk = this.teacher === 'all' || teacherName  === this.teacher;
-            return searchOk && statusOk && teacherOk;
+        matches(title, courseStatus, courseGroup) {
+            const searchOk = this.search.trim() === '' || title.toLowerCase().includes(this.search.toLowerCase().trim());
+            const statusOk = this.status === 'all' || courseStatus === this.status;
+            const groupOk  = this.group  === 'all' || courseGroup  === this.group;
+            return searchOk && statusOk && groupOk;
         },
         clearFilters() {
-            this.search = ''; this.status = 'published'; this.teacher = 'all';
+            this.search = '';
+            this.status = 'published';
+            this.group  = 'all';
         }
     }"
     x-effect="$nextTick(() => {
@@ -53,7 +72,7 @@
             <input
                 type="search"
                 x-model="search"
-                placeholder="Search by course or teacher…"
+                placeholder="Search courses…"
                 class="w-full pl-10 pr-4 py-2.5 bg-surface-white border border-outline-variant/60
                        rounded-[16px] text-sm placeholder:text-outline
                        focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
@@ -75,28 +94,36 @@
 
     </div>
 
-    {{-- Teacher filter chips --}}
-    @if($allTeachers->isNotEmpty())
+    {{-- Group filter chips --}}
+    @if($allGroups->isNotEmpty())
         <div class="flex items-center gap-2 flex-wrap mt-3">
-            <span class="text-[10px] font-semibold tracking-widest text-outline uppercase">Teacher:</span>
+            <span class="text-[10px] font-semibold tracking-widest text-outline uppercase">Group:</span>
 
             <button
-                @click="teacher = 'all'"
-                :class="teacher === 'all'
+                @click="group = 'all'"
+                :class="group === 'all'
                     ? 'bg-gold/20 text-primary border-gold/40'
                     : 'bg-surface-white border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low'"
                 class="px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer"
             >All</button>
 
-            @foreach($allTeachers as $t)
+            @foreach($allGroups as $g)
             <button
-                @click="teacher = @js($t->name)"
-                :class="teacher === @js($t->name)
+                @click="group = '{{ $g->id }}'"
+                :class="group === '{{ $g->id }}'
                     ? 'bg-gold/20 text-primary border-gold/40'
                     : 'bg-surface-white border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low'"
                 class="px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer"
-            >{{ $t->name }}</button>
+            >{{ $g->name }}</button>
             @endforeach
+
+            <button
+                @click="group = 'none'"
+                :class="group === 'none'
+                    ? 'bg-gold/20 text-primary border-gold/40'
+                    : 'bg-surface-white border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low'"
+                class="px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer"
+            >No group</button>
         </div>
     @endif
 
@@ -104,6 +131,7 @@
     {{-- ─── Cards / Empty States ─── --}}
     @if($courses->isEmpty())
 
+        {{-- No courses at all --}}
         <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] py-20
                     flex flex-col items-center gap-4 text-center">
             <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
@@ -111,8 +139,14 @@
             </div>
             <div>
                 <p class="text-base font-semibold text-on-surface">No courses yet</p>
-                <p class="text-sm text-on-surface-variant mt-1">Courses will appear here once teachers create them.</p>
+                <p class="text-sm text-on-surface-variant mt-1">Create your first course to get started.</p>
             </div>
+            <a href="{{ Route::has('teacher.courses.create') ? route('teacher.courses.create') : '#' }}"
+               class="mt-1 inline-flex items-center gap-1.5 px-5 py-2.5 bg-gold text-primary
+                      text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">add</span>
+                Add Course
+            </a>
         </div>
 
     @else
@@ -121,16 +155,16 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             @foreach($courses as $course)
             @php
-                $published   = $course->is_published ?? false;
-                $teacherName = $course->teacher?->name ?? '—';
-                $groupName   = $course->courseGroup?->name ?? null;
-                $students    = $course->students_count ?? 0;
-                $units       = $course->units_count ?? 0;
-                $progress    = min($course->avg_progress ?? 0, 100);
+                $published = $course->is_published ?? false;
+                $groupId   = $course->courseGroup?->id ? (string) $course->courseGroup->id : 'none';
+                $groupName = $course->courseGroup?->name ?? null;
+                $students  = $course->students_count ?? 0;
+                $units     = $course->units_count ?? 0;
+                $progress  = min($course->avg_progress ?? 0, 100);
             @endphp
             <div
                 data-card
-                x-show="matches(@js($course->title), @js($teacherName), '{{ $published ? 'published' : 'draft' }}')"
+                x-show="matches(@js($course->title), '{{ $published ? 'published' : 'draft' }}', '{{ $groupId }}')"
                 class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex flex-col gap-4
                        hover:shadow-[0px_4px_12px_rgba(30,42,74,0.07)] transition-shadow"
             >
@@ -154,17 +188,6 @@
                         <span class="w-1.5 h-1.5 rounded-full {{ $published ? 'bg-gold' : 'bg-outline-variant' }}"></span>
                         {{ $published ? 'Published' : 'Draft' }}
                     </span>
-                </div>
-
-                {{-- Teacher --}}
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-                        <span class="text-[10px] font-semibold text-on-primary"
-                              style="font-family: var(--font-display);">
-                            {{ strtoupper(substr($teacherName, 0, 2)) }}
-                        </span>
-                    </div>
-                    <span class="text-sm text-on-surface-variant truncate">{{ $teacherName }}</span>
                 </div>
 
                 {{-- Stats --}}
@@ -192,30 +215,18 @@
 
                 {{-- Actions --}}
                 <div class="flex items-center gap-2 pt-1 border-t border-outline-variant/20">
-                    <a href="{{ Route::has('admin.courses.show') ? route('admin.courses.show', $course) : '#' }}"
+                    <a href="{{ Route::has('teacher.courses.show') ? route('teacher.courses.show', $course) : '#' }}"
                        class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gold text-primary
                               text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">open_in_new</span>
                         View Course
                     </a>
-                    <a href="{{ Route::has('admin.courses.edit') ? route('admin.courses.edit', $course) : '#' }}"
+                    <a href="{{ Route::has('teacher.courses.edit') ? route('teacher.courses.edit', $course) : '#' }}"
                        class="flex items-center justify-center px-3.5 py-2
                               border border-outline-variant/60 text-on-surface-variant rounded-[24px]
                               hover:bg-surface-container-low hover:text-primary transition-colors cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">edit</span>
                     </a>
-                    <form method="POST"
-                          action="{{ Route::has('admin.courses.destroy') ? route('admin.courses.destroy', $course) : '#' }}"
-                          onsubmit="return confirm('Delete \'{{ addslashes($course->title) }}\'? This cannot be undone.')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit"
-                                class="flex items-center justify-center px-3.5 py-2
-                                       border border-error/40 text-error rounded-[24px]
-                                       hover:bg-error/5 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
-                    </form>
                 </div>
             </div>
             @endforeach
