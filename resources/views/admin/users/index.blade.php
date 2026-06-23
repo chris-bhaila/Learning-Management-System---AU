@@ -41,7 +41,7 @@
 </div>
 
 {{-- ─── Toolbar (search + sort + role tabs) ─── --}}
-<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 space-y-4">
+<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-5 space-y-4 animate-fade-up">
 
     {{-- Top row: search + sort --}}
     <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -121,8 +121,8 @@
 
 {{-- ─── Users Table ─── --}}
 <div id="usersTableContainer"
-     class="bg-surface-white border border-outline-variant/40 rounded-[20px] overflow-hidden
-            transition-opacity duration-150">
+     class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)]
+            transition-opacity duration-150 animate-fade-up">
     @include('admin.users._table')
 </div>
 

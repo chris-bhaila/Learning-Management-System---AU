@@ -103,6 +103,7 @@ php artisan activitylog:clean  # Prune logs older than configured retention peri
 - **CSRF:** Laravel's CSRF protection enabled on all forms — never disable it
 - **DDoS:** Laravel rate limiting handles brute force; a CDN (Cloudflare) should be in place at the infrastructure level for volumetric attacks
 - **Client-side Validation:** Iodine.js handles client-side validation (UX only) — always paired with server-side Laravel Form Request validation which is the authoritative layer. Never rely on client-side validation alone.
+- HTMLPurifier must be called explicitly wherever rich-text (TipTap) content is saved — sanitization is not automatic and must never be deferred or left as a "before production" task. Add it to the repository's create/update methods, not the controller.
 
 ## Conventions
 - Blade views follow the layouts/app.blade.php base template
@@ -115,6 +116,10 @@ php artisan activitylog:clean  # Prune logs older than configured retention peri
 - Activity logging handled by Spatie laravel-activitylog — add LogsActivity trait to models, never write manual log calls
 - Course and Unit pages use Alpine.js toggle between view mode and edit mode — page loads in view mode by default
 - Courses always get a dedicated show page regardless of role — too much content for a modal
+- After any state-changing action (create, update, delete), prevent the user from returning to the stale page via the browser back button. Use POST-redirect-GET pattern (already default in Laravel redirects) and set Cache-Control headers (no-store) on form-bearing pages, or use Alpine.js to invalidate cached views via history.replaceState where needed.
+- Every new form must include Iodine.js client-side validation matching the server-side Form Request rules at the time it's built — not as a follow-up task. If a form ships without it, treat it as incomplete, not done.
+- All containers must constrain content properly — use max-w-full, overflow-hidden, and min-w-0 on flex children where text could overflow. Test every new page at narrow widths before considering it done.
+- All interactive elements (buttons, cards, modals, toggles, dropdowns) must have transition animations — use Tailwind's transition, duration-150/200, and ease-in-out utilities at minimum. Modals fade/scale in, toggles slide, page elements should not feel static. Treat missing animation as incomplete, not polish to add later.
 
 ## Models
 - User (roles: super_admin, admin, teacher, student)

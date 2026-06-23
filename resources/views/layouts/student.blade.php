@@ -44,6 +44,7 @@
         id="sidebar"
         class="fixed inset-y-0 left-0 z-50 w-[260px] flex flex-col
                bg-surface-white border-r border-outline-variant/30
+               shadow-[4px_0px_24px_rgba(30,42,74,0.08)]
                -translate-x-full md:translate-x-0 transition-transform duration-200"
     >
         {{-- Logo --}}
@@ -73,7 +74,7 @@
             @yield('nav-items')
         </div>
 
-        {{-- Optional sidebar CTA (e.g. "New Course", "Create Assignment") --}}
+        {{-- Optional sidebar CTA --}}
         @hasSection('sidebar-cta')
             <div class="px-4 pb-4 shrink-0">
                 @yield('sidebar-cta')
@@ -112,6 +113,7 @@
 
         {{-- ─── TOPBAR ─── --}}
         <header class="h-16 sticky top-0 z-30 bg-surface-white border-b border-outline-variant/30
+                        shadow-[0px_4px_16px_rgba(30,42,74,0.06)]
                         flex items-center gap-4 px-4 md:px-8 shrink-0">
 
             {{-- Mobile sidebar toggle --}}
@@ -126,7 +128,7 @@
                                  text-outline text-[18px] pointer-events-none">search</span>
                     <input
                         type="search"
-                        placeholder="Search courses, assignments…"
+                        placeholder="Search courses…"
                         class="w-full pl-10 pr-4 py-2 bg-surface-container-low rounded-full text-sm
                                border border-outline-variant/60
                                placeholder:text-outline
@@ -136,7 +138,7 @@
             </div>
 
             <div class="ml-auto flex items-center gap-3">
-                {{-- Page-level action buttons (e.g. "New Assignment") --}}
+                {{-- Page-level action buttons --}}
                 @yield('topbar-actions')
 
                 {{-- Notifications --}}

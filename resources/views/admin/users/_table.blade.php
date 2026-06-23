@@ -56,9 +56,16 @@
 
                     {{-- Avatar + Name --}}
                     <td class="px-6 py-4">
+                        @php
+                            $avatarCls = [
+                                'admin'   => 'bg-primary-container text-on-primary',
+                                'teacher' => 'bg-gold/20 text-on-gold',
+                                'student' => 'bg-surface-container text-on-surface',
+                            ][$user->role->name] ?? 'bg-surface-container text-on-surface';
+                        @endphp
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center
-                                        text-xs font-semibold text-on-primary shrink-0 overflow-hidden select-none">
+                            <div class="w-9 h-9 rounded-full {{ $avatarCls }} flex items-center justify-center
+                                        text-xs font-semibold shrink-0 overflow-hidden select-none">
                                 @if($user->profile_photo_path ?? false)
                                     <img src="{{ $user->profile_photo_url }}"
                                          alt="{{ $user->name }}"

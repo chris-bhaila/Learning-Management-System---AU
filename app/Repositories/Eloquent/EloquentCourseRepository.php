@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Models\Course;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Mews\Purifier\Facades\Purifier;
 
 class EloquentCourseRepository implements CourseRepositoryInterface
 {
@@ -13,14 +14,34 @@ class EloquentCourseRepository implements CourseRepositoryInterface
         return Course::find($id);
     }
 
+    public function findWithRelations(int $id): ?Course
+    {
+        return Course::with([
+            'teacher',
+            'group',
+            'units',
+            'tokens'   => fn($q) => $q->where('type', 'course')->latest(),
+            'students' => fn($q) => $q->wherePivot('is_active', true)->orderBy('name'),
+        ])->find($id);
+    }
+
     public function create(array $data): Course
     {
+        if (array_key_exists('description', $data)) {
+            $data['description'] = Purifier::clean($data['description'] ?? '');
+        }
+
         return Course::create($data);
     }
 
     public function update(Course $course, array $data): Course
     {
+        if (array_key_exists('description', $data)) {
+            $data['description'] = Purifier::clean($data['description'] ?? '');
+        }
+
         $course->update($data);
+
         return $course->fresh();
     }
 

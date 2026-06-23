@@ -24,10 +24,29 @@ class CourseController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        return response()
+            ->view('admin.courses.create', [
+                'teachers' => $this->users->getAllTeachers(),
+                'groups'   => $this->groups->getAll(),
+            ])
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
+    public function store(StoreCourseRequest $request)
+    {
+        $this->courses->create($request->validated());
+
+        return redirect()->route('admin.courses.index')->with('success', 'Course created.');
+    }
+
     public function show(int $id)
     {
         return view('admin.courses.show', [
-            'course' => $this->courses->find($id),
+            'course'   => $this->courses->findWithRelations($id),
+            'teachers' => $this->users->getAllTeachers(),
+            'groups'   => $this->groups->getAll(),
         ]);
     }
 
@@ -45,7 +64,7 @@ class CourseController extends Controller
         $course = $this->courses->find($id);
         $this->courses->update($course, $request->validated());
 
-        return redirect()->route('admin.courses.show', $course)->with('success', 'Course updated.');
+        return redirect()->route('admin.courses.show', $id)->with('success', 'Course updated.');
     }
 
     public function destroy(int $id)

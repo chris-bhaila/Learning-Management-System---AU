@@ -38,19 +38,19 @@
 
 {{-- ─── Stats ─── --}}
 @php $total = method_exists($logs, 'total') ? $logs->total() : $logs->count(); @endphp
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-fade-up">
     @foreach([
         ['label' => 'Total Events',  'value' => number_format($total),          'icon' => 'history',        'tint' => 'bg-surface-container'],
         ['label' => 'Today',         'value' => number_format($totalToday),      'icon' => 'today',          'tint' => 'bg-gold/10'],
         ['label' => 'This Week',     'value' => number_format($totalWeek),       'icon' => 'calendar_month', 'tint' => 'bg-surface-container'],
         ['label' => 'Showing',       'value' => number_format($logs->count()),   'icon' => 'filter_list',    'tint' => 'bg-surface-container'],
     ] as $stat)
-        <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-4 flex items-center gap-3">
+        <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-4 flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl {{ $stat['tint'] }} flex items-center justify-center shrink-0">
                 <span class="material-symbols-outlined text-primary text-[18px]">{{ $stat['icon'] }}</span>
             </div>
             <div class="min-w-0">
-                <p class="text-[10px] font-semibold tracking-widest text-outline uppercase">{{ $stat['label'] }}</p>
+                <p class="text-xs text-on-surface-variant font-medium">{{ $stat['label'] }}</p>
                 <p class="text-xl font-bold text-primary leading-tight" style="font-family: var(--font-display);">
                     {{ $stat['value'] }}
                 </p>
@@ -60,7 +60,7 @@
 </div>
 
 {{-- ─── Filters ─── --}}
-<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 space-y-4">
+<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-5 space-y-4 animate-fade-up">
 
     <div class="flex flex-wrap items-center gap-3">
 
@@ -151,7 +151,7 @@
 </div>
 
 {{-- ─── Log Table ─── --}}
-<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] overflow-hidden">
+<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden animate-fade-up">
 
     <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
         <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">Events</h2>
@@ -388,7 +388,7 @@
         const row  = document.getElementById('details-' + id);
         const icon = document.getElementById('icon-' + id);
         const hidden = row.classList.toggle('hidden');
-        icon.textContent = hidden ? 'expand_more' : 'expand_less';
+        icon.style.transform = hidden ? '' : 'rotate(180deg)';
     }
 </script>
 @endpush

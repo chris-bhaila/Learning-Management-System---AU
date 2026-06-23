@@ -68,3 +68,39 @@
     content: '';
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r bg-gold;
 }
+
+/* ─── Animations ─────────────────────────────────── */
+
+/* Page / card entrance */
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+    animation: fade-up 0.3s ease-out;
+}
+
+/* Form validation shake */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15%       { transform: translateX(-5px); }
+    30%       { transform: translateX(5px); }
+    45%       { transform: translateX(-4px); }
+    60%       { transform: translateX(4px); }
+    75%       { transform: translateX(-2px); }
+    90%       { transform: translateX(2px); }
+}
+.animate-shake { animation: shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+
+/* Idle float for empty-state icons */
+@keyframes float-icon {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-5px); }
+}
+.animate-float { animation: float-icon 3s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-fade-up,
+    .animate-shake,
+    .animate-float { animation: none; }
+}

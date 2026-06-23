@@ -31,7 +31,6 @@
         'completed'  => 0,
         'in_progress' => 0,
     ];
-    $assignmentsDueCount ??= 0;
 @endphp
 
 {{-- ─── Page Header ─── --}}
@@ -40,13 +39,7 @@
         <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
             Welcome back, {{ auth()->user()?->name ?? 'Student' }}
         </h1>
-        <p class="mt-1 text-sm text-on-surface-variant">
-            @if($assignmentsDueCount > 0)
-                You have {{ $assignmentsDueCount }} {{ Str::plural('assignment', $assignmentsDueCount) }} due this week. Keep up the good work.
-            @else
-                You're all caught up. Keep up the great work!
-            @endif
-        </p>
+        <p class="mt-1 text-sm text-on-surface-variant">You're all caught up. Keep up the great work!</p>
     </div>
     <span class="text-xs text-outline bg-surface-container px-3 py-1.5 rounded-full shrink-0">
         {{ now()->format('D, d M Y') }}
@@ -55,10 +48,10 @@
 
 
 {{-- ─── Stat Cards ─── --}}
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-5 animate-fade-up">
 
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-primary text-[22px]">school</span>
         </div>
@@ -72,7 +65,7 @@
     </div>
 
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-[22px]" style="color: var(--color-on-gold);">trending_up</span>
         </div>
@@ -86,7 +79,7 @@
     </div>
 
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-primary text-[22px]">task_alt</span>
         </div>
@@ -103,7 +96,7 @@
 
 
 {{-- ─── My Courses ─── --}}
-<div>
+<div class="animate-fade-up">
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
             My Courses
@@ -142,7 +135,7 @@
                 @endphp
                 <a href="{{ Route::has('student.courses.show') ? route('student.courses.show', $course) : '#' }}"
                    class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex flex-col gap-4
-                          hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow group">
+                          shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.12)] hover:-translate-y-0.5 transition-all duration-200 group">
 
                     {{-- Course identity --}}
                     <div class="flex items-start gap-3">

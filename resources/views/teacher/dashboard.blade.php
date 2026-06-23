@@ -42,11 +42,11 @@
 
 
 {{-- ─── Stat Cards ─── --}}
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 animate-fade-up">
 
     {{-- Total Students --}}
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-primary text-[22px]">group</span>
         </div>
@@ -61,7 +61,7 @@
 
     {{-- Active Courses --}}
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-primary text-[22px]">library_books</span>
         </div>
@@ -76,7 +76,7 @@
 
     {{-- Pending Grading --}}
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-gold/20 flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-[22px]" style="color: var(--color-on-gold);">pending_actions</span>
         </div>
@@ -91,7 +91,7 @@
 
     {{-- Avg Progress --}}
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex items-start gap-4
-                hover:shadow-[0px_4px_12px_rgba(30,42,74,0.05)] transition-shadow">
+                shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.10)] transition-shadow">
         <div class="w-11 h-11 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
             <span class="material-symbols-outlined text-primary text-[22px]">trending_up</span>
         </div>
@@ -108,7 +108,7 @@
 
 
 {{-- ─── Course Management Table ─── --}}
-<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] overflow-hidden">
+<div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden animate-fade-up">
 
     <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
         <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">

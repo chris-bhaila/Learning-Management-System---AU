@@ -39,7 +39,7 @@
 
 
 {{-- ─── Filters + Grid ─── --}}
-<div
+<div class="animate-fade-up"
     x-data="{
         search: '',
         status: 'published',
@@ -97,7 +97,6 @@
     {{-- Group filter chips --}}
     @if($allGroups->isNotEmpty())
         <div class="flex items-center gap-2 flex-wrap mt-3">
-            <span class="text-[10px] font-semibold tracking-widest text-outline uppercase">Group:</span>
 
             <button
                 @click="group = 'all'"
@@ -166,7 +165,7 @@
                 data-card
                 x-show="matches(@js($course->title), '{{ $published ? 'published' : 'draft' }}', '{{ $groupId }}')"
                 class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex flex-col gap-4
-                       hover:shadow-[0px_4px_12px_rgba(30,42,74,0.07)] transition-shadow"
+                       shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.12)] hover:-translate-y-0.5 transition-all duration-200"
             >
                 {{-- Header: title + status chip --}}
                 <div class="flex items-start justify-between gap-3">
@@ -205,7 +204,7 @@
                 {{-- Progress bar --}}
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-[10px] font-semibold tracking-widest text-outline uppercase">Avg. Progress</span>
+                        <span class="text-xs text-on-surface-variant">Avg. progress</span>
                         <span class="text-xs font-medium text-on-surface-variant">{{ $progress }}%</span>
                     </div>
                     <div class="h-1.5 bg-surface-container rounded-full overflow-hidden">

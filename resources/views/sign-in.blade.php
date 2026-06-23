@@ -31,7 +31,7 @@
         </div>
 
         {{-- Centre copy --}}
-        <div class="space-y-6">
+        <div class="space-y-6 animate-fade-up">
             <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full
                          bg-gold/20 text-gold text-[11px] font-semibold uppercase tracking-widest">
                 Private · Instructor-Led · Focused
@@ -83,7 +83,7 @@
 
         {{-- Centred form area --}}
         <div class="flex-1 flex items-center justify-center px-6 py-10 md:px-12">
-            <div class="w-full max-w-[400px] space-y-7">
+            <div class="w-full max-w-[400px] space-y-7 animate-fade-up">
 
                 {{-- Heading --}}
                 <div>

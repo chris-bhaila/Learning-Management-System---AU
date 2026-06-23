@@ -8,19 +8,50 @@
     $allTeachers = $courses->pluck('teacher')->filter()->unique('id')->values();
 @endphp
 
+{{-- ─── Flash ─── --}}
+@if(session('success'))
+    <div
+        x-data="{ show: true }"
+        x-show="show"
+        x-init="setTimeout(() => show = false, 4000)"
+        x-transition:leave="transition duration-300"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="flex items-center gap-3 px-4 py-3 bg-surface-container-low border border-outline-variant/40
+               rounded-[16px] text-sm text-on-surface"
+    >
+        <span class="material-symbols-outlined text-[20px] text-gold shrink-0">check_circle</span>
+        {{ session('success') }}
+        <button type="button" @click="show = false"
+                class="ml-auto text-outline hover:text-on-surface transition-colors cursor-pointer">
+            <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+    </div>
+@endif
+
 {{-- ─── Page Header ─── --}}
-<div>
-    <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
-        All Courses
-    </h1>
-    <p class="mt-1 text-sm text-on-surface-variant">
-        {{ $courses->count() }} {{ Str::plural('course', $courses->count()) }} across all teachers
-    </p>
+<div class="flex items-start justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
+            All Courses
+        </h1>
+        <p class="mt-1 text-sm text-on-surface-variant">
+            {{ $courses->count() }} {{ Str::plural('course', $courses->count()) }} across all teachers
+        </p>
+    </div>
+
+    <a href="{{ route('admin.courses.create') }}"
+       class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
+              text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors
+              cursor-pointer shrink-0">
+        <span class="material-symbols-outlined text-[18px]">add</span>
+        New Course
+    </a>
 </div>
 
 
 {{-- ─── Filters + Grid ─── --}}
-<div
+<div class="animate-fade-up"
     x-data="{
         search: '',
         status: 'published',
@@ -77,8 +108,7 @@
 
     {{-- Teacher filter chips --}}
     @if($allTeachers->isNotEmpty())
-        <div class="flex items-center gap-2 flex-wrap mt-3">
-            <span class="text-[10px] font-semibold tracking-widest text-outline uppercase">Teacher:</span>
+        <div class="flex items-center gap-2 flex-wrap mt-3 mb-2">
 
             <button
                 @click="teacher = 'all'"
@@ -131,8 +161,14 @@
             <div
                 data-card
                 x-show="matches(@js($course->title), @js($teacherName), '{{ $published ? 'published' : 'draft' }}')"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-95"
                 class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex flex-col gap-4
-                       hover:shadow-[0px_4px_12px_rgba(30,42,74,0.07)] transition-shadow"
+                       shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.12)] hover:-translate-y-0.5 transition-all duration-200"
             >
                 {{-- Header: title + status chip --}}
                 <div class="flex items-start justify-between gap-3">
@@ -157,7 +193,7 @@
                 </div>
 
                 {{-- Teacher --}}
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 min-w-0">
                     <div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center shrink-0">
                         <span class="text-[10px] font-semibold text-on-primary"
                               style="font-family: var(--font-display);">
@@ -182,11 +218,11 @@
                 {{-- Progress bar --}}
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-[10px] font-semibold tracking-widest text-outline uppercase">Avg. Progress</span>
+                        <span class="text-xs text-on-surface-variant">Avg. progress</span>
                         <span class="text-xs font-medium text-on-surface-variant">{{ $progress }}%</span>
                     </div>
                     <div class="h-1.5 bg-surface-container rounded-full overflow-hidden">
-                        <div class="h-full bg-gold rounded-full" style="width: {{ $progress }}%"></div>
+                        <div class="h-full bg-gold rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
                     </div>
                 </div>
 
@@ -225,6 +261,12 @@
         <div
             x-show="visibleCount === 0"
             x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
             class="bg-surface-white border border-outline-variant/40 rounded-[20px] py-16
                    flex flex-col items-center gap-3 text-center"
         >

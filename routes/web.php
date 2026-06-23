@@ -41,11 +41,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/users/{id}', [Admin\UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
 
-    // Courses — no show/edit routes, handled by modals
+    // Courses
     Route::get('/courses', [Admin\CourseController::class, 'index'])->name('courses.index');
+    Route::get('/courses/create', [Admin\CourseController::class, 'create'])->name('courses.create');
+    Route::post('/courses', [Admin\CourseController::class, 'store'])->name('courses.store');
+    Route::get('/courses/{id}', [Admin\CourseController::class, 'show'])->name('courses.show');
     Route::patch('/courses/{id}', [Admin\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [Admin\CourseController::class, 'destroy'])->name('courses.destroy');
-    Route::get('/courses/{id}', [Admin\CourseController::class, 'show'])->name('courses.show');
 
     // Units — no show/edit routes, handled by modals
     Route::patch('/units/{id}', [Admin\UnitController::class, 'update'])->name('units.update');

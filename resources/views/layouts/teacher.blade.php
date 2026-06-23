@@ -35,6 +35,7 @@
         id="sidebar"
         class="fixed inset-y-0 left-0 z-50 w-[260px] flex flex-col
                bg-surface-white border-r border-outline-variant/30
+               shadow-[4px_0px_24px_rgba(30,42,74,0.08)]
                -translate-x-full md:translate-x-0 transition-transform duration-200"
     >
         {{-- Logo --}}
@@ -137,6 +138,7 @@
 
         {{-- ─── TOPBAR ─── --}}
         <header class="h-16 sticky top-0 z-30 bg-surface-white border-b border-outline-variant/30
+                        shadow-[0px_4px_16px_rgba(30,42,74,0.06)]
                         flex items-center gap-4 px-4 md:px-8 shrink-0">
 
             {{-- Mobile sidebar toggle --}}

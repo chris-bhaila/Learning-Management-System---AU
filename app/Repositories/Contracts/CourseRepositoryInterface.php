@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 interface CourseRepositoryInterface
 {
     public function find(int $id): ?Course;
+    public function findWithRelations(int $id): ?Course;
     public function create(array $data): Course;
     public function update(Course $course, array $data): Course;
     public function delete(Course $course): bool;
