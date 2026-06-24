@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Teacher\StoreCourseRequest;
-use App\Http\Requests\Teacher\UpdateCourseRequest;
+use App\Http\Requests\Shared\StoreCourseRequest;
+use App\Http\Requests\Shared\UpdateCourseRequest;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\CourseGroupRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
@@ -42,10 +42,13 @@ class CourseController extends Controller
 
     public function show(int $id)
     {
-        $course = $this->courses->find($id);
+        $course = $this->courses->findWithRelations($id);
         $this->authorize('view', $course);
 
-        return view('teacher.courses.show', compact('course'));
+        return view('teacher.courses.show', [
+            'course' => $course,
+            'groups' => $this->groups->getByTeacher(Auth::id()),
+        ]);
     }
 
     public function edit(int $id)

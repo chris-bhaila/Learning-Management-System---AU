@@ -114,12 +114,21 @@ php artisan activitylog:clean  # Prune logs older than configured retention peri
 - All database-driven content must have fallback states — empty states for no data, skeleton loaders while fetching, graceful error messages on failure. Never render a blank or broken UI
 - CourseRepositoryInterface, TokenRepositoryInterface, and CourseGroupRepositoryInterface each need a getAll() method — used by Admin controllers to fetch all records regardless of ownership
 - Activity logging handled by Spatie laravel-activitylog — add LogsActivity trait to models, never write manual log calls
-- Course and Unit pages use Alpine.js toggle between view mode and edit mode — page loads in view mode by default
-- Courses always get a dedicated show page regardless of role — too much content for a modal
+- Course and Unit pages use Alpine.js toggle between view mode and edit mode — page loads in view mode by default. Editing happens inline on the show page; there are no separate edit pages or modals for courses or units.
+- Courses and Units always get a dedicated show page regardless of role — too much content for a modal
+- Unit create/show/edit views are shared: `resources/views/units/create.blade.php` and `resources/views/units/show.blade.php`. Each role's controller passes `$layout`, `$storeRoute`/`$updateRoute`/`$destroyRoute`, and `$backRoute` as view variables — no duplicate view files per role
+- getAll() is not needed on UnitRepositoryInterface — units are always scoped to a course via getByCourse(int $courseId)
+- Teacher's courses/show.blade.php includes drag-to-reorder for units via SortableJS (loaded from esm.sh). Admin's courses/show does not include reorder since admins don't own courses.
 - After any state-changing action (create, update, delete), prevent the user from returning to the stale page via the browser back button. Use POST-redirect-GET pattern (already default in Laravel redirects) and set Cache-Control headers (no-store) on form-bearing pages, or use Alpine.js to invalidate cached views via history.replaceState where needed.
 - Every new form must include Iodine.js client-side validation matching the server-side Form Request rules at the time it's built — not as a follow-up task. If a form ships without it, treat it as incomplete, not done.
 - All containers must constrain content properly — use max-w-full, overflow-hidden, and min-w-0 on flex children where text could overflow. Test every new page at narrow widths before considering it done.
 - All interactive elements (buttons, cards, modals, toggles, dropdowns) must have transition animations — use Tailwind's transition, duration-150/200, and ease-in-out utilities at minimum. Modals fade/scale in, toggles slide, page elements should not feel static. Treat missing animation as incomplete, not polish to add later.
+- Confirmation dialogs (SweetAlert2) follow standard action-color convention, not brand colors:
+  - Destructive actions (delete, revoke, remove) — danger/error color for confirm, neutral gray for cancel
+  - Positive/safe actions (publish, save, approve, enroll) — success color (or gold as fallback) for confirm, neutral gray for cancel
+  - Neutral actions (logout, unsaved changes) — both buttons neutral gray
+  - Reusable helpers (confirmDelete(), confirmAction()) live in resources/js/app.js — never one-off SweetAlert2 calls in Blade files
+  - All colors reference existing CSS variables from resources/css/app.css — never hardcoded hex values, never guessed variable names without reading the file first
 
 ## Models
 - User (roles: super_admin, admin, teacher, student)

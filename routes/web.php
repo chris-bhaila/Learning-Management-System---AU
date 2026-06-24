@@ -49,7 +49,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/courses/{id}', [Admin\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [Admin\CourseController::class, 'destroy'])->name('courses.destroy');
 
-    // Units — no show/edit routes, handled by modals
+    // Units
+    Route::get('/courses/{courseId}/units/create', [Admin\UnitController::class, 'create'])->name('units.create');
+    Route::post('/courses/{courseId}/units', [Admin\UnitController::class, 'store'])->name('units.store');
+    Route::get('/units/{id}', [Admin\UnitController::class, 'show'])->name('units.show');
     Route::patch('/units/{id}', [Admin\UnitController::class, 'update'])->name('units.update');
     Route::delete('/units/{id}', [Admin\UnitController::class, 'destroy'])->name('units.destroy');
 
@@ -79,9 +82,10 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::patch('/courses/{id}', [Teacher\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [Teacher\CourseController::class, 'destroy'])->name('courses.destroy');
 
-    // Units — no edit route, handled by modal
+    // Units
     Route::get('/courses/{courseId}/units/create', [Teacher\UnitController::class, 'create'])->name('units.create');
     Route::post('/courses/{courseId}/units', [Teacher\UnitController::class, 'store'])->name('units.store');
+    Route::get('/units/{id}', [Teacher\UnitController::class, 'show'])->name('units.show');
     Route::patch('/units/{id}', [Teacher\UnitController::class, 'update'])->name('units.update');
     Route::delete('/units/{id}', [Teacher\UnitController::class, 'destroy'])->name('units.destroy');
     Route::post('/courses/{courseId}/units/reorder', [Teacher\UnitController::class, 'reorder'])->name('units.reorder');

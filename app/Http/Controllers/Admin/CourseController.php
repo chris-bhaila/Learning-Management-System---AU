@@ -26,12 +26,10 @@ class CourseController extends Controller
 
     public function create()
     {
-        return response()
-            ->view('admin.courses.create', [
-                'teachers' => $this->users->getAllTeachers(),
-                'groups'   => $this->groups->getAll(),
-            ])
-            ->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        return view('admin.courses.create', [
+            'teachers' => $this->users->getAllTeachers(),
+            'groups'   => $this->groups->getAll(),
+        ]);
     }
 
     public function store(StoreCourseRequest $request)

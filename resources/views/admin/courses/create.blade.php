@@ -84,14 +84,16 @@
 
             if (Object.values(this.errors).some(Boolean)) {
                 event.preventDefault();
+                return;
             }
+            history.replaceState(null, '', '{{ route('admin.courses.index') }}');
         },
     }"
 >
     @csrf
 
     {{-- ═══ SECTION 1 — Course Details ═══ --}}
-    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up">
+    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up mb-4">
 
         <h2 class="text-sm font-semibold text-on-surface mb-5" style="font-family: var(--font-display);">
             Course Details
@@ -237,7 +239,7 @@
     </div>
 
     {{-- ═══ SECTION 2 — Teacher & Group ═══ --}}
-    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up">
+    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up mb-4">
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
@@ -320,7 +322,7 @@
     </div>
 
     {{-- ═══ SECTION 3 — Settings ═══ --}}
-    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up">
+    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up mb-2">
 
         <h2 class="text-sm font-semibold text-on-surface mb-5" style="font-family: var(--font-display);">
             Settings

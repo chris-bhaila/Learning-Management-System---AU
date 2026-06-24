@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Teacher\StoreUnitRequest;
-use App\Http\Requests\Teacher\UpdateUnitRequest;
+use App\Http\Requests\Shared\StoreUnitRequest;
+use App\Http\Requests\Shared\UpdateUnitRequest;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use Illuminate\Http\Request;
@@ -21,7 +21,12 @@ class UnitController extends Controller
         $course = $this->courses->find($courseId);
         $this->authorize('update', $course);
 
-        return view('teacher.units.create', compact('course'));
+        return view('units.create', [
+            'course'     => $course,
+            'layout'     => 'layouts.teacher',
+            'storeRoute' => route('teacher.units.store', $courseId),
+            'backRoute'  => route('teacher.courses.show', $courseId),
+        ]);
     }
 
     public function store(StoreUnitRequest $request, int $courseId)
@@ -29,41 +34,51 @@ class UnitController extends Controller
         $course = $this->courses->find($courseId);
         $this->authorize('update', $course);
 
-        $this->units->create(array_merge(
-            $request->validated(),
-            ['course_id' => $courseId]
-        ));
+        $data              = $request->validated();
+        $data['course_id'] = $courseId;
 
-        return redirect()->route('teacher.courses.show', $courseId)->with('success', 'Unit added.');
+        if (empty($data['order'])) {
+            $data['order'] = $this->units->getByCourse($courseId)->count() + 1;
+        }
+
+        $unit = $this->units->create($data);
+
+        return redirect()->route('teacher.units.show', $unit->id)->with('success', 'Unit added.');
     }
 
-    public function edit(int $id)
+    public function show(int $id)
     {
         $unit = $this->units->find($id);
-        $this->authorize('update', $unit->course);
+        $this->authorize('update', $unit);
 
-        return view('teacher.units.edit', compact('unit'));
+        return view('units.show', [
+            'unit'         => $unit,
+            'layout'       => 'layouts.teacher',
+            'updateRoute'  => route('teacher.units.update', $id),
+            'destroyRoute' => route('teacher.units.destroy', $id),
+            'backRoute'    => route('teacher.courses.show', $unit->course_id),
+        ]);
     }
 
     public function update(UpdateUnitRequest $request, int $id)
     {
         $unit = $this->units->find($id);
-        $this->authorize('update', $unit->course);
+        $this->authorize('update', $unit);
 
         $this->units->update($unit, $request->validated());
 
-        return back()->with('success', 'Unit updated.');
+        return redirect()->route('teacher.units.show', $id)->with('success', 'Unit updated.');
     }
 
     public function destroy(int $id)
     {
         $unit = $this->units->find($id);
-        $this->authorize('update', $unit->course);
+        $this->authorize('delete', $unit);
 
-        $course = $unit->course;
+        $courseId = $unit->course_id;
         $this->units->delete($unit);
 
-        return redirect()->route('teacher.courses.show', $course)->with('success', 'Unit deleted.');
+        return redirect()->route('teacher.courses.show', $courseId)->with('success', 'Unit deleted.');
     }
 
     public function reorder(Request $request, int $courseId)

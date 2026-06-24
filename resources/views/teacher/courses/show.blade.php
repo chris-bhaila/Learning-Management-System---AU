@@ -1,27 +1,21 @@
-@extends('layouts.admin')
+@extends('layouts.teacher')
 
 @section('title', $course->title)
 
 @section('topbar-actions')
-    <a href="{{ route('admin.courses.index') }}"
+    <a href="{{ route('teacher.courses.index') }}"
        class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant/60
               text-sm font-medium text-on-surface-variant rounded-[24px]
               hover:bg-surface-container-low hover:text-primary transition-colors cursor-pointer">
         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-        All Courses
+        My Courses
     </a>
 @endsection
 
-
 @section('content')
 @php
-    $groupsByTeacher = $groups
-        ->groupBy('teacher_id')
-        ->map(fn($g) => $g->map(fn($grp) => ['id' => $grp->id, 'name' => $grp->name])->values());
-
-    $published   = $course->is_published ?? false;
-    $teacherName = $course->teacher?->name ?? '—';
-    $groupName   = $course->group?->name ?? null;
+    $published = $course->is_published ?? false;
+    $groupName = $course->group?->name ?? null;
 @endphp
 
 <div
@@ -29,20 +23,11 @@
         editing: false,
         submitting: false,
         titleShake: false,
-        teacherShake: false,
-
-        teacherId: '{{ $course->teacher_id }}',
-        groupId:   '{{ $course->group_id ?? '' }}',
+        groupId: '{{ $course->group_id ?? '' }}',
         published: {{ $course->is_published ? 'true' : 'false' }},
-        groupsByTeacher: @js($groupsByTeacher),
 
         errors: {
-            title:      '{{ addslashes($errors->first('title')) }}',
-            teacher_id: '{{ addslashes($errors->first('teacher_id')) }}',
-        },
-
-        get filteredGroups() {
-            return this.groupsByTeacher[this.teacherId] ?? [];
+            title: '{{ addslashes($errors->first('title')) }}',
         },
 
         check(value, rules) {
@@ -62,29 +47,21 @@
             this.errors.title = this.check(value, ['required', 'maxLength:255']);
         },
 
-        onTeacherChange(event) {
-            this.groupId = '';
-            this.errors.teacher_id = this.check(event.target.value, ['required']);
-        },
-
         onSubmit(event) {
-            this.errors.title      = this.check(document.getElementById('edit-title').value, ['required', 'maxLength:255']);
-            this.errors.teacher_id = this.check(this.teacherId, ['required']);
-            if (Object.values(this.errors).some(Boolean)) {
+            this.errors.title = this.check(document.getElementById('edit-title').value, ['required', 'maxLength:255']);
+            if (this.errors.title) {
                 event.preventDefault();
-                if (this.errors.title)      this.shake('titleShake');
-                if (this.errors.teacher_id) this.shake('teacherShake');
+                this.shake('titleShake');
                 return;
             }
             this.submitting = true;
         },
 
         cancelEdit() {
-            this.editing     = false;
-            this.teacherId   = '{{ $course->teacher_id }}';
-            this.groupId     = '{{ $course->group_id ?? '' }}';
-            this.published   = {{ $course->is_published ? 'true' : 'false' }};
-            this.errors      = { title: '', teacher_id: '' };
+            this.editing   = false;
+            this.groupId   = '{{ $course->group_id ?? '' }}';
+            this.published = {{ $course->is_published ? 'true' : 'false' }};
+            this.errors    = { title: '' };
             document.getElementById('edit-title').value = @js($course->title);
             if (window.tiptap) {
                 window.tiptap.commands.setContent(@js($course->description ?? ''), false);
@@ -101,7 +78,7 @@
     class="space-y-6"
 >
 
-{{-- ─── Server validation error summary ─── --}}
+{{-- ─── Server validation errors ─── --}}
 @if($errors->any())
     <div role="alert" class="bg-error-container border border-error/30 text-on-error-container rounded-[16px] p-4 flex gap-3">
         <span class="material-symbols-outlined text-error text-[20px] shrink-0 mt-0.5">error</span>
@@ -116,30 +93,27 @@
     </div>
 @endif
 
-{{-- ══════════════════════════════════════════
-     EDITABLE FORM (title · description · settings)
-══════════════════════════════════════════ --}}
 <form
     id="edit-course-form"
     method="POST"
-    action="{{ route('admin.courses.update', $course->id) }}"
+    action="{{ route('teacher.courses.update', $course->id) }}"
     @submit="onSubmit"
     class="space-y-6"
 >
     @csrf
     @method('PATCH')
 
-    {{-- ─── Page Header / Title ─── --}}
-    {{-- Label lives outside the flex row so only the input participates in vertical alignment --}}
+    {{-- Label above flex row — only in edit mode --}}
     <label x-show="editing" x-cloak for="edit-title"
            class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
         Course Title <span class="text-error">*</span>
     </label>
 
+    {{-- ─── Header row ─── --}}
     <div class="flex flex-wrap items-start gap-4 mb-4">
         <div class="min-w-0 w-full sm:flex-1">
 
-            {{-- View: course title heading --}}
+            {{-- View --}}
             <div x-show="!editing"
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-y-1"
@@ -166,11 +140,6 @@
                     {{ $course->title }}
                 </h1>
                 <p class="text-sm text-on-surface-variant flex items-center gap-1.5 flex-wrap">
-                    <span class="inline-flex items-center gap-1.5 min-w-0">
-                        <span class="material-symbols-outlined text-[16px] shrink-0">person</span>
-                        <span class="truncate">{{ $teacherName }}</span>
-                    </span>
-                    <span class="text-outline-variant/60">·</span>
                     <span class="inline-flex items-center gap-1.5 shrink-0">
                         <span class="material-symbols-outlined text-[16px]">schedule</span>
                         Created {{ $course->created_at->diffForHumans() }}
@@ -178,7 +147,7 @@
                 </p>
             </div>
 
-            {{-- Edit: title input (label is above the flex row, so only the input aligns with buttons) --}}
+            {{-- Edit --}}
             <div x-show="editing" x-cloak
                  x-transition:enter="transition ease-out duration-200"
                  x-transition:enter-start="opacity-0 translate-y-1"
@@ -200,15 +169,11 @@
                    x-transition:enter="transition ease-out duration-150"
                    x-transition:enter-start="opacity-0 -translate-y-1"
                    x-transition:enter-end="opacity-100 translate-y-0"
-                   x-transition:leave="transition ease-in duration-100"
-                   x-transition:leave-start="opacity-100"
-                   x-transition:leave-end="opacity-0"
                    class="mt-1.5 text-xs text-error" x-cloak></p>
             </div>
-
         </div>
 
-        {{-- Action buttons — inside x-data scope so Alpine can toggle them --}}
+        {{-- Action buttons --}}
         <div class="flex items-center gap-2 shrink-0 self-center">
 
             {{-- View mode --}}
@@ -253,7 +218,7 @@
                            text-sm font-semibold rounded-[24px] hover:bg-gold/90
                            active:scale-[0.96] transition-all duration-150 cursor-pointer
                            disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
-                    <span class="material-symbols-outlined text-[18px]" aria-hidden="true"
+                    <span class="material-symbols-outlined text-[18px]"
                           :class="submitting ? 'animate-spin' : ''"
                           x-text="submitting ? 'progress_activity' : 'save'">save</span>
                     <span x-text="submitting ? 'Saving…' : 'Save'">Save</span>
@@ -269,14 +234,15 @@
         {{-- ═══ MAIN COLUMN ═══ --}}
         <div class="lg:col-span-2 min-w-0 flex flex-col gap-5">
 
-            {{-- Description card --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 mt-4 overflow-hidden">
+            {{-- Description --}}
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 mt-4 overflow-hidden">
 
                 <p class="text-sm font-semibold text-on-surface mb-4" style="font-family: var(--font-display);">
                     Description
                 </p>
 
-                {{-- View: rendered HTML --}}
+                {{-- View --}}
                 <div x-show="!editing"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-1"
@@ -313,7 +279,7 @@
                     @endif
                 </div>
 
-                {{-- Edit: TipTap editor --}}
+                {{-- Edit: TipTap --}}
                 <div x-show="editing" x-cloak
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="opacity-0 translate-y-1"
@@ -322,35 +288,24 @@
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 -translate-y-1">
 
-                    {{-- Toolbar --}}
                     <div class="flex items-center gap-0.5 px-3 py-2 bg-surface-container-low
                                 border border-outline-variant/60 rounded-t-[16px] border-b-0 flex-wrap">
                         <button type="button" onclick="tiptap.chain().focus().toggleBold().run()" aria-label="Bold"
                                 class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant
-                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer font-bold text-sm">
-                            B
-                        </button>
+                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer font-bold text-sm">B</button>
                         <button type="button" onclick="tiptap.chain().focus().toggleItalic().run()" aria-label="Italic"
                                 class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant
-                                       hover:bg-surface-container hover:text-primary transition-colors cursor-pointer italic text-sm">
-                            I
-                        </button>
+                                       hover:bg-surface-container hover:text-primary transition-colors cursor-pointer italic text-sm">I</button>
                         <button type="button" onclick="tiptap.chain().focus().toggleStrike().run()" aria-label="Strikethrough"
                                 class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant
-                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer line-through text-sm">
-                            S
-                        </button>
+                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer line-through text-sm">S</button>
                         <div class="w-px h-5 bg-outline-variant/60 mx-1" role="separator"></div>
                         <button type="button" onclick="tiptap.chain().focus().toggleHeading({ level: 2 }).run()" aria-label="Heading 2"
                                 class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant
-                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer text-xs font-bold">
-                            H2
-                        </button>
+                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer text-xs font-bold">H2</button>
                         <button type="button" onclick="tiptap.chain().focus().toggleHeading({ level: 3 }).run()" aria-label="Heading 3"
                                 class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant
-                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer text-xs font-bold">
-                            H3
-                        </button>
+                                       hover:bg-surface-container hover:text-primary active:scale-90 transition-all duration-100 cursor-pointer text-xs font-bold">H3</button>
                         <div class="w-px h-5 bg-outline-variant/60 mx-1" role="separator"></div>
                         <button type="button" onclick="tiptap.chain().focus().toggleBulletList().run()" aria-label="Bullet list"
                                 class="w-8 h-8 flex items-center justify-center rounded-lg text-on-surface-variant
@@ -399,7 +354,8 @@
             </div>
 
             {{-- ─── Units ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -409,7 +365,7 @@
                         <span class="text-xs text-on-surface-variant">
                             {{ $course->units->count() }} {{ Str::plural('unit', $course->units->count()) }}
                         </span>
-                        <a href="{{ route('admin.units.create', $course->id) }}"
+                        <a href="{{ route('teacher.units.create', $course->id) }}"
                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gold text-primary
                                   text-xs font-semibold rounded-[24px] hover:bg-gold/90
                                   active:scale-[0.96] transition-all duration-150 cursor-pointer">
@@ -424,29 +380,46 @@
                         <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center animate-float">
                             <span class="material-symbols-outlined text-outline text-[24px]">menu_book</span>
                         </div>
-                        <p class="text-sm text-on-surface-variant">No units yet.</p>
+                        <p class="text-sm font-semibold text-on-surface">No units yet</p>
+                        <p class="text-xs text-on-surface-variant">Add your first unit to start building this course.</p>
+                        <a href="{{ route('teacher.units.create', $course->id) }}"
+                           class="mt-1 inline-flex items-center gap-1.5 px-4 py-2 bg-gold text-primary
+                                  text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">add</span>
+                            Add Unit
+                        </a>
                     </div>
                 @else
-                    <ul class="divide-y divide-outline-variant/20">
+                    <ul id="unit-list" class="divide-y divide-outline-variant/20">
                         @foreach($course->units as $unit)
-                            <li class="flex items-center gap-4 px-6 py-3.5 hover:bg-surface-container-low/40 transition-colors duration-200">
+                            <li data-id="{{ $unit->id }}"
+                                class="flex items-center gap-3 px-4 py-3.5
+                                       hover:bg-surface-container-low/40 transition-colors duration-200">
+
+                                {{-- Drag handle --}}
+                                <span class="drag-handle shrink-0 flex items-center justify-center w-7 h-7
+                                             text-outline hover:text-on-surface-variant
+                                             transition-colors cursor-grab active:cursor-grabbing"
+                                      title="Drag to reorder">
+                                    <span class="material-symbols-outlined text-[18px]">drag_indicator</span>
+                                </span>
 
                                 {{-- Order badge --}}
-                                <span class="w-7 h-7 rounded-full bg-surface-container text-on-surface-variant
+                                <span class="order-badge w-7 h-7 rounded-full bg-surface-container text-on-surface-variant
                                              text-xs font-semibold flex items-center justify-center shrink-0"
                                       aria-hidden="true">
                                     {{ $unit->order }}
                                 </span>
 
                                 {{-- Title --}}
-                                <a href="{{ route('admin.units.show', $unit->id) }}"
+                                <a href="{{ route('teacher.units.show', $unit->id) }}"
                                    class="flex-1 text-sm font-medium text-on-surface truncate min-w-0
                                           hover:text-gold transition-colors cursor-pointer">
                                     {{ $unit->title }}
                                 </a>
 
                                 {{-- Delete --}}
-                                <form method="POST" action="{{ route('admin.units.destroy', $unit->id) }}" class="shrink-0">
+                                <form method="POST" action="{{ route('teacher.units.destroy', $unit->id) }}" class="shrink-0">
                                     @csrf
                                     @method('DELETE')
                                     <button type="button"
@@ -458,20 +431,20 @@
                                         <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
                                     </button>
                                 </form>
-
                             </li>
                         @endforeach
                     </ul>
                 @endif
             </div>
 
-        </div>{{-- end main column --}}
+        </div>{{-- end main --}}
 
         {{-- ═══ SIDEBAR ═══ --}}
         <div class="min-w-0 flex flex-col gap-5">
 
-            {{-- ─── Course info card ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6">
+            {{-- ─── Course settings ─── --}}
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6">
 
                 {{-- View --}}
                 <div x-show="!editing" class="flex flex-col gap-3"
@@ -482,32 +455,18 @@
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 -translate-y-1">
 
-                    {{-- Teacher --}}
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-                            <span class="text-xs font-semibold text-on-primary"
-                                  style="font-family: var(--font-display);">
-                                {{ strtoupper(substr($teacherName, 0, 2)) }}
-                            </span>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium">Teacher</p>
-                            <p class="text-sm font-medium text-on-surface truncate">{{ $teacherName }}</p>
-                        </div>
-                    </div>
-
                     {{-- Group --}}
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-outline text-[18px]">folder</span>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium">Group</p>
+                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Group</p>
                             <p class="text-sm text-on-surface truncate">{{ $groupName ?? '—' }}</p>
                         </div>
                     </div>
 
-                    {{-- Published status --}}
+                    {{-- Status --}}
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full {{ $published ? 'bg-gold/10' : 'bg-surface-container' }} flex items-center justify-center shrink-0">
                             <span class="material-symbols-outlined text-[18px] {{ $published ? 'text-gold' : 'text-outline' }}">
@@ -515,7 +474,7 @@
                             </span>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium">Status</p>
+                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Status</p>
                             <p class="text-sm font-medium {{ $published ? 'text-primary' : 'text-on-surface-variant' }}">
                                 {{ $published ? 'Published' : 'Draft' }}
                             </p>
@@ -533,44 +492,6 @@
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 -translate-y-1">
 
-                    {{-- Teacher dropdown --}}
-                    <div>
-                        <label for="edit-teacher"
-                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                            Teacher <span class="text-error">*</span>
-                        </label>
-                        <div class="relative">
-                            <select
-                                id="edit-teacher"
-                                name="teacher_id"
-                                x-model="teacherId"
-                                @change="onTeacherChange($event)"
-                                :class="[errors.teacher_id ? 'border-error' : 'border-outline-variant/60', { 'animate-shake': teacherShake }]"
-                                class="w-full appearance-none pl-4 pr-10 py-2.5 bg-surface-white border
-                                       rounded-[16px] text-sm text-on-surface cursor-pointer
-                                       focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                            >
-                                <option value="">Select a teacher…</option>
-                                @foreach($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}"
-                                            {{ old('teacher_id', $course->teacher_id) == $teacher->id ? 'selected' : '' }}>
-                                        {{ $teacher->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2
-                                         text-outline text-[18px] pointer-events-none">expand_more</span>
-                        </div>
-                        <p x-show="errors.teacher_id" x-text="errors.teacher_id"
-                           x-transition:enter="transition ease-out duration-150"
-                           x-transition:enter-start="opacity-0 -translate-y-1"
-                           x-transition:enter-end="opacity-100 translate-y-0"
-                           x-transition:leave="transition ease-in duration-100"
-                           x-transition:leave-start="opacity-100"
-                           x-transition:leave-end="opacity-0"
-                           class="mt-1.5 text-xs text-error" x-cloak></p>
-                    </div>
-
                     {{-- Group dropdown --}}
                     <div>
                         <label for="edit-group"
@@ -583,21 +504,17 @@
                                 id="edit-group"
                                 name="group_id"
                                 x-model="groupId"
-                                :disabled="!teacherId || filteredGroups.length === 0"
                                 class="w-full appearance-none pl-4 pr-10 py-2.5 bg-surface-white border
                                        border-outline-variant/60 rounded-[16px] text-sm text-on-surface cursor-pointer
-                                       disabled:opacity-50 disabled:cursor-not-allowed
                                        focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                             >
-                                <option value="">
-                                    <span x-text="teacherId
-                                        ? (filteredGroups.length ? 'No group' : 'No groups for this teacher')
-                                        : 'Select a teacher first'">No group</span>
-                                </option>
-                                <template x-for="group in filteredGroups" :key="group.id">
-                                    <option :value="group.id" :selected="groupId == group.id"
-                                            x-text="group.name"></option>
-                                </template>
+                                <option value="">No group</option>
+                                @foreach($groups as $group)
+                                    <option value="{{ $group->id }}"
+                                            {{ old('group_id', $course->group_id) == $group->id ? 'selected' : '' }}>
+                                        {{ $group->name }}
+                                    </option>
+                                @endforeach
                             </select>
                             <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2
                                          text-outline text-[18px] pointer-events-none">expand_more</span>
@@ -629,8 +546,128 @@
                 </div>
             </div>
 
-            {{-- ─── Tokens ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+            {{-- ─── Generate Token ─── --}}
+            <div x-data="{
+                    lifetimeValue: 30,
+                    lifetimeUnit: 'minutes',
+                    maxUses: 30,
+                    submittingToken: false,
+                    lifetimeOptions: [
+                        { value: 12,  unit: 'minutes', label: '12 minutes' },
+                        { value: 30,  unit: 'minutes', label: '30 minutes' },
+                        { value: 45,  unit: 'minutes', label: '45 minutes' },
+                        { value: 1,   unit: 'hours',   label: '1 hour' },
+                        { value: 2,   unit: 'hours',   label: '2 hours' },
+                        { value: 6,   unit: 'hours',   label: '6 hours' },
+                        { value: 12,  unit: 'hours',   label: '12 hours' },
+                        { value: 24,  unit: 'hours',   label: '24 hours' },
+                    ],
+                    setLifetime(option) {
+                        this.lifetimeValue = option.value;
+                        this.lifetimeUnit  = option.unit;
+                    },
+                    get selectedLabel() {
+                        const opt = this.lifetimeOptions.find(o => o.value === this.lifetimeValue && o.unit === this.lifetimeUnit);
+                        return opt ? opt.label : this.lifetimeValue + ' ' + this.lifetimeUnit;
+                    },
+                 }"
+                 class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+
+                <div class="px-6 py-4 border-b border-outline-variant/20">
+                    <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
+                        Generate Token
+                    </p>
+                    <p class="text-xs text-on-surface-variant mt-0.5">Create an enrollment link for students.</p>
+                </div>
+
+                <form method="POST" action="{{ route('teacher.tokens.store') }}"
+                      @submit="submittingToken = true" class="p-5 flex flex-col gap-4">
+                    @csrf
+                    <input type="hidden" name="type" value="course">
+                    <input type="hidden" name="course_id" value="{{ $course->id }}">
+
+                    {{-- Lifetime picker --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
+                            Expires after
+                        </label>
+                        <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                            <button
+                                type="button"
+                                @click="open = !open"
+                                class="w-full flex items-center justify-between pl-4 pr-3 py-2.5
+                                       bg-surface-white border border-outline-variant/60 rounded-[16px]
+                                       text-sm text-on-surface cursor-pointer
+                                       focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
+                                       transition-colors hover:border-primary/50">
+                                <span x-text="selectedLabel">30 minutes</span>
+                                <span class="material-symbols-outlined text-outline text-[18px]"
+                                      :class="open ? 'rotate-180' : ''"
+                                      style="transition: transform 150ms ease">expand_more</span>
+                            </button>
+                            <div x-show="open" x-cloak
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1 scale-95"
+                                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                                 x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
+                                 class="absolute z-10 mt-1 w-full bg-surface-white border border-outline-variant/40
+                                        rounded-[16px] shadow-lg overflow-hidden">
+                                <template x-for="opt in lifetimeOptions" :key="opt.label">
+                                    <button
+                                        type="button"
+                                        @click="setLifetime(opt); open = false"
+                                        :class="(lifetimeValue === opt.value && lifetimeUnit === opt.unit)
+                                            ? 'bg-gold/10 text-primary font-semibold'
+                                            : 'text-on-surface hover:bg-surface-container-low'"
+                                        class="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer"
+                                        x-text="opt.label">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <input type="hidden" name="lifetime_value" :value="lifetimeValue">
+                        <input type="hidden" name="lifetime_unit" :value="lifetimeUnit">
+                    </div>
+
+                    {{-- Max uses --}}
+                    <div>
+                        <label for="token-max-uses"
+                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                            Max uses
+                        </label>
+                        <input
+                            id="token-max-uses"
+                            type="number"
+                            name="max_uses"
+                            x-model.number="maxUses"
+                            min="1" max="1000"
+                            class="w-full px-4 py-2.5 bg-surface-white border border-outline-variant/60
+                                   rounded-[16px] text-sm text-on-surface
+                                   focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
+                                   transition-colors"
+                        >
+                    </div>
+
+                    <button type="submit"
+                            :disabled="submittingToken"
+                            class="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-gold text-primary
+                                   text-sm font-semibold rounded-[24px] hover:bg-gold/90
+                                   active:scale-[0.98] transition-all duration-150 cursor-pointer
+                                   disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
+                        <span class="material-symbols-outlined text-[18px]"
+                              :class="submittingToken ? 'animate-spin' : ''"
+                              x-text="submittingToken ? 'progress_activity' : 'key'">key</span>
+                        <span x-text="submittingToken ? 'Generating…' : 'Generate Token'">Generate Token</span>
+                    </button>
+                </form>
+            </div>
+
+            {{-- ─── Course Tokens ─── --}}
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -653,8 +690,8 @@
                             $expired       = $token->isExpired();
                             $usesRemaining = max(0, $token->max_uses - $token->uses_count);
                         @endphp
-                        <li class="px-6 py-3.5 flex flex-col gap-1 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200">
-                            <div class="flex items-center justify-between gap-2 min-w-0">
+                        <li class="px-5 py-3.5 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200">
+                            <div class="flex items-center justify-between gap-2 min-w-0 mb-1">
                                 <code class="text-xs font-mono text-primary bg-surface-container
                                              px-2 py-0.5 rounded-lg tracking-wide min-w-0 truncate">
                                     {{ $token->token_value }}
@@ -665,16 +702,29 @@
                                     {{ $expired ? 'Expired' : 'Active' }}
                                 </span>
                             </div>
-                            <div class="flex items-center gap-3 text-[11px] text-on-surface-variant flex-wrap">
-                                <span class="flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[13px]">schedule</span>
-                                    Expires {{ $token->expires_at->format('M j, Y g:i A') }}
-                                </span>
-                                <span class="text-outline-variant/60">·</span>
-                                <span class="flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[13px]">group</span>
-                                    {{ $usesRemaining }} / {{ $token->max_uses }} remaining
-                                </span>
+                            <div class="flex items-center gap-2.5 flex-wrap justify-between">
+                                <div class="flex items-center gap-3 text-[11px] text-on-surface-variant flex-wrap">
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px]">schedule</span>
+                                        {{ $token->expires_at->format('M j, g:i A') }}
+                                    </span>
+                                    <span class="text-outline-variant/60">·</span>
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[13px]">group</span>
+                                        {{ $usesRemaining }}/{{ $token->max_uses }}
+                                    </span>
+                                </div>
+                                <form method="POST" action="{{ route('teacher.tokens.destroy', $token->id) }}" class="shrink-0">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button"
+                                            onclick="confirmDelete('token', this.closest('form'))"
+                                            class="inline-flex items-center gap-1 text-[11px] text-error
+                                                   hover:text-error/80 transition-colors cursor-pointer">
+                                        <span class="material-symbols-outlined text-[13px]">delete</span>
+                                        Revoke
+                                    </button>
+                                </form>
                             </div>
                         </li>
                         @endforeach
@@ -683,7 +733,8 @@
             </div>
 
             {{-- ─── Enrolled Students ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -697,12 +748,13 @@
                 @if($course->students->isEmpty())
                     <div class="py-10 flex flex-col items-center gap-2 text-center px-4">
                         <span class="material-symbols-outlined text-outline text-[28px] animate-float">group</span>
-                        <p class="text-xs text-on-surface-variant">No students enrolled yet.</p>
+                        <p class="text-xs text-on-surface-variant">No students enrolled yet. Share a token to get started.</p>
                     </div>
                 @else
                     <ul class="divide-y divide-outline-variant/20 max-h-72 overflow-y-auto">
                         @foreach($course->students as $student)
-                            <li class="flex items-center gap-3 px-6 py-3 hover:bg-surface-container-low/40 transition-colors duration-200">
+                            <li class="flex items-center gap-3 px-6 py-3
+                                       hover:bg-surface-container-low/40 transition-colors duration-200">
                                 <div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center shrink-0">
                                     <span class="text-[10px] font-semibold text-on-surface-variant"
                                           style="font-family: var(--font-display);">
@@ -714,7 +766,9 @@
                                     <p class="text-[11px] text-on-surface-variant truncate">{{ $student->email }}</p>
                                 </div>
                                 <span class="text-[10px] text-outline shrink-0">
-                                    {{ $student->pivot->enrolled_at ? \Carbon\Carbon::parse($student->pivot->enrolled_at)->format('M j') : '—' }}
+                                    {{ $student->pivot->enrolled_at
+                                        ? \Carbon\Carbon::parse($student->pivot->enrolled_at)->format('M j')
+                                        : '—' }}
                                 </span>
                             </li>
                         @endforeach
@@ -735,9 +789,11 @@
 <script type="module">
 import { Editor } from 'https://esm.sh/@tiptap/core@2'
 import StarterKit from 'https://esm.sh/@tiptap/starter-kit@2'
+import Sortable from 'https://esm.sh/sortablejs@1'
 
-const editorEl  = document.getElementById('tiptap-editor')
-const hiddenEl  = document.getElementById('edit-description')
+// ─── TipTap ───────────────────────────────────────────────────────────────
+const editorEl = document.getElementById('tiptap-editor')
+const hiddenEl = document.getElementById('edit-description')
 
 window.tiptap = new Editor({
     element: editorEl,
@@ -750,5 +806,33 @@ window.tiptap = new Editor({
         if (hiddenEl) hiddenEl.value = editor.getHTML()
     },
 })
+
+// ─── Unit reorder ─────────────────────────────────────────────────────────
+const unitList = document.getElementById('unit-list')
+if (unitList) {
+    Sortable.create(unitList, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'opacity-40',
+        onEnd() {
+            const ids = [...unitList.querySelectorAll('li[data-id]')]
+                .map(el => el.dataset.id)
+
+            // Update order badges
+            unitList.querySelectorAll('.order-badge').forEach((badge, i) => {
+                badge.textContent = i + 1
+            })
+
+            fetch('{{ route('teacher.units.reorder', $course->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: JSON.stringify({ order: ids }),
+            })
+        },
+    })
+}
 </script>
 @endpush

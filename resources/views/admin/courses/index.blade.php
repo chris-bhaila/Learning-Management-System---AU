@@ -8,27 +8,6 @@
     $allTeachers = $courses->pluck('teacher')->filter()->unique('id')->values();
 @endphp
 
-{{-- ─── Flash ─── --}}
-@if(session('success'))
-    <div
-        x-data="{ show: true }"
-        x-show="show"
-        x-init="setTimeout(() => show = false, 4000)"
-        x-transition:leave="transition duration-300"
-        x-transition:leave-start="opacity-100"
-        x-transition:leave-end="opacity-0"
-        class="flex items-center gap-3 px-4 py-3 bg-surface-container-low border border-outline-variant/40
-               rounded-[16px] text-sm text-on-surface"
-    >
-        <span class="material-symbols-outlined text-[20px] text-gold shrink-0">check_circle</span>
-        {{ session('success') }}
-        <button type="button" @click="show = false"
-                class="ml-auto text-outline hover:text-on-surface transition-colors cursor-pointer">
-            <span class="material-symbols-outlined text-[18px]">close</span>
-        </button>
-    </div>
-@endif
-
 {{-- ─── Page Header ─── --}}
 <div class="flex items-start justify-between gap-4">
     <div>
@@ -167,91 +146,115 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
-                class="bg-surface-white border border-outline-variant/40 rounded-[20px] p-5 flex flex-col gap-4
-                       shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.12)] hover:-translate-y-0.5 transition-all duration-200"
+                class="group relative bg-surface-white border border-outline-variant/40 rounded-[20px] mt-2
+                       shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.12)]
+                       hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
             >
-                {{-- Header: title + status chip --}}
-                <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0 flex-1">
-                        @if($groupName)
-                            <span class="inline-block mb-1.5 px-2 py-0.5 rounded-full bg-surface-container
-                                         text-[10px] font-semibold tracking-wide text-on-surface-variant uppercase">
-                                {{ $groupName }}
+                {{-- Top accent strip --}}
+                <div class="h-1 w-full {{ $published ? 'bg-gold' : 'bg-outline-variant/40' }}"></div>
+
+                {{-- Main clickable area --}}
+                <a href="{{ route('admin.courses.show', $course) }}" class="block p-5 cursor-pointer">
+                    <div class="flex flex-col gap-4">
+
+                        {{-- Header: title + status chip --}}
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0 flex-1">
+                                @if($groupName)
+                                    <span class="inline-block mb-1.5 px-2 py-0.5 rounded-full bg-surface-container
+                                                 text-[10px] font-semibold tracking-wide text-on-surface-variant uppercase">
+                                        {{ $groupName }}
+                                    </span>
+                                @endif
+                                <h3 class="font-semibold text-primary leading-snug group-hover:text-gold transition-colors duration-150"
+                                    style="font-family: var(--font-display);">
+                                    {{ $course->title }}
+                                </h3>
+                            </div>
+
+                            <span class="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
+                                         {{ $published ? 'bg-gold/20 text-on-gold' : 'bg-surface-container text-on-surface-variant' }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ $published ? 'bg-gold' : 'bg-outline-variant' }}"></span>
+                                {{ $published ? 'Published' : 'Draft' }}
                             </span>
-                        @endif
-                        <h3 class="font-semibold text-primary leading-snug"
-                            style="font-family: var(--font-display);">
-                            {{ $course->title }}
-                        </h3>
+                        </div>
+
+                        {{-- Teacher --}}
+                        <div class="flex items-center gap-2 min-w-0">
+                            <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
+                                <span class="text-[10px] font-bold text-white"
+                                      style="font-family: var(--font-display);">
+                                    {{ strtoupper(substr($teacherName, 0, 2)) }}
+                                </span>
+                            </div>
+                            <span class="text-sm text-on-surface-variant truncate">{{ $teacherName }}</span>
+                        </div>
+
+                        {{-- Stats --}}
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant">
+                                <span class="material-symbols-outlined text-[14px]">group</span>
+                                {{ $students }} {{ Str::plural('student', $students) }}
+                            </div>
+                            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant">
+                                <span class="material-symbols-outlined text-[14px]">menu_book</span>
+                                {{ $units }} {{ Str::plural('unit', $units) }}
+                            </div>
+                        </div>
+
+                        {{-- Progress bar --}}
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-xs text-on-surface-variant">Avg. progress</span>
+                                <span class="text-xs font-semibold text-primary">{{ $progress }}%</span>
+                            </div>
+                            <div class="h-1.5 bg-surface-container rounded-full overflow-hidden">
+                                <div class="h-full bg-gold rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
+                            </div>
+                        </div>
+
                     </div>
+                </a>
 
-                    <span class="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
-                                 {{ $published ? 'bg-gold/20 text-on-gold' : 'bg-surface-container text-on-surface-variant' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $published ? 'bg-gold' : 'bg-outline-variant' }}"></span>
-                        {{ $published ? 'Published' : 'Draft' }}
+                {{-- Footer — outside the <a> to allow delete form --}}
+                <div class="px-5 pb-5 flex items-center justify-between border-t border-outline-variant/20 pt-3">
+                    <span class="text-xs text-outline">
+                        {{ $course->created_at?->diffForHumans() ?? '' }}
                     </span>
-                </div>
 
-                {{-- Teacher --}}
-                <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center shrink-0">
-                        <span class="text-[10px] font-semibold text-on-primary"
-                              style="font-family: var(--font-display);">
-                            {{ strtoupper(substr($teacherName, 0, 2)) }}
+                    {{-- Right side: View course / Delete toggle --}}
+                    <div class="relative flex items-center">
+
+                        {{-- View course (fades out on hover) --}}
+                        <span class="inline-flex items-center gap-1 text-xs font-medium text-primary/60
+                                     transition-all duration-150 ease-in-out
+                                     group-hover:opacity-0 group-hover:translate-x-1
+                                     pointer-events-none select-none whitespace-nowrap">
+                            View course
+                            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                         </span>
-                    </div>
-                    <span class="text-sm text-on-surface-variant truncate">{{ $teacherName }}</span>
-                </div>
 
-                {{-- Stats --}}
-                <div class="flex items-center gap-5 text-sm text-on-surface-variant">
-                    <span class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[16px]">group</span>
-                        {{ $students }} {{ Str::plural('student', $students) }}
-                    </span>
-                    <span class="flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[16px]">menu_book</span>
-                        {{ $units }} {{ Str::plural('unit', $units) }}
-                    </span>
-                </div>
+                        {{-- Delete pill (fades in on hover, overlays exact same position) --}}
+                        <form method="POST"
+                              action="{{ route('admin.courses.destroy', $course) }}"
+                              class="absolute inset-0 flex items-center justify-end
+                                     opacity-0 -translate-x-1
+                                     group-hover:opacity-100 group-hover:translate-x-0
+                                     transition-all duration-150 ease-in-out">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button"
+                                    onclick="confirmDelete({{ Js::from($course->title) }}, this.closest('form'))"
+                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full
+                                           border border-error/40 text-error text-xs font-medium
+                                           hover:bg-error hover:text-white hover:border-error
+                                           transition-all duration-150 cursor-pointer whitespace-nowrap">
+                                <span class="material-symbols-outlined text-[13px]">delete</span>
+                                Delete
+                            </button>
+                        </form>
 
-                {{-- Progress bar --}}
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-xs text-on-surface-variant">Avg. progress</span>
-                        <span class="text-xs font-medium text-on-surface-variant">{{ $progress }}%</span>
                     </div>
-                    <div class="h-1.5 bg-surface-container rounded-full overflow-hidden">
-                        <div class="h-full bg-gold rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
-                    </div>
-                </div>
-
-                {{-- Actions --}}
-                <div class="flex items-center gap-2 pt-1 border-t border-outline-variant/20">
-                    <a href="{{ Route::has('admin.courses.show') ? route('admin.courses.show', $course) : '#' }}"
-                       class="flex-1 flex items-center justify-center gap-1.5 py-2 bg-gold text-primary
-                              text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors cursor-pointer">
-                        <span class="material-symbols-outlined text-[16px]">open_in_new</span>
-                        View Course
-                    </a>
-                    <a href="{{ Route::has('admin.courses.edit') ? route('admin.courses.edit', $course) : '#' }}"
-                       class="flex items-center justify-center px-3.5 py-2
-                              border border-outline-variant/60 text-on-surface-variant rounded-[24px]
-                              hover:bg-surface-container-low hover:text-primary transition-colors cursor-pointer">
-                        <span class="material-symbols-outlined text-[16px]">edit</span>
-                    </a>
-                    <form method="POST"
-                          action="{{ Route::has('admin.courses.destroy') ? route('admin.courses.destroy', $course) : '#' }}"
-                          onsubmit="return confirm('Delete \'{{ addslashes($course->title) }}\'? This cannot be undone.')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit"
-                                class="flex items-center justify-center px-3.5 py-2
-                                       border border-error/40 text-error rounded-[24px]
-                                       hover:bg-error/5 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px]">delete</span>
-                        </button>
-                    </form>
                 </div>
             </div>
             @endforeach

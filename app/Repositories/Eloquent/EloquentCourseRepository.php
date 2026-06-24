@@ -52,7 +52,9 @@ class EloquentCourseRepository implements CourseRepositoryInterface
 
     public function getByTeacher(int $teacherId): Collection
     {
-        return Course::where('teacher_id', $teacherId)->get();
+        return Course::where('teacher_id', $teacherId)
+            ->withCount(['units', 'students'])
+            ->get();
     }
 
     public function getEnrolledByStudent(int $studentId): Collection
@@ -71,7 +73,7 @@ class EloquentCourseRepository implements CourseRepositoryInterface
     
     public function getAll(): Collection
     {
-        return Course::with('teacher')->get();
+        return Course::with('teacher')->withCount(['units', 'students'])->get();
     }
 
     public function countPublished(): int

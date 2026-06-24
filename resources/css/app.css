@@ -69,6 +69,13 @@
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r bg-gold;
 }
 
+/* ─── SweetAlert2 overrides ──────────────────────── */
+
+/* Gold confirm button needs dark text — white on #FBB740 fails contrast */
+.swal2-confirm.swal-confirm-positive {
+    color: var(--color-primary) !important;
+}
+
 /* ─── Animations ─────────────────────────────────── */
 
 /* Page / card entrance */
@@ -104,3 +111,78 @@
     .animate-shake,
     .animate-float { animation: none; }
 }
+
+/* ─── TipTap / ProseMirror content styles ────────────────────────────────
+   Tailwind v4 preflight strips list-style, margins, and heading sizes from
+   all elements. These rules restore readable formatting inside the editor
+   and in rendered rich-text output (units/courses description). Apply them
+   to both .ProseMirror (live editor) and .rich-text (view-mode rendered HTML).
+*/
+.ProseMirror,
+.rich-text {
+    line-height: 1.7;
+}
+
+.ProseMirror ul,
+.rich-text ul {
+    list-style: disc;
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.ProseMirror ol,
+.rich-text ol {
+    list-style: decimal;
+    padding-left: 1.5rem;
+    margin: 0.5rem 0;
+}
+
+.ProseMirror li,
+.rich-text li {
+    margin: 0.2rem 0;
+}
+
+.ProseMirror ul ul,
+.rich-text ul ul { list-style: circle; }
+
+.ProseMirror ul ul ul,
+.rich-text ul ul ul { list-style: square; }
+
+.ProseMirror h2,
+.rich-text h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 1rem 0 0.4rem;
+    line-height: 1.3;
+}
+
+.ProseMirror h3,
+.rich-text h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0.875rem 0 0.35rem;
+    line-height: 1.3;
+}
+
+.ProseMirror blockquote,
+.rich-text blockquote {
+    border-left: 3px solid var(--color-outline-variant);
+    padding-left: 1rem;
+    margin: 0.75rem 0;
+    color: var(--color-on-surface-variant);
+    font-style: italic;
+}
+
+.ProseMirror p,
+.rich-text p {
+    margin: 0.4rem 0;
+}
+
+.ProseMirror strong,
+.rich-text strong { font-weight: 700; }
+
+.ProseMirror em,
+.rich-text em { font-style: italic; }
+
+.ProseMirror s,
+.rich-text s { text-decoration: line-through; }
