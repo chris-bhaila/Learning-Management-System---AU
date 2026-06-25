@@ -18,18 +18,15 @@ Route::get('/', function () {
     return view('landing');
 })->name('home');
 
-// Auth
-// Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
-// Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
-// Route::post('/logout', function () {
-//     Auth::logout();
-//     request()->session()->invalidate();
-//     request()->session()->regenerateToken();
-//     return redirect()->route('home');
-// })->middleware('auth')->name('logout');
+// Auth — Google OAuth (throttled: 10 requests / minute)
+Route::middleware('throttle:10,1')->group(function () {
+    Route::get('/auth/google', [GoogleController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('auth.google.callback');
+});
 
+// Email/password login (throttled: 5 attempts / minute)
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('auth.login');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('auth.login');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Admin
