@@ -40,31 +40,39 @@ class GoogleController extends Controller
         $user = $this->users->findByGoogleId($googleUser->getId());
 
         if ($user) {
-            $this->users->update($user, [
-                'name'   => $googleUser->getName(),
-                'avatar' => $googleUser->getAvatar(),
-            ]);
+            $updates = ['name' => $googleUser->getName()];
+            // Only update avatar from Google if the user hasn't manually uploaded one.
+            if ($user->avatar_source !== 'upload') {
+                $updates['avatar']        = $googleUser->getAvatar();
+                $updates['avatar_source'] = 'google';
+            }
+            $this->users->update($user, $updates);
         } else {
             // 2. Look up by email — handles admin-created Teacher/Admin accounts
             $user = $this->users->findByEmail($googleUser->getEmail());
 
             if ($user) {
-                // Attach Google ID to the existing account — never touch their role
-                $this->users->update($user, [
+                // Attach Google ID to the existing account — never touch their role.
+                $updates = [
                     'google_id' => $googleUser->getId(),
                     'name'      => $googleUser->getName(),
-                    'avatar'    => $googleUser->getAvatar(),
-                ]);
+                ];
+                if ($user->avatar_source !== 'upload') {
+                    $updates['avatar']        = $googleUser->getAvatar();
+                    $updates['avatar_source'] = 'google';
+                }
+                $this->users->update($user, $updates);
             } else {
                 // 3. Brand-new user — create as student, no password set
                 $studentRole = $this->roles->findByName('student');
 
                 $user = $this->users->create([
-                    'role_id'   => $studentRole->id,
-                    'google_id' => $googleUser->getId(),
-                    'name'      => $googleUser->getName(),
-                    'email'     => $googleUser->getEmail(),
-                    'avatar'    => $googleUser->getAvatar(),
+                    'role_id'       => $studentRole->id,
+                    'google_id'     => $googleUser->getId(),
+                    'name'          => $googleUser->getName(),
+                    'email'         => $googleUser->getEmail(),
+                    'avatar'        => $googleUser->getAvatar(),
+                    'avatar_source' => 'google',
                 ]);
             }
         }

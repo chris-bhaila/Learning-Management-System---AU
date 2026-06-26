@@ -114,11 +114,12 @@
 
         </div>
 
-        {{-- Footer: Support + Logout --}}
+        {{-- Footer: Settings + Logout --}}
         <div class="border-t border-outline-variant/30 py-2 flex flex-col shrink-0">
-            <a href="#" class="nav-item">
-                <span class="material-symbols-outlined text-[20px]">help</span>
-                Support
+            <a href="{{ route('settings.index') }}"
+               class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
+                Settings
             </a>
 
             <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
@@ -182,27 +183,24 @@
                 </button>
 
                 {{-- User avatar --}}
-                <div class="w-8 h-8 rounded-full bg-primary-container shrink-0
-                            flex items-center justify-center overflow-hidden
-                            border border-outline-variant/50 cursor-pointer select-none">
+                <a href="{{ route('settings.index') }}"
+                   class="w-8 h-8 rounded-full bg-primary-container shrink-0
+                          flex items-center justify-center overflow-hidden
+                          border border-outline-variant/50 cursor-pointer select-none
+                          hover:ring-2 hover:ring-gold transition-all">
                     @auth
-                        @if(auth()->user()->profile_photo_path ?? false)
-                            <img
-                                src="{{ auth()->user()->profile_photo_url }}"
-                                alt="{{ auth()->user()->name }}"
-                                class="w-full h-full object-cover"
-                            >
+                        @if(auth()->user()->avatarUrl())
+                            <img src="{{ auth()->user()->avatarUrl() }}"
+                                 alt="{{ auth()->user()->name }}"
+                                 class="w-full h-full object-cover">
                         @else
                             <span class="text-xs font-semibold text-on-primary"
                                   style="font-family: var(--font-display);">
-                                {{ strtoupper(substr(auth()->user()->name ?? 'AD', 0, 2)) }}
+                                {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}
                             </span>
                         @endif
-                    @else
-                        <span class="text-xs font-semibold text-on-primary"
-                              style="font-family: var(--font-display);">AD</span>
                     @endauth
-                </div>
+                </a>
             </div>
         </header>
 

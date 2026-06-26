@@ -5,6 +5,9 @@ import Swal from 'sweetalert2';
 const iodine = new Iodine();
 iodine.setErrorMessage('required',  'This field is required.');
 iodine.setErrorMessage('maxLength', 'Must be [PARAM] characters or fewer.');
+iodine.setErrorMessage('minLength', 'Must be at least [PARAM] characters.');
+iodine.setErrorMessage('email',     'Must be a valid email address.');
+iodine.setErrorMessage('same',      'Passwords do not match.');
 
 window.Alpine = Alpine;
 window.Iodine = iodine;

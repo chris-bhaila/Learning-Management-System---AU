@@ -17,7 +17,9 @@ interface UserRepositoryInterface
     public function getAllStudents(): Collection;
     public function getAllTeachers(): Collection;
     public function updateRole(User $user, int $roleId): User;
-    public function getFilteredUsers(string $role, string $sort, ?string $search, int $perPage = 20): LengthAwarePaginator;
+    public function getFilteredUsers(string $role, string $sort, ?string $search, ?string $status = null, int $perPage = 20): LengthAwarePaginator;
     public function getRoleCounts(): array;
     public function getRecent(int $limit = 10): Collection;
+    public function updateAvatar(User $user, string $path): User;
+    public function removeAvatar(User $user): User;
 }

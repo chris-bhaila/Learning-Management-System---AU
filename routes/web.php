@@ -9,6 +9,7 @@ use App\Http\Controllers\Teacher;
 use App\Http\Controllers\Student;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\SettingsController;
 
 // Landing page
 Route::get('/', function () {
@@ -35,6 +36,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Users
     Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
+    Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
     Route::patch('/users/{id}', [Admin\UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
 
@@ -104,6 +106,13 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
     Route::get('/courses', [Student\CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{id}', [Student\CourseController::class, 'show'])->name('courses.show');
     Route::get('/courses/{courseId}/units/{unitId}', [Student\CourseController::class, 'showUnit'])->name('units.show');
+});
+
+// Settings — shared across all roles
+Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [SettingsController::class, 'index'])->name('index');
+    Route::post('/avatar', [SettingsController::class, 'updateAvatar'])->name('avatar.update');
+    Route::delete('/avatar', [SettingsController::class, 'removeAvatar'])->name('avatar.destroy');
 });
 
 // Files — auth only, policy handles role-level access

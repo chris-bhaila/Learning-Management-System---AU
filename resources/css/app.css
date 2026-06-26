@@ -45,6 +45,9 @@
     --radius-pill:   9999px;    /* status chips */
 }
 
+/* Hide Alpine x-cloak elements until Alpine initialises */
+[x-cloak] { display: none !important; }
+
 /* Material Symbols baseline */
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;

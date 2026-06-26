@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 
@@ -30,6 +31,8 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar',
+        'avatar_path',
+        'avatar_source',
         'is_active',
     ];
 
@@ -92,6 +95,22 @@ class User extends Authenticatable
     public function notificationReads(): HasMany
     {
         return $this->hasMany(NotificationRead::class);
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return match($this->avatar_source) {
+            'upload' => $this->avatar_path
+                            ? Storage::disk('public')->url($this->avatar_path)
+                            : null,
+            'google' => $this->avatar ?: null,
+            default  => null,
+        };
+    }
+
+    public function hasManualAvatar(): bool
+    {
+        return $this->avatar_source === 'upload';
     }
 
     public function isAdmin(): bool

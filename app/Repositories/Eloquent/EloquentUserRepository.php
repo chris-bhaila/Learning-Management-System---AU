@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class EloquentUserRepository implements UserRepositoryInterface
 {
@@ -56,7 +57,7 @@ class EloquentUserRepository implements UserRepositoryInterface
         return $user->fresh();
     }
 
-    public function getFilteredUsers(string $role, string $sort, ?string $search, int $perPage = 20): LengthAwarePaginator
+    public function getFilteredUsers(string $role, string $sort, ?string $search, ?string $status = null, int $perPage = 20): LengthAwarePaginator
     {
         $query = User::with('role')
             ->whereHas('role', fn($q) => $q->where('name', $role));
@@ -66,6 +67,12 @@ class EloquentUserRepository implements UserRepositoryInterface
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%");
             });
+        }
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
         }
 
         $query->when($sort === 'oldest', fn($q) => $q->oldest())
@@ -79,6 +86,35 @@ class EloquentUserRepository implements UserRepositoryInterface
     public function getRecent(int $limit = 10): Collection
     {
         return User::with('role')->latest()->limit($limit)->get();
+    }
+
+    public function updateAvatar(User $user, string $path): User
+    {
+        // Delete the previous uploaded file if there was one.
+        if ($user->avatar_source === 'upload' && $user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $user->update([
+            'avatar_path'   => $path,
+            'avatar_source' => 'upload',
+        ]);
+
+        return $user->fresh();
+    }
+
+    public function removeAvatar(User $user): User
+    {
+        if ($user->avatar_source === 'upload' && $user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $user->update([
+            'avatar_path'   => null,
+            'avatar_source' => 'none',
+        ]);
+
+        return $user->fresh();
     }
 
     public function getRoleCounts(): array

@@ -45,6 +45,9 @@
                 <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase hidden md:table-cell">
                     Joined
                 </th>
+                <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase hidden sm:table-cell">
+                    Status
+                </th>
                 <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase text-center">
                     Actions
                 </th>
@@ -66,12 +69,12 @@
                         <div class="flex items-center gap-3">
                             <div class="w-9 h-9 rounded-full {{ $avatarCls }} flex items-center justify-center
                                         text-xs font-semibold shrink-0 overflow-hidden select-none">
-                                @if($user->profile_photo_path ?? false)
-                                    <img src="{{ $user->profile_photo_url }}"
+                                @if($user->avatarUrl())
+                                    <img src="{{ $user->avatarUrl() }}"
                                          alt="{{ $user->name }}"
                                          class="w-full h-full object-cover">
                                 @else
-                                    {{ strtoupper(substr($user->name ?? '??', 0, 2)) }}
+                                    {{ strtoupper(substr($user->name ?? '?', 0, 1)) }}
                                 @endif
                             </div>
                             <span class="font-medium text-on-surface truncate max-w-[160px]">
@@ -101,6 +104,23 @@
                         {{ $user->created_at?->format('d M Y') ?? '—' }}
                     </td>
 
+                    {{-- Active status --}}
+                    <td class="px-6 py-4 hidden sm:table-cell">
+                        @if($user->is_active)
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full
+                                         text-xs font-medium bg-green-100 text-green-800">
+                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
+                                Active
+                            </span>
+                        @else
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full
+                                         text-xs font-medium bg-surface-container text-on-surface-variant">
+                                <span class="w-1.5 h-1.5 rounded-full bg-outline shrink-0"></span>
+                                Inactive
+                            </span>
+                        @endif
+                    </td>
+
                     {{-- Actions --}}
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-0.5">
@@ -115,13 +135,15 @@
                             </a>
 
                             {{-- Edit --}}
-                            <a href="{{ Route::has('admin.users.edit') ? route('admin.users.edit', $user) : '#' }}"
-                               title="Edit user"
-                               class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
-                                      text-on-surface-variant hover:bg-surface-container hover:text-primary
-                                      transition-colors">
+                            <button
+                                type="button"
+                                title="Edit user"
+                                onclick="openEditModal({{ $user->id }}, {{ Js::from($user->name) }}, {{ Js::from($user->email) }}, {{ Js::from($user->role->name) }}, {{ $user->is_active ? 'true' : 'false' }}, {{ Js::from($user->avatarUrl() ?? '') }})"
+                                class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                       text-on-surface-variant hover:bg-surface-container hover:text-primary
+                                       transition-colors">
                                 <span class="material-symbols-outlined text-[18px]">edit</span>
-                            </a>
+                            </button>
 
                             {{-- Delete --}}
                             <button
@@ -139,7 +161,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-16 text-center">
+                    <td colspan="6" class="px-6 py-16 text-center">
                         <div class="flex flex-col items-center gap-3">
                             <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center">
                                 <span class="material-symbols-outlined text-outline text-[24px]">group_off</span>
