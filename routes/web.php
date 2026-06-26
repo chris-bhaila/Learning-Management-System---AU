@@ -120,5 +120,11 @@ Route::middleware('auth')->prefix('settings')->name('settings.')->group(function
 Route::middleware('auth')->group(function () {
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
     Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
+    Route::get('/files/{id}/view-token', [FileController::class, 'viewToken'])->name('files.viewToken');
     Route::delete('/files/{id}', [FileController::class, 'destroy'])->name('files.destroy');
 });
+
+// Raw file stream — signed URL only, no session auth (hit by the browser or external viewers)
+Route::get('/files/{id}/raw', [FileController::class, 'raw'])
+    ->middleware('signed')
+    ->name('files.raw');

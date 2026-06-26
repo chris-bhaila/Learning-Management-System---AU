@@ -20,6 +20,7 @@ class EloquentCourseRepository implements CourseRepositoryInterface
             'teacher',
             'group',
             'units',
+            'files',
             'tokens'   => fn($q) => $q->where('type', 'course')->latest(),
             'students' => fn($q) => $q->wherePivot('is_active', true)->orderBy('name'),
         ])->find($id);
