@@ -446,18 +446,14 @@
                                 </a>
 
                                 {{-- Delete --}}
-                                <form method="POST" action="{{ route('admin.units.destroy', $unit->id) }}" class="shrink-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button"
-                                            onclick="confirmDelete({{ Js::from($unit->title) }}, this.closest('form'))"
-                                            aria-label="Delete unit {{ $unit->title }}"
-                                            class="inline-flex items-center justify-center w-8 h-8
-                                                   border border-error/40 rounded-[12px] text-error
-                                                   hover:bg-error/5 transition-colors cursor-pointer">
-                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        onclick="confirmDelete({{ Js::from($unit->title) }}, document.getElementById('delete-unit-form-{{ $unit->id }}'))"
+                                        aria-label="Delete unit {{ $unit->title }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 shrink-0
+                                               border border-error/40 rounded-[12px] text-error
+                                               hover:bg-error/5 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
+                                </button>
 
                             </li>
                         @endforeach
@@ -727,6 +723,14 @@
     </div>{{-- end grid --}}
 
 </form>
+
+{{-- Standalone unit delete forms — outside #edit-course-form to prevent _method=DELETE polluting the PATCH submission --}}
+@foreach($course->units as $unit)
+<form id="delete-unit-form-{{ $unit->id }}" method="POST" action="{{ route('admin.units.destroy', $unit->id) }}" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+@endforeach
 
 </div>{{-- end x-data --}}
 @endsection

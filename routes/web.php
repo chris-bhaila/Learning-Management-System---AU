@@ -37,6 +37,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Users
     Route::get('/users', [Admin\UserController::class, 'index'])->name('users.index');
     Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{id}', [Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{id}', [Admin\UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
 

@@ -51,6 +51,22 @@ class UserController extends Controller
         return view('admin.users.index', $data);
     }
 
+    public function show(int $id)
+    {
+        $user = $this->users->find($id);
+        abort_if(is_null($user), 404);
+
+        if ($user->isTeacher()) {
+            $user->load(['courses' => fn($q) => $q->withCount('students')->with('units')]);
+        } elseif ($user->isStudent()) {
+            $user->load(['enrolledCourses' => fn($q) => $q->with(['teacher', 'units'])->withCount('units')]);
+        }
+
+        return view('admin.users.show', [
+            'subject' => $user,
+        ]);
+    }
+
     public function store(StoreUserRequest $request)
     {
         $role = $this->roles->findByName($request->validated('role'));
@@ -69,13 +85,18 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, int $id)
     {
         $user = $this->users->find($id);
-        $role = $this->roles->findByName($request->validated('role'));
 
-        $this->users->update($user, [
+        $updates = [
             'name'      => $request->validated('name'),
-            'role_id'   => $role->id,
             'is_active' => $request->validated('is_active'),
-        ]);
+        ];
+
+        // Admin role is locked — never allow role changes on an admin account.
+        if (!$user->isAdmin()) {
+            $updates['role_id'] = $this->roles->findByName($request->validated('role'))->id;
+        }
+
+        $this->users->update($user, $updates);
 
         // Avatar — handled in same form submission as the profile update.
         if ($request->hasFile('avatar')) {

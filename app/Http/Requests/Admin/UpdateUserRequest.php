@@ -16,7 +16,7 @@ class UpdateUserRequest extends FormRequest
         // Email is intentionally absent — never submitted, never reaches the repository.
         return [
             'name'          => ['required', 'string', 'max:255'],
-            'role'          => ['required', 'string', 'in:teacher,student'],
+            'role'          => ['required', 'string', 'in:admin,teacher,student'],
             'is_active'     => ['required', 'boolean'],
             // Avatar fields are optional — present only when admin uploads or removes.
             // gif/svg excluded: gif is large and unhelpful; svg can carry embedded scripts.

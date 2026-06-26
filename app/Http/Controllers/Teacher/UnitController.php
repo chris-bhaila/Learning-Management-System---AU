@@ -49,6 +49,7 @@ class UnitController extends Controller
     public function show(int $id)
     {
         $unit = $this->units->find($id);
+        abort_if(is_null($unit), 404);
         $this->authorize('update', $unit);
 
         return view('units.show', [
@@ -63,6 +64,7 @@ class UnitController extends Controller
     public function update(UpdateUnitRequest $request, int $id)
     {
         $unit = $this->units->find($id);
+        abort_if(is_null($unit), 404);
         $this->authorize('update', $unit);
 
         $this->units->update($unit, $request->validated());
@@ -73,6 +75,7 @@ class UnitController extends Controller
     public function destroy(int $id)
     {
         $unit = $this->units->find($id);
+        abort_if(is_null($unit), 404);
         $this->authorize('delete', $unit);
 
         $courseId = $unit->course_id;

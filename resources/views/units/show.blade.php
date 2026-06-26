@@ -191,18 +191,14 @@
                  x-transition:leave="transition ease-in duration-100"
                  x-transition:leave-start="opacity-100"
                  x-transition:leave-end="opacity-0">
-                <form method="POST" action="{{ $destroyRoute }}">
-                    @csrf
-                    @method('DELETE')
-                    <button type="button"
-                            onclick="confirmDelete({{ Js::from($unit->title) }}, this.closest('form'))"
-                            class="inline-flex items-center gap-2 px-4 py-2.5
-                                   border border-error/40 text-error text-sm font-medium rounded-[24px]
-                                   hover:bg-error/5 active:scale-[0.96] transition-all duration-150 cursor-pointer">
-                        <span class="material-symbols-outlined text-[18px]">delete</span>
-                        Delete
-                    </button>
-                </form>
+                <button type="button"
+                        onclick="confirmDelete({{ Js::from($unit->title) }}, document.getElementById('delete-unit-form'))"
+                        class="inline-flex items-center gap-2 px-4 py-2.5
+                               border border-error/40 text-error text-sm font-medium rounded-[24px]
+                               hover:bg-error/5 active:scale-[0.96] transition-all duration-150 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                    Delete
+                </button>
             </div>
 
             {{-- Edit mode: Cancel + Save --}}
@@ -450,6 +446,13 @@
 
     </div>{{-- end grid --}}
 
+</form>
+
+{{-- Standalone delete form — must live outside #edit-unit-form to prevent _method=DELETE
+     from polluting the PATCH submission (nested forms cause both hidden fields to merge). --}}
+<form id="delete-unit-form" method="POST" action="{{ $destroyRoute }}" class="hidden">
+    @csrf
+    @method('DELETE')
 </form>
 
 </div>{{-- end x-data --}}

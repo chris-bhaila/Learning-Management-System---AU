@@ -419,18 +419,14 @@
                                 </a>
 
                                 {{-- Delete --}}
-                                <form method="POST" action="{{ route('teacher.units.destroy', $unit->id) }}" class="shrink-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button"
-                                            onclick="confirmDelete({{ Js::from($unit->title) }}, this.closest('form'))"
-                                            aria-label="Delete unit {{ $unit->title }}"
-                                            class="inline-flex items-center justify-center w-8 h-8
-                                                   border border-error/40 rounded-[12px] text-error
-                                                   hover:bg-error/5 transition-colors cursor-pointer">
-                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        onclick="confirmDelete({{ Js::from($unit->title) }}, document.getElementById('delete-unit-form-{{ $unit->id }}'))"
+                                        aria-label="Delete unit {{ $unit->title }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 shrink-0
+                                               border border-error/40 rounded-[12px] text-error
+                                               hover:bg-error/5 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
+                                </button>
                             </li>
                         @endforeach
                     </ul>
@@ -581,11 +577,9 @@
                     <p class="text-xs text-on-surface-variant mt-0.5">Create an enrollment link for students.</p>
                 </div>
 
-                <form method="POST" action="{{ route('teacher.tokens.store') }}"
-                      @submit="submittingToken = true" class="p-5 flex flex-col gap-4">
-                    @csrf
-                    <input type="hidden" name="type" value="course">
-                    <input type="hidden" name="course_id" value="{{ $course->id }}">
+                <div class="p-5 flex flex-col gap-4">
+                    <input type="hidden" name="type" value="course" form="token-create-form">
+                    <input type="hidden" name="course_id" value="{{ $course->id }}" form="token-create-form">
 
                     {{-- Lifetime picker --}}
                     <div>
@@ -628,8 +622,8 @@
                                 </template>
                             </div>
                         </div>
-                        <input type="hidden" name="lifetime_value" :value="lifetimeValue">
-                        <input type="hidden" name="lifetime_unit" :value="lifetimeUnit">
+                        <input type="hidden" name="lifetime_value" :value="lifetimeValue" form="token-create-form">
+                        <input type="hidden" name="lifetime_unit" :value="lifetimeUnit" form="token-create-form">
                     </div>
 
                     {{-- Max uses --}}
@@ -644,6 +638,7 @@
                             name="max_uses"
                             x-model.number="maxUses"
                             min="1" max="1000"
+                            form="token-create-form"
                             class="w-full px-4 py-2.5 bg-surface-white border border-outline-variant/60
                                    rounded-[16px] text-sm text-on-surface
                                    focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
@@ -652,6 +647,7 @@
                     </div>
 
                     <button type="submit"
+                            form="token-create-form"
                             :disabled="submittingToken"
                             class="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-gold text-primary
                                    text-sm font-semibold rounded-[24px] hover:bg-gold/90
@@ -662,7 +658,7 @@
                               x-text="submittingToken ? 'progress_activity' : 'key'">key</span>
                         <span x-text="submittingToken ? 'Generating…' : 'Generate Token'">Generate Token</span>
                     </button>
-                </form>
+                </div>
             </div>
 
             {{-- ─── Course Tokens ─── --}}
@@ -714,17 +710,13 @@
                                         {{ $usesRemaining }}/{{ $token->max_uses }}
                                     </span>
                                 </div>
-                                <form method="POST" action="{{ route('teacher.tokens.destroy', $token->id) }}" class="shrink-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="button"
-                                            onclick="confirmDelete('token', this.closest('form'))"
-                                            class="inline-flex items-center gap-1 text-[11px] text-error
-                                                   hover:text-error/80 transition-colors cursor-pointer">
-                                        <span class="material-symbols-outlined text-[13px]">delete</span>
-                                        Revoke
-                                    </button>
-                                </form>
+                                <button type="button"
+                                        onclick="confirmDelete('token', document.getElementById('delete-token-form-{{ $token->id }}'))"
+                                        class="inline-flex items-center gap-1 text-[11px] text-error shrink-0
+                                               hover:text-error/80 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[13px]">delete</span>
+                                    Revoke
+                                </button>
                             </div>
                         </li>
                         @endforeach
@@ -781,6 +773,26 @@
     </div>{{-- end grid --}}
 
 </form>
+
+{{-- Standalone token create form — outside #edit-course-form; fields linked via form="token-create-form" attribute --}}
+<form id="token-create-form" method="POST" action="{{ route('teacher.tokens.store') }}"
+      @submit="submittingToken = true" class="hidden">
+    @csrf
+</form>
+
+{{-- Standalone delete forms — outside #edit-course-form to prevent _method=DELETE polluting the PATCH submission --}}
+@foreach($course->units as $unit)
+<form id="delete-unit-form-{{ $unit->id }}" method="POST" action="{{ route('teacher.units.destroy', $unit->id) }}" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+@endforeach
+@foreach($course->tokens as $token)
+<form id="delete-token-form-{{ $token->id }}" method="POST" action="{{ route('teacher.tokens.destroy', $token->id) }}" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+@endforeach
 
 </div>{{-- end x-data --}}
 @endsection

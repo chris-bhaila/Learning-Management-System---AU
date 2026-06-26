@@ -692,30 +692,47 @@
 
                     {{-- Role --}}
                     <div>
-                        <label for="e-role"
-                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                            Role <span class="text-error normal-case tracking-normal font-normal">*</span>
-                        </label>
-                        <div class="relative">
-                            <select
-                                id="e-role"
-                                name="role"
-                                x-model="role"
-                                @change="errors.role = check(role, ['required'])"
-                                :class="errors.role ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
-                                class="w-full appearance-none pl-4 pr-9 py-2.5 bg-surface-white border
-                                       rounded-[16px] text-sm text-on-surface
-                                       focus:outline-none focus:ring-1 transition-colors cursor-pointer"
-                            >
-                                <option value="" disabled>Select a role…</option>
-                                <option value="teacher">Teacher</option>
-                                <option value="student">Student</option>
-                            </select>
-                            <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2
-                                         text-outline text-[18px] pointer-events-none">expand_more</span>
-                        </div>
-                        <p x-show="errors.role" x-text="errors.role"
-                           class="mt-1.5 text-xs text-error" x-cloak></p>
+                        <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                            Role <span x-show="role !== 'admin'" class="text-error normal-case tracking-normal font-normal">*</span>
+                        </p>
+
+                        {{-- Admin: locked display, hidden input carries value --}}
+                        <template x-if="role === 'admin'">
+                            <div>
+                                <div class="flex items-center gap-2 px-4 py-2.5 bg-surface-container-low
+                                            border border-outline-variant/30 rounded-[16px] text-sm text-on-surface-variant">
+                                    <span class="material-symbols-outlined text-[16px] text-outline shrink-0">lock</span>
+                                    <span>Admin</span>
+                                </div>
+                                <p class="mt-1 text-[11px] text-outline">Admin role cannot be changed.</p>
+                                <input type="hidden" name="role" value="admin">
+                            </div>
+                        </template>
+
+                        {{-- Teacher / Student: editable select --}}
+                        <template x-if="role !== 'admin'">
+                            <div>
+                                <div class="relative">
+                                    <select
+                                        name="role"
+                                        x-model="role"
+                                        @change="errors.role = check(role, ['required'])"
+                                        :class="errors.role ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
+                                        class="w-full appearance-none pl-4 pr-9 py-2.5 bg-surface-white border
+                                               rounded-[16px] text-sm text-on-surface
+                                               focus:outline-none focus:ring-1 transition-colors cursor-pointer"
+                                    >
+                                        <option value="" disabled>Select a role…</option>
+                                        <option value="teacher">Teacher</option>
+                                        <option value="student">Student</option>
+                                    </select>
+                                    <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2
+                                                 text-outline text-[18px] pointer-events-none">expand_more</span>
+                                </div>
+                                <p x-show="errors.role" x-text="errors.role"
+                                   class="mt-1.5 text-xs text-error" x-cloak></p>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- Active toggle --}}
