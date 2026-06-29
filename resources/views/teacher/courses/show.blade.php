@@ -737,14 +737,16 @@
                     maxUses: 30,
                     submittingToken: false,
                     lifetimeOptions: [
-                        { value: 12,  unit: 'minutes', label: '12 minutes' },
+                        { value: 15,  unit: 'minutes', label: '15 minutes' },
                         { value: 30,  unit: 'minutes', label: '30 minutes' },
                         { value: 45,  unit: 'minutes', label: '45 minutes' },
                         { value: 1,   unit: 'hours',   label: '1 hour' },
                         { value: 2,   unit: 'hours',   label: '2 hours' },
+                        { value: 4,   unit: 'hours',   label: '4 hours' },
                         { value: 6,   unit: 'hours',   label: '6 hours' },
                         { value: 12,  unit: 'hours',   label: '12 hours' },
                         { value: 24,  unit: 'hours',   label: '24 hours' },
+                        { value: 48,  unit: 'hours',   label: '48 hours' },
                     ],
                     setLifetime(option) {
                         this.lifetimeValue = option.value;

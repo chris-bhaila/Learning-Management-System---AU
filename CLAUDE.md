@@ -144,3 +144,13 @@ php artisan activitylog:clean  # Prune logs older than configured retention peri
 - SiteContent (landing page editable content — hero, subheading, CTA, about text)
 - Page (static editable pages)
 - Activity (Spatie — audit trail, replaces custom ActivityLog model)
+
+## Security Audits
+When asked to perform a security audit, write findings to `SECURITY_AUDIT.md` 
+in the project root. Do not modify any other files during an audit.
+
+Format each finding as:
+### [SEVERITY: High/Medium/Low] Short title
+- **File:** path/to/file.php:line
+- **Issue:** What the vulnerability is
+- **Fix:** What should be done (no code changes)
