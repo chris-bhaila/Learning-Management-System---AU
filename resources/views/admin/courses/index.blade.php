@@ -170,7 +170,7 @@
                 :delete-route="route('admin.courses.destroy', $course)"
                 :show-teacher="true"
                 data-card
-                x-show="matches(@js($course->title), @js($teacherName), '{{ $published ? 'published' : 'draft' }}')"
+                x-show="matches({{ Js::from($course->title) }}, {{ Js::from($teacherName) }}, '{{ $published ? 'published' : 'draft' }}')"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"

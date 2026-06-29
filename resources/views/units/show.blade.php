@@ -249,7 +249,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up">
 
         {{-- ═══ MAIN COLUMN ═══ --}}
-        <div class="lg:col-span-2 min-w-0 flex flex-col gap-5">
+        <div class="lg:col-span-2 min-w-0 flex flex-col gap-5 order-2 lg:order-1">
 
             {{-- Content card --}}
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
@@ -541,7 +541,7 @@
         </div>{{-- end main --}}
 
         {{-- ═══ SIDEBAR ═══ --}}
-        <div class="min-w-0 flex flex-col gap-5">
+        <div class="min-w-0 flex flex-col gap-5 order-1 lg:order-2">
 
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
                         shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6">

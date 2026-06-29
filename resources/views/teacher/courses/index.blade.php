@@ -159,7 +159,7 @@
                 :delete-route="route('teacher.courses.destroy', $course)"
                 :show-teacher="false"
                 data-card
-                x-show="matches(@js($course->title), '{{ $published ? 'published' : 'draft' }}')"
+                x-show="matches({{ Js::from($course->title) }}, '{{ $published ? 'published' : 'draft' }}')"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
@@ -219,7 +219,7 @@
                     :delete-route="route('teacher.courses.destroy', $course)"
                     :show-teacher="false"
                     data-card
-                    x-show="matches(@js($course->title), '{{ $published ? 'published' : 'draft' }}')"
+                    x-show="matches({{ Js::from($course->title) }}, '{{ $published ? 'published' : 'draft' }}')"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
@@ -276,7 +276,7 @@
                     :delete-route="route('teacher.courses.destroy', $course)"
                     :show-teacher="false"
                     data-card
-                    x-show="matches(@js($course->title), '{{ $published ? 'published' : 'draft' }}')"
+                    x-show="matches({{ Js::from($course->title) }}, '{{ $published ? 'published' : 'draft' }}')"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
