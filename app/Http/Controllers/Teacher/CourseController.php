@@ -18,8 +18,18 @@ class CourseController extends Controller
 
     public function index()
     {
+        $courses = $this->courses->getByTeacher(Auth::id());
+
         return view('teacher.courses.index', [
-            'courses' => $this->courses->getByTeacher(Auth::id()),
+            'courses'          => $courses,
+            'recentCourses'    => $this->courses->getRecentByTeacher(Auth::id()),
+            'coursesByGroup'   => $courses
+                ->filter(fn($c) => $c->group_id !== null && $c->group !== null)
+                ->groupBy('group_id')
+                ->sortBy(fn($gc) => strtolower($gc->first()->group->name ?? '')),
+            'ungroupedCourses' => $courses
+                ->filter(fn($c) => $c->group_id === null || $c->group === null),
+            'groups'           => $this->groups->getByTeacher(Auth::id()),
         ]);
     }
 

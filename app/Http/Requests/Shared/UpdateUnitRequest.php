@@ -14,9 +14,10 @@ class UpdateUnitRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'   => ['sometimes', 'required', 'string', 'max:255'],
-            'content' => ['nullable', 'string'],
-            'order'   => ['nullable', 'integer', 'min:0'],
+            'title'        => ['sometimes', 'required', 'string', 'max:255'],
+            'content'      => ['nullable', 'string'],
+            'order'        => ['nullable', 'integer', 'min:0'],
+            'is_published' => ['boolean'],
         ];
     }
 }

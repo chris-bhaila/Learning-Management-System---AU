@@ -31,11 +31,11 @@ class EloquentCourseGroupRepository implements CourseGroupRepositoryInterface
 
     public function getByTeacher(int $teacherId): Collection
     {
-        return CourseGroup::where('teacher_id', $teacherId)->get();
+        return CourseGroup::withCount('courses')->where('teacher_id', $teacherId)->get();
     }
 
     public function getAll(): Collection
     {
-        return CourseGroup::with('teacher')->get();
+        return CourseGroup::with('teacher')->withCount('courses')->get();
     }
 }

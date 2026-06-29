@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Teacher\StoreCourseGroupRequest;
-use App\Http\Requests\Teacher\UpdateCourseGroupRequest;
+use App\Http\Requests\Shared\StoreCourseGroupRequest;
+use App\Http\Requests\Shared\UpdateCourseGroupRequest;
 use App\Repositories\Contracts\CourseGroupRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 

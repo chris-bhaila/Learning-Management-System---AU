@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreCourseGroupRequest;
-use App\Http\Requests\Admin\UpdateCourseGroupRequest;
+use App\Http\Requests\Shared\StoreCourseGroupRequest;
+use App\Http\Requests\Shared\UpdateCourseGroupRequest;
 use App\Repositories\Contracts\CourseGroupRepositoryInterface;
 
 class CourseGroupController extends Controller

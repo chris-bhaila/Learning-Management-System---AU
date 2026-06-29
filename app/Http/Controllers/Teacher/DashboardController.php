@@ -18,8 +18,10 @@ class DashboardController extends Controller
 
     public function index()
     {
-        $teacher    = Auth::user();
-        $studentIds = $teacher->students()->pluck('users.id');
+        $teacher      = Auth::user();
+        $courses      = $this->courses->getByTeacher($teacher->id);
+        $activeTokens = $this->tokens->getActiveByTeacher($teacher->id);
+        $studentIds   = $teacher->students()->pluck('users.id');
 
         $notifications = Activity::with('causer')
             ->whereIn('causer_id', $studentIds)
@@ -28,10 +30,13 @@ class DashboardController extends Controller
             ->take(20)
             ->get();
 
-        return view('teacher.dashboard', [
-            'courses'       => $this->courses->getByTeacher($teacher->id),
-            'activeTokens'  => $this->tokens->getActiveByTeacher($teacher->id),
-            'notifications' => $notifications,
-        ]);
+        $stats = [
+            'total_courses'  => $courses->count(),
+            'active_tokens'  => $activeTokens->count(),
+            'total_students' => $teacher->students()->count(),
+            'total_units'    => $courses->sum('units_count'),
+        ];
+
+        return view('teacher.dashboard', compact('courses', 'activeTokens', 'notifications', 'stats'));
     }
 }

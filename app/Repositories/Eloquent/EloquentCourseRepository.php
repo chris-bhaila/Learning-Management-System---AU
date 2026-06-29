@@ -55,6 +55,17 @@ class EloquentCourseRepository implements CourseRepositoryInterface
     {
         return Course::where('teacher_id', $teacherId)
             ->withCount(['units', 'students'])
+            ->with('group')
+            ->get();
+    }
+
+    public function getRecentByTeacher(int $teacherId, int $limit = 5): Collection
+    {
+        return Course::where('teacher_id', $teacherId)
+            ->withCount(['units', 'students'])
+            ->with('group')
+            ->orderByDesc('created_at')
+            ->limit($limit)
             ->get();
     }
 

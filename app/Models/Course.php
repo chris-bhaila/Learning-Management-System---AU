@@ -46,6 +46,11 @@ class Course extends Model
         return $this->belongsTo(CourseGroup::class, 'group_id');
     }
 
+    public function getCourseGroupAttribute(): ?CourseGroup
+    {
+        return $this->group;
+    }
+
     public function units(): HasMany
     {
         return $this->hasMany(Unit::class)->orderBy('order');

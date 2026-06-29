@@ -33,10 +33,10 @@ function _dispatch(swalOptions, formOrCb) {
  * Destructive confirmation — delete course, unit, token, user, etc.
  * Confirm: error red. Cancel: neutral gray. Focus defaults to cancel.
  */
-window.confirmDelete = function (label, formOrCb) {
+window.confirmDelete = function (label, formOrCb, text = 'This cannot be undone.') {
     _dispatch({
         title: `Delete "${label}"?`,
-        text: 'This cannot be undone.',
+        text,
         icon: 'warning',
         showCancelButton: true,
         reverseButtons: true,

@@ -27,6 +27,11 @@ class Unit extends Model
         'title',
         'content',
         'order',
+        'is_published',
+    ];
+
+    protected $casts = [
+        'is_published' => 'boolean',
     ];
 
     public function course(): BelongsTo

@@ -5,12 +5,39 @@
 @section('content')
 @php
     $courses     ??= collect();
+    $groups      ??= collect();
     $allTeachers = $courses->pluck('teacher')->filter()->unique('id')->values();
 @endphp
 
+<div x-data="{
+    groupsOpen: false,
+    view: 'list',
+    editId: null,
+    editName: '',
+    editDesc: '',
+    editErrors: { name: '' },
+
+    check(value, rules) {
+        const result = window.Iodine.assert(value ?? '', rules);
+        return result.valid ? '' : result.error;
+    },
+
+    editGroup(id, name, desc) {
+        this.editId   = id;
+        this.editName = name;
+        this.editDesc = desc ?? '';
+        this.editErrors = { name: '' };
+        this.view = 'edit';
+        this.$nextTick(() => document.getElementById('admin-edit-group-name')?.focus());
+    },
+
+    cancelEdit() { this.view = 'list'; this.editId = null; this.editErrors = { name: '' }; },
+    closeModal() { this.groupsOpen = false; this.view = 'list'; this.editId = null; },
+}">
+
 {{-- ─── Page Header ─── --}}
-<div class="flex items-start justify-between gap-4">
-    <div>
+<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 lg:gap-4 mb-8">
+    <div class="min-w-0">
         <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
             All Courses
         </h1>
@@ -18,14 +45,23 @@
             {{ $courses->count() }} {{ Str::plural('course', $courses->count()) }} across all teachers
         </p>
     </div>
-
-    <a href="{{ route('admin.courses.create') }}"
-       class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
-              text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors
-              cursor-pointer shrink-0">
-        <span class="material-symbols-outlined text-[18px]">add</span>
-        New Course
-    </a>
+    <div class="flex items-center gap-2 lg:shrink-0">
+        <button type="button" @click="groupsOpen = true"
+                class="inline-flex items-center gap-2 px-4 py-2.5 border border-outline-variant/60
+                       text-sm font-medium text-on-surface-variant rounded-[24px]
+                       hover:bg-surface-container-low hover:text-primary
+                       transition-colors duration-150 cursor-pointer">
+            <span class="material-symbols-outlined text-[18px]">folder_managed</span>
+            Manage Groups
+        </button>
+        <a href="{{ route('admin.courses.create') }}"
+           class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
+                  text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors
+                  duration-150 cursor-pointer">
+            <span class="material-symbols-outlined text-[18px]">add</span>
+            New Course
+        </a>
+    </div>
 </div>
 
 
@@ -54,8 +90,8 @@
     })"
 >
 
-    {{-- Search + Status --}}
-    <div class="flex flex-col sm:flex-row gap-3 mb-4">
+    {{-- Search + Status + Teacher --}}
+    <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
 
         <div class="relative flex-1 max-w-md">
             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2
@@ -70,7 +106,7 @@
             >
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
             @foreach([['All','all'],['Published','published'],['Draft','draft']] as [$label,$val])
             <button
                 @click="status = '{{ $val }}'"
@@ -81,33 +117,28 @@
                 class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer"
             >{{ $label }}</button>
             @endforeach
+
+            @if($allTeachers->isNotEmpty())
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2
+                             text-outline text-[15px] pointer-events-none">person</span>
+                <select x-model="teacher"
+                        class="pl-8 pr-7 py-1.5 bg-surface-white border border-outline-variant/60
+                               rounded-full text-xs font-medium text-on-surface-variant
+                               appearance-none cursor-pointer
+                               focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary">
+                    <option value="all">All Teachers</option>
+                    @foreach($allTeachers as $t)
+                    <option value="{{ $t->name }}">{{ $t->name }}</option>
+                    @endforeach
+                </select>
+                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2
+                             text-outline text-[14px] pointer-events-none">expand_more</span>
+            </div>
+            @endif
         </div>
 
     </div>
-
-    {{-- Teacher filter chips --}}
-    @if($allTeachers->isNotEmpty())
-        <div class="flex items-center gap-2 flex-wrap mt-3 mb-2">
-
-            <button
-                @click="teacher = 'all'"
-                :class="teacher === 'all'
-                    ? 'bg-gold/20 text-primary border-gold/40'
-                    : 'bg-surface-white border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low'"
-                class="px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer"
-            >All</button>
-
-            @foreach($allTeachers as $t)
-            <button
-                @click="teacher = @js($t->name)"
-                :class="teacher === @js($t->name)
-                    ? 'bg-gold/20 text-primary border-gold/40'
-                    : 'bg-surface-white border-outline-variant/60 text-on-surface-variant hover:bg-surface-container-low'"
-                class="px-3 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer"
-            >{{ $t->name }}</button>
-            @endforeach
-        </div>
-    @endif
 
 
     {{-- ─── Cards / Empty States ─── --}}
@@ -132,12 +163,12 @@
             @php
                 $published   = $course->is_published ?? false;
                 $teacherName = $course->teacher?->name ?? '—';
-                $groupName   = $course->courseGroup?->name ?? null;
-                $students    = $course->students_count ?? 0;
-                $units       = $course->units_count ?? 0;
-                $progress    = min($course->avg_progress ?? 0, 100);
             @endphp
-            <div
+            <x-course-card
+                :course="$course"
+                :show-route="route('admin.courses.show', $course)"
+                :delete-route="route('admin.courses.destroy', $course)"
+                :show-teacher="true"
                 data-card
                 x-show="matches(@js($course->title), @js($teacherName), '{{ $published ? 'published' : 'draft' }}')"
                 x-transition:enter="transition ease-out duration-200"
@@ -146,117 +177,7 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 scale-100"
                 x-transition:leave-end="opacity-0 scale-95"
-                class="group relative bg-surface-white border border-outline-variant/40 rounded-[20px] mt-2
-                       shadow-[0px_2px_8px_rgba(30,42,74,0.06)] hover:shadow-[0px_8px_24px_rgba(30,42,74,0.12)]
-                       hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
-            >
-                {{-- Top accent strip --}}
-                <div class="h-1 w-full {{ $published ? 'bg-gold' : 'bg-outline-variant/40' }}"></div>
-
-                {{-- Main clickable area --}}
-                <a href="{{ route('admin.courses.show', $course) }}" class="block p-5 cursor-pointer">
-                    <div class="flex flex-col gap-4">
-
-                        {{-- Header: title + status chip --}}
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0 flex-1">
-                                @if($groupName)
-                                    <span class="inline-block mb-1.5 px-2 py-0.5 rounded-full bg-surface-container
-                                                 text-[10px] font-semibold tracking-wide text-on-surface-variant uppercase">
-                                        {{ $groupName }}
-                                    </span>
-                                @endif
-                                <h3 class="font-semibold text-primary leading-snug group-hover:text-gold transition-colors duration-150"
-                                    style="font-family: var(--font-display);">
-                                    {{ $course->title }}
-                                </h3>
-                            </div>
-
-                            <span class="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
-                                         {{ $published ? 'bg-gold/20 text-on-gold' : 'bg-surface-container text-on-surface-variant' }}">
-                                <span class="w-1.5 h-1.5 rounded-full {{ $published ? 'bg-gold' : 'bg-outline-variant' }}"></span>
-                                {{ $published ? 'Published' : 'Draft' }}
-                            </span>
-                        </div>
-
-                        {{-- Teacher --}}
-                        <div class="flex items-center gap-2 min-w-0">
-                            <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0">
-                                <span class="text-[10px] font-bold text-white"
-                                      style="font-family: var(--font-display);">
-                                    {{ strtoupper(substr($teacherName, 0, 2)) }}
-                                </span>
-                            </div>
-                            <span class="text-sm text-on-surface-variant truncate">{{ $teacherName }}</span>
-                        </div>
-
-                        {{-- Stats --}}
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[14px]">group</span>
-                                {{ $students }} {{ Str::plural('student', $students) }}
-                            </div>
-                            <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant">
-                                <span class="material-symbols-outlined text-[14px]">menu_book</span>
-                                {{ $units }} {{ Str::plural('unit', $units) }}
-                            </div>
-                        </div>
-
-                        {{-- Progress bar --}}
-                        <div>
-                            <div class="flex items-center justify-between mb-1.5">
-                                <span class="text-xs text-on-surface-variant">Avg. progress</span>
-                                <span class="text-xs font-semibold text-primary">{{ $progress }}%</span>
-                            </div>
-                            <div class="h-1.5 bg-surface-container rounded-full overflow-hidden">
-                                <div class="h-full bg-gold rounded-full transition-all duration-500" style="width: {{ $progress }}%"></div>
-                            </div>
-                        </div>
-
-                    </div>
-                </a>
-
-                {{-- Footer — outside the <a> to allow delete form --}}
-                <div class="px-5 pb-5 flex items-center justify-between border-t border-outline-variant/20 pt-3">
-                    <span class="text-xs text-outline">
-                        {{ $course->created_at?->diffForHumans() ?? '' }}
-                    </span>
-
-                    {{-- Right side: View course / Delete toggle --}}
-                    <div class="relative flex items-center">
-
-                        {{-- View course (fades out on hover) --}}
-                        <span class="inline-flex items-center gap-1 text-xs font-medium text-primary/60
-                                     transition-all duration-150 ease-in-out
-                                     group-hover:opacity-0 group-hover:translate-x-1
-                                     pointer-events-none select-none whitespace-nowrap">
-                            View course
-                            <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                        </span>
-
-                        {{-- Delete pill (fades in on hover, overlays exact same position) --}}
-                        <form method="POST"
-                              action="{{ route('admin.courses.destroy', $course) }}"
-                              class="absolute inset-0 flex items-center justify-end
-                                     opacity-0 -translate-x-1
-                                     group-hover:opacity-100 group-hover:translate-x-0
-                                     transition-all duration-150 ease-in-out">
-                            @csrf
-                            @method('DELETE')
-                            <button type="button"
-                                    onclick="confirmDelete({{ Js::from($course->title) }}, this.closest('form'))"
-                                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full
-                                           border border-error/40 text-error text-xs font-medium
-                                           hover:bg-error hover:text-white hover:border-error
-                                           transition-all duration-150 cursor-pointer whitespace-nowrap">
-                                <span class="material-symbols-outlined text-[13px]">delete</span>
-                                Delete
-                            </button>
-                        </form>
-
-                    </div>
-                </div>
-            </div>
+            />
             @endforeach
         </div>
 
@@ -289,4 +210,181 @@
     @endif
 
 </div>
+
+{{-- ─── Groups Modal ─── --}}
+<div x-show="groupsOpen"
+     x-cloak
+     @keydown.escape.window="closeModal()"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0">
+
+    <div class="absolute inset-0 bg-black/40" @click="closeModal()"></div>
+
+    <div class="relative w-full max-w-2xl bg-surface-white rounded-[20px] shadow-2xl max-h-[85vh] flex flex-col"
+         x-show="groupsOpen"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95">
+
+        {{-- Header --}}
+        <div class="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 shrink-0">
+            <div>
+                <h2 class="text-base font-semibold text-on-surface" style="font-family: var(--font-display);">
+                    <span x-show="view === 'list'">All Course Groups</span>
+                    <span x-show="view === 'edit'" x-cloak>Edit Group</span>
+                </h2>
+                <p x-show="view === 'list'" class="text-xs text-on-surface-variant mt-0.5">
+                    {{ $groups->count() }} {{ Str::plural('group', $groups->count()) }} across all teachers
+                </p>
+            </div>
+            <button type="button" @click="closeModal()"
+                    class="w-8 h-8 flex items-center justify-center rounded-full
+                           text-on-surface-variant hover:bg-surface-container
+                           transition-colors duration-150 cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">close</span>
+            </button>
+        </div>
+
+        {{-- Body --}}
+        <div class="flex-1 overflow-y-auto">
+
+            {{-- LIST view --}}
+            <div x-show="view === 'list'">
+                @if($groups->isEmpty())
+                    <div class="py-16 flex flex-col items-center gap-4 text-center px-6">
+                        <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
+                            <span class="material-symbols-outlined text-outline text-[32px]">folder_open</span>
+                        </div>
+                        <div>
+                            <p class="text-base font-semibold text-on-surface">No groups yet</p>
+                            <p class="text-sm text-on-surface-variant mt-1">
+                                Course groups will appear here once teachers create them.
+                            </p>
+                        </div>
+                    </div>
+                @else
+                    <ul class="divide-y divide-outline-variant/20">
+                        @foreach($groups as $group)
+                        <li class="flex items-center gap-3 px-6 py-4
+                                   hover:bg-surface-container-low/40 transition-colors duration-150">
+                            <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+                                <span class="material-symbols-outlined text-outline text-[18px]">folder</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-on-surface truncate">{{ $group->name }}</p>
+                                @if($group->description)
+                                    <p class="text-xs text-on-surface-variant truncate mt-0.5">{{ $group->description }}</p>
+                                @endif
+                                <p class="text-[11px] text-outline mt-0.5">
+                                    {{ $group->courses_count }} {{ Str::plural('course', $group->courses_count) }}
+                                </p>
+                            </div>
+                            <div class="min-w-[120px] shrink-0">
+                                <p class="text-xs font-medium text-on-surface-variant truncate">
+                                    {{ $group->teacher?->name ?? '—' }}
+                                </p>
+                                <p class="text-[10px] text-outline mt-0.5">Teacher</p>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <button type="button"
+                                        @click="editGroup({{ $group->id }}, @js($group->name), @js($group->description ?? ''))"
+                                        class="inline-flex items-center gap-1 text-xs font-medium text-primary
+                                               hover:text-gold transition-colors duration-150 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[14px]">edit</span>
+                                    Edit
+                                </button>
+                                <button type="button"
+                                        onclick="confirmDelete({{ Js::from($group->name) }}, document.getElementById('admin-delete-group-form-{{ $group->id }}'), 'Courses in this group will become unassigned, not deleted.')"
+                                        class="inline-flex items-center gap-1 text-xs font-medium text-error
+                                               hover:text-error/70 transition-colors duration-150 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                                    Delete
+                                </button>
+                            </div>
+                        </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+
+            {{-- EDIT view --}}
+            <form x-show="view === 'edit'" x-cloak
+                  method="POST"
+                  :action="'/admin/groups/' + editId"
+                  class="p-6"
+                  @submit.prevent="
+                      editErrors.name = check(document.getElementById('admin-edit-group-name').value, ['required', 'maxLength:255']);
+                      if (!editErrors.name) $el.submit();
+                  ">
+                @csrf
+                <input type="hidden" name="_method" value="PATCH">
+
+                <div class="mb-5">
+                    <label for="admin-edit-group-name"
+                           class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                        Group Name <span class="text-error">*</span>
+                    </label>
+                    <input id="admin-edit-group-name" type="text" name="name"
+                           x-model="editName"
+                           @blur="editErrors.name = check($event.target.value, ['required', 'maxLength:255'])"
+                           :class="editErrors.name ? 'border-error' : 'border-outline-variant/60'"
+                           class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
+                                  focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                    <p x-show="editErrors.name" x-text="editErrors.name" x-cloak
+                       class="mt-1.5 text-xs text-error"></p>
+                </div>
+
+                <div class="mb-6">
+                    <label for="admin-edit-group-desc"
+                           class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                        Description
+                        <span class="ml-1 text-[10px] font-normal normal-case text-outline">(optional)</span>
+                    </label>
+                    <textarea id="admin-edit-group-desc" name="description" rows="3"
+                              x-model="editDesc"
+                              class="w-full px-4 py-2.5 bg-surface-white border border-outline-variant/60
+                                     rounded-[16px] text-sm placeholder:text-outline resize-none
+                                     focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-3">
+                    <button type="button" @click="cancelEdit()"
+                            class="px-5 py-2.5 border border-outline-variant/60 text-sm font-medium
+                                   text-on-surface-variant rounded-[24px]
+                                   hover:bg-surface-container-low hover:text-primary
+                                   transition-colors duration-150 cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
+                                   text-sm font-semibold rounded-[24px] hover:bg-gold/90
+                                   active:scale-[0.96] transition-all duration-150 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]">save</span>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+{{-- Standalone group delete forms --}}
+@foreach($groups as $group)
+<form id="admin-delete-group-form-{{ $group->id }}" method="POST"
+      action="{{ route('admin.groups.destroy', $group->id) }}" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+@endforeach
+
+</div>{{-- end outer x-data --}}
 @endsection

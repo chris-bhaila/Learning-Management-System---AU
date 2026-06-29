@@ -13,6 +13,7 @@ interface CourseRepositoryInterface
     public function update(Course $course, array $data): Course;
     public function delete(Course $course): bool;
     public function getByTeacher(int $teacherId): Collection;
+    public function getRecentByTeacher(int $teacherId, int $limit = 5): Collection;
     public function getEnrolledByStudent(int $studentId): Collection;
     public function getByGroup(int $groupId): Collection;
     public function getAll(): Collection;

@@ -22,6 +22,7 @@
         editing: false,
         submitting: false,
         titleShake: false,
+        unitPublished: {{ $unit->is_published ? 'true' : 'false' }},
 
         errors: {
             title: '{{ addslashes($errors->first('title')) }}',
@@ -55,8 +56,9 @@
         },
 
         cancelEdit() {
-            this.editing = false;
-            this.errors  = { title: '' };
+            this.editing      = false;
+            this.unitPublished = {{ $unit->is_published ? 'true' : 'false' }};
+            this.errors       = { title: '' };
             document.getElementById('edit-title').value = @js($unit->title);
             if (window.tiptap) {
                 window.tiptap.commands.setContent(@js($unit->content ?? ''), false);
@@ -121,6 +123,11 @@
                                  bg-surface-container text-on-surface-variant">
                         <span class="material-symbols-outlined text-[14px]">menu_book</span>
                         Unit {{ $unit->order ?? '—' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium
+                                 {{ $unit->is_published ? 'bg-gold/20 text-primary' : 'bg-surface-container text-on-surface-variant' }}">
+                        <span class="w-1.5 h-1.5 rounded-full {{ $unit->is_published ? 'bg-gold' : 'bg-outline-variant' }}"></span>
+                        {{ $unit->is_published ? 'Published' : 'Draft' }}
                     </span>
                 </div>
                 <h1 class="text-2xl font-bold text-primary leading-tight break-words"
@@ -347,6 +354,7 @@
 
                     <input type="hidden" name="content" id="edit-content"
                            value="{{ old('content', $unit->content) }}">
+                    <input type="hidden" name="is_published" :value="unitPublished ? '1' : '0'">
 
                     @error('content')
                         <p class="mt-1.5 text-xs text-error">{{ $message }}</p>
@@ -537,7 +545,15 @@
 
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
                         shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6">
-                <div class="flex flex-col gap-4">
+
+                {{-- View mode --}}
+                <div x-show="!editing" class="flex flex-col gap-4"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1">
 
                     {{-- Course --}}
                     <div class="flex items-center gap-3">
@@ -565,6 +581,22 @@
                         </div>
                     </div>
 
+                    {{-- Status --}}
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full {{ $unit->is_published ? 'bg-gold/10' : 'bg-surface-container' }}
+                                    flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[18px] {{ $unit->is_published ? 'text-gold' : 'text-outline' }}">
+                                {{ $unit->is_published ? 'visibility' : 'visibility_off' }}
+                            </span>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Status</p>
+                            <p class="text-sm font-medium {{ $unit->is_published ? 'text-primary' : 'text-on-surface-variant' }}">
+                                {{ $unit->is_published ? 'Published' : 'Draft' }}
+                            </p>
+                        </div>
+                    </div>
+
                     {{-- Created --}}
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
@@ -574,6 +606,38 @@
                             <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Created</p>
                             <p class="text-sm text-on-surface">{{ $unit->created_at->format('M j, Y') }}</p>
                         </div>
+                    </div>
+
+                </div>
+
+                {{-- Edit mode --}}
+                <div x-show="editing" x-cloak class="flex flex-col gap-4"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-100"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1">
+
+                    {{-- Published toggle --}}
+                    <div class="flex items-center justify-between gap-3 pt-1">
+                        <div>
+                            <p class="text-sm font-medium text-on-surface">Published</p>
+                            <p class="text-xs text-on-surface-variant mt-0.5">Visible to enrolled students</p>
+                        </div>
+                        <button
+                            type="button"
+                            @click="unitPublished = !unitPublished"
+                            :class="unitPublished ? 'bg-gold border-gold/80' : 'bg-surface-container-high border-outline-variant/60'"
+                            class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border
+                                   transition-colors duration-200 cursor-pointer focus:outline-none
+                                   focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                            role="switch" :aria-checked="unitPublished.toString()"
+                        >
+                            <span :class="unitPublished ? 'translate-x-6' : 'translate-x-1'"
+                                  class="inline-block h-5 w-5 rounded-full bg-surface-white shadow
+                                         transition-transform duration-200"></span>
+                        </button>
                     </div>
 
                 </div>

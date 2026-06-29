@@ -21,6 +21,7 @@ class CourseController extends Controller
     {
         return view('admin.courses.index', [
             'courses' => $this->courses->getAll(),
+            'groups'  => $this->groups->getAll(),
         ]);
     }
 

@@ -445,6 +445,19 @@
                                     {{ $unit->title }}
                                 </a>
 
+                                {{-- Publish toggle badge --}}
+                                <button type="button"
+                                        title="{{ $unit->is_published ? 'Mark as draft' : 'Publish unit' }}"
+                                        onclick="document.getElementById('publish-unit-form-{{ $unit->id }}').requestSubmit()"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px]
+                                               font-medium shrink-0 transition-colors duration-150 cursor-pointer
+                                               {{ $unit->is_published
+                                                    ? 'bg-gold/20 text-primary hover:bg-gold/30'
+                                                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high' }}">
+                                    <span class="w-1.5 h-1.5 rounded-full {{ $unit->is_published ? 'bg-gold' : 'bg-outline-variant' }}"></span>
+                                    {{ $unit->is_published ? 'Published' : 'Draft' }}
+                                </button>
+
                                 {{-- Delete --}}
                                 <button type="button"
                                         onclick="confirmDelete({{ Js::from($unit->title) }}, document.getElementById('delete-unit-form-{{ $unit->id }}'))"
@@ -455,6 +468,181 @@
                                     <span class="material-symbols-outlined text-[16px]" aria-hidden="true">delete</span>
                                 </button>
 
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+
+            {{-- ─── Attachments ─── --}}
+            <div
+                x-data="{
+                    fileSelected: false,
+                    fileName: '',
+                    fileError: '',
+                    uploading: false,
+                    viewLoading: null,
+                    allowedExts: ['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','png','jpg','jpeg','zip'],
+                    maxBytes: 20971520,
+                    onFileChange(event) {
+                        const file = event.target.files[0];
+                        if (!file) { this.fileSelected = false; this.fileName = ''; this.fileError = ''; return; }
+                        const ext = file.name.split('.').pop().toLowerCase();
+                        if (!this.allowedExts.includes(ext)) {
+                            this.fileError = 'File type not allowed. Accepted: PDF, Word, Excel, PowerPoint, text, images, ZIP.';
+                            this.fileSelected = false;
+                            event.target.value = '';
+                            return;
+                        }
+                        if (file.size > this.maxBytes) {
+                            this.fileError = 'File must be 20 MB or smaller.';
+                            this.fileSelected = false;
+                            event.target.value = '';
+                            return;
+                        }
+                        this.fileError = '';
+                        this.fileSelected = true;
+                        this.fileName = file.name;
+                    },
+                    onUploadSubmit() {
+                        if (!this.fileSelected) {
+                            this.fileError = 'Please select a file first.';
+                            return;
+                        }
+                        this.uploading = true;
+                        document.getElementById('upload-admin-course-file-form').requestSubmit();
+                    },
+                    async viewFile(fileId, viewType) {
+                        this.viewLoading = fileId;
+                        try {
+                            const res = await fetch('/files/' + fileId + '/view-token', { credentials: 'same-origin' });
+                            if (!res.ok) throw new Error('Unauthorised');
+                            const { url } = await res.json();
+                            if (viewType === 'office') {
+                                window.open('https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true', '_blank');
+                            } else {
+                                window.open(url, '_blank');
+                            }
+                        } catch (e) {
+                            console.error('File view error:', e);
+                        } finally {
+                            this.viewLoading = null;
+                        }
+                    },
+                }"
+                class="bg-surface-white border border-outline-variant/40 rounded-[20px]
+                       shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+
+                <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
+                    <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
+                        Attachments
+                    </p>
+                    <span class="text-xs text-on-surface-variant">
+                        {{ $course->files->count() }} {{ Str::plural('file', $course->files->count()) }}
+                    </span>
+                </div>
+
+                {{-- Upload section --}}
+                <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface-container-low/40">
+                    @if($errors->has('file'))
+                        <div class="mb-3 flex items-start gap-2 text-xs text-error">
+                            <span class="material-symbols-outlined text-[14px] mt-0.5 shrink-0">error</span>
+                            {{ $errors->first('file') }}
+                        </div>
+                    @endif
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <label for="admin-course-file-input"
+                               class="flex-1 min-w-0 inline-flex items-center gap-2 px-4 py-2.5 w-full
+                                      border border-outline-variant/60 bg-surface-white rounded-[16px]
+                                      text-sm text-on-surface-variant cursor-pointer
+                                      hover:border-primary/50 hover:bg-surface-container-low
+                                      transition-colors duration-150 overflow-hidden">
+                            <span class="material-symbols-outlined text-[18px] text-outline shrink-0">upload_file</span>
+                            <span class="truncate" x-text="fileName || 'Choose file…'"></span>
+                        </label>
+                        <input id="admin-course-file-input" type="file" name="file"
+                               form="upload-admin-course-file-form"
+                               @change="onFileChange"
+                               class="sr-only"
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip">
+                        <button type="button"
+                                @click="onUploadSubmit"
+                                :disabled="!fileSelected || uploading"
+                                class="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5
+                                       bg-primary text-white text-sm font-semibold rounded-[24px]
+                                       hover:bg-primary-container active:scale-[0.96]
+                                       transition-all duration-150 cursor-pointer
+                                       disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
+                            <span class="material-symbols-outlined text-[16px]"
+                                  :class="uploading ? 'animate-spin' : ''"
+                                  x-text="uploading ? 'progress_activity' : 'upload'">upload</span>
+                            <span x-text="uploading ? 'Uploading…' : 'Upload File'">Upload File</span>
+                        </button>
+                    </div>
+                    <p x-show="fileError" x-text="fileError" x-cloak
+                       class="mt-2 text-xs text-error transition-all duration-150"></p>
+                    <p class="mt-1.5 text-[11px] text-outline">PDF, Word, Excel, PowerPoint, images, text, ZIP · max 20 MB</p>
+                </div>
+
+                @if($course->files->isEmpty())
+                    <div class="py-10 flex flex-col items-center gap-2 text-center px-4">
+                        <span class="material-symbols-outlined text-outline text-[28px] animate-float">attach_file</span>
+                        <p class="text-sm font-medium text-on-surface">No files attached yet</p>
+                        <p class="text-xs text-on-surface-variant">Upload a file above to attach it to this course.</p>
+                    </div>
+                @else
+                    <ul class="divide-y divide-outline-variant/20">
+                        @foreach($course->files as $file)
+                            @php
+                                $fileSize = $file->size >= 1048576
+                                    ? number_format($file->size / 1048576, 1) . ' MB'
+                                    : number_format($file->size / 1024, 0) . ' KB';
+                                $ext      = strtolower(pathinfo($file->original_name ?? $file->filename, PATHINFO_EXTENSION));
+                                $viewType = match(true) {
+                                    in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) => 'image',
+                                    $ext === 'pdf'                                  => 'pdf',
+                                    in_array($ext, ['doc','docx','xls','xlsx','ppt','pptx']) => 'office',
+                                    default                                         => null,
+                                };
+                                $canView = $viewType !== null && !($viewType === 'office' && app()->environment('local'));
+                            @endphp
+                            <li class="flex items-center gap-3 px-6 py-3.5 min-w-0
+                                       hover:bg-surface-container-low/40 transition-colors duration-200">
+                                <span class="material-symbols-outlined text-outline text-[20px] shrink-0">description</span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm text-on-surface truncate">
+                                        {{ $file->original_name ?? $file->filename }}
+                                    </p>
+                                    <p class="text-[11px] text-on-surface-variant mt-0.5">
+                                        {{ $fileSize }} · {{ $file->created_at->format('M j, Y') }}
+                                    </p>
+                                </div>
+                                @if($canView)
+                                    <button type="button"
+                                            @click="viewFile({{ $file->id }}, '{{ $viewType }}')"
+                                            :disabled="viewLoading === {{ $file->id }}"
+                                            class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
+                                                   text-primary hover:text-gold transition-colors cursor-pointer
+                                                   disabled:opacity-50 disabled:cursor-not-allowed">
+                                        <span class="material-symbols-outlined text-[14px]"
+                                              :class="viewLoading === {{ $file->id }} ? 'animate-spin' : ''"
+                                              x-text="viewLoading === {{ $file->id }} ? 'progress_activity' : 'visibility'">visibility</span>
+                                        <span x-show="viewLoading !== {{ $file->id }}">View</span>
+                                    </button>
+                                @endif
+                                <a href="{{ route('files.download', $file->id) }}"
+                                   class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
+                                          text-primary hover:text-gold transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[14px]">download</span>
+                                    Download
+                                </a>
+                                <button type="button"
+                                        onclick="confirmDelete({{ Js::from($file->original_name ?? $file->filename) }}, document.getElementById('delete-admin-course-file-form-{{ $file->id }}'))"
+                                        class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
+                                               text-error hover:text-error/70 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                                    Delete
+                                </button>
                             </li>
                         @endforeach
                     </ul>
@@ -718,181 +906,6 @@
                 @endif
             </div>
 
-            {{-- ─── Attachments ─── --}}
-            <div
-                x-data="{
-                    fileSelected: false,
-                    fileName: '',
-                    fileError: '',
-                    uploading: false,
-                    viewLoading: null,
-                    allowedExts: ['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','png','jpg','jpeg','zip'],
-                    maxBytes: 20971520,
-                    onFileChange(event) {
-                        const file = event.target.files[0];
-                        if (!file) { this.fileSelected = false; this.fileName = ''; this.fileError = ''; return; }
-                        const ext = file.name.split('.').pop().toLowerCase();
-                        if (!this.allowedExts.includes(ext)) {
-                            this.fileError = 'File type not allowed. Accepted: PDF, Word, Excel, PowerPoint, text, images, ZIP.';
-                            this.fileSelected = false;
-                            event.target.value = '';
-                            return;
-                        }
-                        if (file.size > this.maxBytes) {
-                            this.fileError = 'File must be 20 MB or smaller.';
-                            this.fileSelected = false;
-                            event.target.value = '';
-                            return;
-                        }
-                        this.fileError = '';
-                        this.fileSelected = true;
-                        this.fileName = file.name;
-                    },
-                    onUploadSubmit() {
-                        if (!this.fileSelected) {
-                            this.fileError = 'Please select a file first.';
-                            return;
-                        }
-                        this.uploading = true;
-                        document.getElementById('upload-admin-course-file-form').requestSubmit();
-                    },
-                    async viewFile(fileId, viewType) {
-                        this.viewLoading = fileId;
-                        try {
-                            const res = await fetch('/files/' + fileId + '/view-token', { credentials: 'same-origin' });
-                            if (!res.ok) throw new Error('Unauthorised');
-                            const { url } = await res.json();
-                            if (viewType === 'office') {
-                                window.open('https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true', '_blank');
-                            } else {
-                                window.open(url, '_blank');
-                            }
-                        } catch (e) {
-                            console.error('File view error:', e);
-                        } finally {
-                            this.viewLoading = null;
-                        }
-                    },
-                }"
-                class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                       shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
-
-                <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
-                    <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
-                        Attachments
-                    </p>
-                    <span class="text-xs text-on-surface-variant">
-                        {{ $course->files->count() }} {{ Str::plural('file', $course->files->count()) }}
-                    </span>
-                </div>
-
-                {{-- Upload section --}}
-                <div class="px-6 py-4 border-b border-outline-variant/20 bg-surface-container-low/40">
-                    @if($errors->has('file'))
-                        <div class="mb-3 flex items-start gap-2 text-xs text-error">
-                            <span class="material-symbols-outlined text-[14px] mt-0.5 shrink-0">error</span>
-                            {{ $errors->first('file') }}
-                        </div>
-                    @endif
-                    <div class="flex flex-col gap-2">
-                        <label for="admin-course-file-input"
-                               class="inline-flex items-center gap-2 px-4 py-2.5 w-full
-                                      border border-outline-variant/60 bg-surface-white rounded-[16px]
-                                      text-sm text-on-surface-variant cursor-pointer
-                                      hover:border-primary/50 hover:bg-surface-container-low
-                                      transition-colors duration-150 overflow-hidden min-w-0">
-                            <span class="material-symbols-outlined text-[18px] text-outline shrink-0">upload_file</span>
-                            <span class="truncate" x-text="fileName || 'Choose file…'"></span>
-                        </label>
-                        <input id="admin-course-file-input" type="file" name="file"
-                               form="upload-admin-course-file-form"
-                               @change="onFileChange"
-                               class="sr-only"
-                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip">
-                        <button type="button"
-                                @click="onUploadSubmit"
-                                :disabled="!fileSelected || uploading"
-                                class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5
-                                       bg-primary text-white text-sm font-semibold rounded-[24px]
-                                       hover:bg-primary-container active:scale-[0.96]
-                                       transition-all duration-150 cursor-pointer
-                                       disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100">
-                            <span class="material-symbols-outlined text-[16px]"
-                                  :class="uploading ? 'animate-spin' : ''"
-                                  x-text="uploading ? 'progress_activity' : 'upload'">upload</span>
-                            <span x-text="uploading ? 'Uploading…' : 'Upload File'">Upload File</span>
-                        </button>
-                    </div>
-                    <p x-show="fileError" x-text="fileError" x-cloak
-                       class="mt-2 text-xs text-error transition-all duration-150"></p>
-                    <p class="mt-1.5 text-[11px] text-outline">PDF, Word, Excel, PowerPoint, images, text, ZIP · max 20 MB</p>
-                </div>
-
-                @if($course->files->isEmpty())
-                    <div class="py-10 flex flex-col items-center gap-2 text-center px-4">
-                        <span class="material-symbols-outlined text-outline text-[28px] animate-float">attach_file</span>
-                        <p class="text-sm font-medium text-on-surface">No files attached yet</p>
-                        <p class="text-xs text-on-surface-variant">Upload a file above to attach it to this course.</p>
-                    </div>
-                @else
-                    <ul class="divide-y divide-outline-variant/20">
-                        @foreach($course->files as $file)
-                            @php
-                                $fileSize = $file->size >= 1048576
-                                    ? number_format($file->size / 1048576, 1) . ' MB'
-                                    : number_format($file->size / 1024, 0) . ' KB';
-                                $ext      = strtolower(pathinfo($file->original_name ?? $file->filename, PATHINFO_EXTENSION));
-                                $viewType = match(true) {
-                                    in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) => 'image',
-                                    $ext === 'pdf'                                  => 'pdf',
-                                    in_array($ext, ['doc','docx','xls','xlsx','ppt','pptx']) => 'office',
-                                    default                                         => null,
-                                };
-                                $canView = $viewType !== null && !($viewType === 'office' && app()->environment('local'));
-                            @endphp
-                            <li class="flex items-center gap-3 px-6 py-3.5 min-w-0
-                                       hover:bg-surface-container-low/40 transition-colors duration-200">
-                                <span class="material-symbols-outlined text-outline text-[20px] shrink-0">description</span>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm text-on-surface truncate">
-                                        {{ $file->original_name ?? $file->filename }}
-                                    </p>
-                                    <p class="text-[11px] text-on-surface-variant mt-0.5">
-                                        {{ $fileSize }} · {{ $file->created_at->format('M j, Y') }}
-                                    </p>
-                                </div>
-                                @if($canView)
-                                    <button type="button"
-                                            @click="viewFile({{ $file->id }}, '{{ $viewType }}')"
-                                            :disabled="viewLoading === {{ $file->id }}"
-                                            class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
-                                                   text-primary hover:text-gold transition-colors cursor-pointer
-                                                   disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <span class="material-symbols-outlined text-[14px]"
-                                              :class="viewLoading === {{ $file->id }} ? 'animate-spin' : ''"
-                                              x-text="viewLoading === {{ $file->id }} ? 'progress_activity' : 'visibility'">visibility</span>
-                                        <span x-show="viewLoading !== {{ $file->id }}">View</span>
-                                    </button>
-                                @endif
-                                <a href="{{ route('files.download', $file->id) }}"
-                                   class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
-                                          text-primary hover:text-gold transition-colors cursor-pointer">
-                                    <span class="material-symbols-outlined text-[14px]">download</span>
-                                    Download
-                                </a>
-                                <button type="button"
-                                        onclick="confirmDelete({{ Js::from($file->original_name ?? $file->filename) }}, document.getElementById('delete-admin-course-file-form-{{ $file->id }}'))"
-                                        class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
-                                               text-error hover:text-error/70 transition-colors cursor-pointer">
-                                    <span class="material-symbols-outlined text-[14px]">delete</span>
-                                    Delete
-                                </button>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-            </div>
-
         </div>{{-- end sidebar --}}
 
     </div>{{-- end grid --}}
@@ -904,6 +917,15 @@
 <form id="delete-unit-form-{{ $unit->id }}" method="POST" action="{{ route('admin.units.destroy', $unit->id) }}" class="hidden">
     @csrf
     @method('DELETE')
+</form>
+@endforeach
+
+{{-- Standalone unit publish-toggle forms — each submits PATCH with is_published flipped --}}
+@foreach($course->units as $unit)
+<form id="publish-unit-form-{{ $unit->id }}" method="POST" action="{{ route('admin.units.update', $unit->id) }}" class="hidden">
+    @csrf
+    @method('PATCH')
+    <input type="hidden" name="is_published" value="{{ $unit->is_published ? '0' : '1' }}">
 </form>
 @endforeach
 
