@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Teacher\StoreTokenRequest;
 use App\Repositories\Contracts\TokenRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 
 class TokenController extends Controller
@@ -15,6 +14,16 @@ class TokenController extends Controller
         private TokenRepositoryInterface $tokens,
         private CourseRepositoryInterface $courses,
     ) {}
+
+    public function index()
+    {
+        $teacherId = Auth::id();
+        return view('teacher.tokens.index', [
+            'classTokens'  => $this->tokens->getClassTokensByTeacher($teacherId),
+            'courseTokens' => $this->tokens->getCourseTokensByTeacher($teacherId),
+            'courses'      => $this->courses->getByTeacher($teacherId),
+        ]);
+    }
 
     public function store(StoreTokenRequest $request)
     {
@@ -28,9 +37,9 @@ class TokenController extends Controller
         $this->tokens->create([
             'teacher_id'  => Auth::id(),
             'course_id'   => $data['course_id'] ?? null,
-            'token_value' => strtoupper(Str::random(12)),
+            'token_value' => $this->tokens->generateUniqueValue($data['type']),
             'type'        => $data['type'],
-            'expires_at'  => now()->addMinutes($data['lifetime_minutes']),
+            'expires_at'  => now()->addMinutes($request->lifetimeInMinutes()),
             'max_uses'    => $data['max_uses'],
             'uses_count'  => 0,
         ]);

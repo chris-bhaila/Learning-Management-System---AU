@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
-use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -19,6 +20,7 @@ class UserController extends Controller
     public function __construct(
         private UserRepositoryInterface $users,
         private RoleRepositoryInterface $roles,
+        private CourseRepositoryInterface $courses,
     ) {}
 
     public function index(Request $request)
@@ -59,11 +61,26 @@ class UserController extends Controller
         if ($user->isTeacher()) {
             $user->load(['courses' => fn($q) => $q->withCount('students')->with('units')]);
         } elseif ($user->isStudent()) {
-            $user->load(['enrolledCourses' => fn($q) => $q->with(['teacher', 'units'])->withCount('units')]);
+            $user->setRelation('enrolledTeachers', $this->users->getTeachersForStudent($user->id));
         }
 
         return view('admin.users.show', [
             'subject' => $user,
+        ]);
+    }
+
+    public function showStudentClass(int $userId, int $teacherId)
+    {
+        $student = $this->users->getStudentWithTeacherPivot($userId, $teacherId);
+        abort_if(is_null($student), 404);
+
+        $teacher = $this->users->find($teacherId);
+        abort_if(is_null($teacher), 404);
+
+        return view('admin.users.student-class', [
+            'student' => $student,
+            'teacher' => $teacher,
+            'courses' => $this->courses->getStudentCoursesForTeacher($userId, $teacherId),
         ]);
     }
 

@@ -267,10 +267,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up">
 
         {{-- ═══ MAIN COLUMN ═══ --}}
-        <div class="lg:col-span-2 min-w-0 flex flex-col gap-5">
+        <div class="contents lg:col-span-2 lg:flex lg:flex-col lg:gap-5 lg:min-w-0">
 
             {{-- Description card --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 mt-4 overflow-hidden">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-2 p-6 mt-4 overflow-hidden">
 
                 <p class="text-sm font-semibold text-on-surface mb-4" style="font-family: var(--font-display);">
                     Description
@@ -399,7 +399,7 @@
             </div>
 
             {{-- ─── Units ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-3 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -531,7 +531,7 @@
                     },
                 }"
                 class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                       shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+                       shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-4 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -652,10 +652,10 @@
         </div>{{-- end main column --}}
 
         {{-- ═══ SIDEBAR ═══ --}}
-        <div class="min-w-0 flex flex-col gap-5">
+        <div class="contents lg:flex lg:flex-col lg:gap-5 lg:min-w-0">
 
             {{-- ─── Course info card ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-1 p-6">
 
                 {{-- View --}}
                 <div x-show="!editing" class="flex flex-col gap-3"
@@ -814,7 +814,7 @@
             </div>
 
             {{-- ─── Tokens ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-5 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -867,7 +867,7 @@
             </div>
 
             {{-- ─── Enrolled Students ─── --}}
-            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+            <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-6 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">

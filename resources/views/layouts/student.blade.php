@@ -6,7 +6,6 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — EduNest</title>
 
-    {{-- Fonts: Plus Jakarta Sans (headings), Inter (body), JetBrains Mono (code) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
@@ -23,25 +22,6 @@
 
     @stack('styles')
 </head>
-
-{{--
-    Layout: fixed sidebar (260px) + flex column (topbar + scrollable main).
-
-    Sections available to child views:
-      - title          : <title> text (default: "Dashboard")
-      - nav-items      : sidebar anchor tags using the .nav-item / .active classes
-      - sidebar-cta    : optional CTA button below nav (e.g. "New Course")
-      - topbar-actions : page-level buttons rendered in the topbar
-      - content        : main page body
-      - styles / scripts (stacks)
-
-    Nav item pattern (no nested Blade comments inside @section blocks):
-      <a href="{{ route('dashboard') }}"
-         class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-          <span class="material-symbols-outlined text-[20px]">dashboard</span>
-          Dashboard
-      </a>
---}}
 <body class="bg-surface font-sans text-on-surface h-screen flex overflow-hidden">
 
     {{-- ═══════════════════════════════════════════════
@@ -64,21 +44,33 @@
             <div class="min-w-0">
                 <p class="font-semibold text-primary text-base leading-tight truncate"
                    style="font-family: var(--font-display);">EduNest</p>
-                <p class="text-[11px] text-primary/50 leading-tight">LMS Portal</p>
+                <p class="text-[11px] text-primary/50 leading-tight">Student Portal</p>
             </div>
         </div>
 
-        {{-- Navigation items — filled by each dashboard view --}}
-        {{--
-            Use the .nav-item + .active classes defined in app.css:
-
-            <a href="…" class="nav-item {{ active ? 'active' : '' }}">
-                <span class="material-symbols-outlined text-[20px]">icon_name</span>
-                Label
-            </a>
-        --}}
+        {{-- Navigation --}}
         <div class="flex-1 overflow-y-auto py-3 flex flex-col">
-            @yield('nav-items')
+
+            <p class="px-6 pb-1 pt-2 text-[10px] font-semibold tracking-widest text-outline uppercase">
+                Overview
+            </p>
+
+            <a href="{{ route('student.dashboard') }}"
+               class="nav-item {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
+                <span class="material-symbols-outlined text-[20px]">dashboard</span>
+                Dashboard
+            </a>
+
+            <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
+                Learning
+            </p>
+
+            <a href="{{ route('student.courses.index') }}"
+               class="nav-item {{ request()->routeIs('student.courses.*') ? 'active' : '' }}">
+                <span class="material-symbols-outlined text-[20px]">library_books</span>
+                My Courses
+            </a>
+
         </div>
 
         {{-- Optional sidebar CTA --}}
@@ -96,7 +88,7 @@
                 Settings
             </a>
 
-            <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
+            <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" class="nav-item cursor-pointer w-full text-left">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
@@ -117,7 +109,7 @@
     {{-- ═══════════════════════════════════════════════
          MAIN COLUMN (topbar + scrollable content)
     ═══════════════════════════════════════════════ --}}
-    <div class="flex-1 flex flex-col md:ml-[260px] min-w-0 h-full overflow-hidden">
+    <div id="main-content" class="flex-1 flex flex-col md:ml-[260px] min-w-0 h-full overflow-hidden">
 
         {{-- ─── TOPBAR ─── --}}
         <header class="h-16 sticky top-0 z-30 bg-surface-white border-b border-outline-variant/30
@@ -125,36 +117,17 @@
                         flex items-center gap-4 px-4 md:px-8 shrink-0">
 
             {{-- Mobile sidebar toggle --}}
-            <button onclick="openSidebar()" class="md:hidden text-primary -ml-1 shrink-0">
+            <button onclick="openSidebar()"
+                    class="md:hidden text-primary -ml-1 shrink-0 cursor-pointer">
                 <span class="material-symbols-outlined">menu</span>
             </button>
 
-            {{-- Search --}}
-            <div class="flex-1 max-w-md hidden sm:block">
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2
-                                 text-outline text-[18px] pointer-events-none">search</span>
-                    <input
-                        type="search"
-                        placeholder="Search courses…"
-                        class="w-full pl-10 pr-4 py-2 bg-surface-container-low rounded-full text-sm
-                               border border-outline-variant/60
-                               placeholder:text-outline
-                               focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                    >
-                </div>
+            {{-- Page-level action buttons --}}
+            <div class="flex items-center gap-3">
+                @yield('topbar-actions')
             </div>
 
             <div class="ml-auto flex items-center gap-3">
-                {{-- Page-level action buttons --}}
-                @yield('topbar-actions')
-
-                {{-- Notifications --}}
-                <button class="relative text-on-surface-variant hover:text-primary transition-colors">
-                    <span class="material-symbols-outlined">notifications</span>
-                    <span class="absolute top-0.5 right-0.5 w-2 h-2 bg-gold rounded-full
-                                 border-2 border-surface-white"></span>
-                </button>
 
                 {{-- User avatar --}}
                 <a href="{{ route('settings.index') }}"
@@ -191,8 +164,8 @@
 
     {{-- Mobile sidebar open/close --}}
     <script>
-        const sidebar   = document.getElementById('sidebar');
-        const backdrop  = document.getElementById('sidebar-backdrop');
+        const sidebar  = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
 
         function openSidebar() {
             sidebar.classList.remove('-translate-x-full');

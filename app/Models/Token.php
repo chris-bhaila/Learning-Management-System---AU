@@ -57,6 +57,12 @@ class Token extends Model
         return $this->type === 'course';
     }
 
+    public function formattedValue(): string
+    {
+        $size = $this->type === 'class' ? 3 : 2;
+        return implode('-', str_split($this->token_value, $size));
+    }
+
     public function isExpired(): bool
     {
         return $this->expires_at->isPast() || $this->uses_count >= $this->max_uses;

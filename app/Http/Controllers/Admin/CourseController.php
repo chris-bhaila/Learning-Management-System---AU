@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreCourseRequest;
 use App\Http\Requests\Admin\UpdateCourseRequest;
+use App\Models\Course;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\CourseGroupRepositoryInterface;
+use App\Repositories\Contracts\FileRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Illuminate\Support\Facades\Auth;
 
 class CourseController extends Controller
 {
@@ -15,6 +18,7 @@ class CourseController extends Controller
         private CourseRepositoryInterface $courses,
         private CourseGroupRepositoryInterface $groups,
         private UserRepositoryInterface $users,
+        private FileRepositoryInterface $files,
     ) {}
 
     public function index()
@@ -35,9 +39,18 @@ class CourseController extends Controller
 
     public function store(StoreCourseRequest $request)
     {
-        $this->courses->create($request->validated());
+        $course = $this->courses->create($request->safe()->except('files'));
 
-        return redirect()->route('admin.courses.index')->with('success', 'Course created.');
+        if ($request->hasFile('files')) {
+            $this->files->storeUploads(
+                $request->file('files'),
+                Course::class,
+                $course->id,
+                Auth::id(),
+            );
+        }
+
+        return redirect()->route('admin.courses.show', $course)->with('success', 'Course created.');
     }
 
     public function show(int $id)

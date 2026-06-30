@@ -7,7 +7,6 @@ use App\Repositories\Contracts\FileRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Str;
 
 class FileController extends Controller
 {
@@ -17,20 +16,12 @@ class FileController extends Controller
 
     public function store(StoreFileRequest $request)
     {
-        $uploaded = $request->file('file');
-        $filename = Str::uuid() . '.' . $uploaded->getClientOriginalExtension();
-        $path     = $uploaded->storeAs('uploads', $filename, 'private');
-
-        $this->files->create([
-            'fileable_type' => $request->validated('fileable_type'),
-            'fileable_id'   => $request->validated('fileable_id'),
-            'filename'      => $filename,
-            'original_name' => $uploaded->getClientOriginalName(),
-            'path'          => $path,
-            'mime_type'     => $uploaded->getMimeType(),
-            'size'          => $uploaded->getSize(),
-            'uploaded_by'   => Auth::id(),
-        ]);
+        $this->files->storeUploads(
+            [$request->file('file')],
+            $request->validated('fileable_type'),
+            $request->validated('fileable_id'),
+            Auth::id(),
+        );
 
         return back()->with('success', 'File uploaded.');
     }

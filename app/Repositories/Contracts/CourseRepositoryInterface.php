@@ -18,4 +18,7 @@ interface CourseRepositoryInterface
     public function getByGroup(int $groupId): Collection;
     public function getAll(): Collection;
     public function countPublished(): int;
+
+    /** Courses belonging to $teacherId that $studentId is enrolled in, with enrollment pivot. */
+    public function getStudentCoursesForTeacher(int $studentId, int $teacherId): Collection;
 }

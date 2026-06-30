@@ -18,6 +18,8 @@ class StoreCourseRequest extends FormRequest
             'description'  => ['nullable', 'string'],
             'group_id'     => ['nullable', 'integer', 'exists:course_groups,id'],
             'is_published' => ['boolean'],
+            'files'        => ['nullable', 'array'],
+            'files.*'      => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,png,jpg,jpeg,zip'],
         ];
     }
 }

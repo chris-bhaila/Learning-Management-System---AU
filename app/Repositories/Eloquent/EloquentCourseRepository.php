@@ -75,7 +75,11 @@ class EloquentCourseRepository implements CourseRepositoryInterface
             'students',
             fn($q) => $q->where('student_id', $studentId)
                 ->where('course_student.is_active', true)
-        )->where('is_published', true)->get();
+        )
+        ->where('is_published', true)
+        ->with('teacher')
+        ->withCount('units')
+        ->get();
     }
 
     public function getByGroup(int $groupId): Collection
@@ -91,5 +95,19 @@ class EloquentCourseRepository implements CourseRepositoryInterface
     public function countPublished(): int
     {
         return Course::where('is_published', true)->count();
+    }
+
+    public function getStudentCoursesForTeacher(int $studentId, int $teacherId): Collection
+    {
+        return Course::where('teacher_id', $teacherId)
+            ->whereHas('students', fn($q) => $q->where('student_id', $studentId))
+            ->with([
+                'group',
+                'students' => fn($q) => $q->where('users.id', $studentId)
+                                           ->withPivot(['is_active', 'enrolled_at']),
+            ])
+            ->withCount('units')
+            ->orderBy('title')
+            ->get();
     }
 }

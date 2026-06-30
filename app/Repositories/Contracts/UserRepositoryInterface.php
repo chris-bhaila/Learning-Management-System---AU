@@ -22,4 +22,13 @@ interface UserRepositoryInterface
     public function getRecent(int $limit = 10): Collection;
     public function updateAvatar(User $user, string $path): User;
     public function removeAvatar(User $user): User;
+
+    /** All students in a teacher's class, with pivot status and scoped course count. */
+    public function getStudentsForTeacher(int $teacherId): Collection;
+
+    /** A single student with teacher_student pivot data, or null if not in the class. */
+    public function getStudentWithTeacherPivot(int $studentId, int $teacherId): ?User;
+
+    /** All teachers whose class a student is enrolled in, with pivot status and enrolled course count. */
+    public function getTeachersForStudent(int $studentId): Collection;
 }

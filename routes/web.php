@@ -40,6 +40,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/users/{id}', [Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{id}', [Admin\UserController::class, 'update'])->name('users.update');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
+    Route::get('/users/{userId}/classes/{teacherId}', [Admin\UserController::class, 'showStudentClass'])->name('users.classes.show');
 
     // Courses
     Route::get('/courses', [Admin\CourseController::class, 'index'])->name('courses.index');
@@ -58,6 +59,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Tokens
     Route::get('/tokens', [Admin\TokenController::class, 'index'])->name('tokens.index');
+    Route::post('/tokens', [Admin\TokenController::class, 'store'])->name('tokens.store');
     Route::delete('/tokens/{id}', [Admin\TokenController::class, 'destroy'])->name('tokens.destroy');
 
     // Course Groups
@@ -91,8 +93,13 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/courses/{courseId}/units/reorder', [Teacher\UnitController::class, 'reorder'])->name('units.reorder');
 
     // Tokens
+    Route::get('/tokens', [Teacher\TokenController::class, 'index'])->name('tokens.index');
     Route::post('/tokens', [Teacher\TokenController::class, 'store'])->name('tokens.store');
     Route::delete('/tokens/{id}', [Teacher\TokenController::class, 'destroy'])->name('tokens.destroy');
+
+    // Students
+    Route::get('/students', [Teacher\StudentController::class, 'index'])->name('students.index');
+    Route::get('/students/{id}', [Teacher\StudentController::class, 'show'])->name('students.show');
 
     // Course Groups — no dedicated index, handled on dashboard or courses page
     Route::post('/groups', [Teacher\CourseGroupController::class, 'store'])->name('groups.store');

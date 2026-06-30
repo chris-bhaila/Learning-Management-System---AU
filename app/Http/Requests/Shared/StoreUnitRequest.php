@@ -17,6 +17,8 @@ class StoreUnitRequest extends FormRequest
             'title'   => ['required', 'string', 'max:255'],
             'content' => ['nullable', 'string'],
             'order'   => ['nullable', 'integer', 'min:0'],
+            'files'   => ['nullable', 'array'],
+            'files.*' => ['file', 'max:20480', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,png,jpg,jpeg,zip'],
         ];
     }
 }

@@ -232,11 +232,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fade-up">
 
         {{-- ═══ MAIN COLUMN ═══ --}}
-        <div class="lg:col-span-2 min-w-0 flex flex-col gap-5">
+        <div class="contents lg:col-span-2 lg:flex lg:flex-col lg:gap-5 lg:min-w-0">
 
             {{-- Description --}}
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 mt-4 overflow-hidden">
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-2 p-6 mt-4 overflow-hidden">
 
                 <p class="text-sm font-semibold text-on-surface mb-4" style="font-family: var(--font-display);">
                     Description
@@ -355,7 +355,7 @@
 
             {{-- ─── Units ─── --}}
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-3 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -503,7 +503,7 @@
                     },
                 }"
                 class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                       shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+                       shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-4 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -624,11 +624,11 @@
         </div>{{-- end main --}}
 
         {{-- ═══ SIDEBAR ═══ --}}
-        <div class="min-w-0 flex flex-col gap-5">
+        <div class="contents lg:flex lg:flex-col lg:gap-5 lg:min-w-0">
 
             {{-- ─── Course settings ─── --}}
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6">
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-1 p-6">
 
                 {{-- View --}}
                 <div x-show="!editing" class="flex flex-col gap-3"
@@ -730,193 +730,36 @@
                 </div>
             </div>
 
-            {{-- ─── Generate Token ─── --}}
-            <div x-data="{
-                    lifetimeValue: 30,
-                    lifetimeUnit: 'minutes',
-                    maxUses: 30,
-                    submittingToken: false,
-                    lifetimeOptions: [
-                        { value: 15,  unit: 'minutes', label: '15 minutes' },
-                        { value: 30,  unit: 'minutes', label: '30 minutes' },
-                        { value: 45,  unit: 'minutes', label: '45 minutes' },
-                        { value: 1,   unit: 'hours',   label: '1 hour' },
-                        { value: 2,   unit: 'hours',   label: '2 hours' },
-                        { value: 4,   unit: 'hours',   label: '4 hours' },
-                        { value: 6,   unit: 'hours',   label: '6 hours' },
-                        { value: 12,  unit: 'hours',   label: '12 hours' },
-                        { value: 24,  unit: 'hours',   label: '24 hours' },
-                        { value: 48,  unit: 'hours',   label: '48 hours' },
-                    ],
-                    setLifetime(option) {
-                        this.lifetimeValue = option.value;
-                        this.lifetimeUnit  = option.unit;
-                    },
-                    get selectedLabel() {
-                        const opt = this.lifetimeOptions.find(o => o.value === this.lifetimeValue && o.unit === this.lifetimeUnit);
-                        return opt ? opt.label : this.lifetimeValue + ' ' + this.lifetimeUnit;
-                    },
-                 }"
-                 class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)]">
-
-                <div class="px-6 py-4 border-b border-outline-variant/20">
-                    <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
-                        Generate Token
-                    </p>
-                    <p class="text-xs text-on-surface-variant mt-0.5">Create an enrollment link for students.</p>
-                </div>
-
-                <div class="p-5 flex flex-col gap-4">
-                    <input type="hidden" name="type" value="course" form="token-create-form">
-                    <input type="hidden" name="course_id" value="{{ $course->id }}" form="token-create-form">
-
-                    {{-- Lifetime picker --}}
-                    <div>
-                        <label class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
-                            Expires after
-                        </label>
-                        <div class="relative" x-data="{ open: false }" @click.outside="open = false">
-                            <button
-                                type="button"
-                                @click="open = !open"
-                                class="w-full flex items-center justify-between pl-4 pr-3 py-2.5
-                                       bg-surface-white border border-outline-variant/60 rounded-[16px]
-                                       text-sm text-on-surface cursor-pointer
-                                       focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
-                                       transition-colors hover:border-primary/50">
-                                <span x-text="selectedLabel">30 minutes</span>
-                                <span class="material-symbols-outlined text-outline text-[18px]"
-                                      :class="open ? 'rotate-180' : ''"
-                                      style="transition: transform 150ms ease">expand_more</span>
-                            </button>
-                            <div x-show="open" x-cloak
-                                 x-transition:enter="transition ease-out duration-150"
-                                 x-transition:enter-start="opacity-0 -translate-y-1 scale-95"
-                                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-                                 x-transition:leave="transition ease-in duration-100"
-                                 x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-                                 x-transition:leave-end="opacity-0 -translate-y-1 scale-95"
-                                 class="absolute z-10 mt-1 w-full bg-surface-white border border-outline-variant/40
-                                        rounded-[16px] shadow-lg overflow-hidden">
-                                <template x-for="opt in lifetimeOptions" :key="opt.label">
-                                    <button
-                                        type="button"
-                                        @click="setLifetime(opt); open = false"
-                                        :class="(lifetimeValue === opt.value && lifetimeUnit === opt.unit)
-                                            ? 'bg-gold/10 text-primary font-semibold'
-                                            : 'text-on-surface hover:bg-surface-container-low'"
-                                        class="w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer"
-                                        x-text="opt.label">
-                                    </button>
-                                </template>
-                            </div>
-                        </div>
-                        <input type="hidden" name="lifetime_value" :value="lifetimeValue" form="token-create-form">
-                        <input type="hidden" name="lifetime_unit" :value="lifetimeUnit" form="token-create-form">
-                    </div>
-
-                    {{-- Max uses --}}
-                    <div>
-                        <label for="token-max-uses"
-                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                            Max uses
-                        </label>
-                        <input
-                            id="token-max-uses"
-                            type="number"
-                            name="max_uses"
-                            x-model.number="maxUses"
-                            min="1" max="1000"
-                            form="token-create-form"
-                            class="w-full px-4 py-2.5 bg-surface-white border border-outline-variant/60
-                                   rounded-[16px] text-sm text-on-surface
-                                   focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary
-                                   transition-colors"
-                        >
-                    </div>
-
-                    <button type="submit"
-                            form="token-create-form"
-                            :disabled="submittingToken"
-                            class="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-gold text-primary
-                                   text-sm font-semibold rounded-[24px] hover:bg-gold/90
-                                   active:scale-[0.98] transition-all duration-150 cursor-pointer
-                                   disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
-                        <span class="material-symbols-outlined text-[18px]"
-                              :class="submittingToken ? 'animate-spin' : ''"
-                              x-text="submittingToken ? 'progress_activity' : 'key'">key</span>
-                        <span x-text="submittingToken ? 'Generating…' : 'Generate Token'">Generate Token</span>
-                    </button>
-                </div>
-            </div>
-
             {{-- ─── Course Tokens ─── --}}
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
-
-                <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
-                    <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
-                        Course Tokens
-                    </p>
-                    <span class="text-xs text-on-surface-variant">
-                        {{ $course->tokens->count() }} total
-                    </span>
-                </div>
-
-                @if($course->tokens->isEmpty())
-                    <div class="py-10 flex flex-col items-center gap-2 text-center px-4">
-                        <span class="material-symbols-outlined text-outline text-[28px] animate-float">key</span>
-                        <p class="text-xs text-on-surface-variant">No tokens generated yet.</p>
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-5 p-5
+                        flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-primary text-[18px]">key</span>
                     </div>
-                @else
-                    <ul class="divide-y divide-outline-variant/20">
-                        @foreach($course->tokens as $token)
-                        @php
-                            $expired       = $token->isExpired();
-                            $usesRemaining = max(0, $token->max_uses - $token->uses_count);
-                        @endphp
-                        <li class="px-5 py-3.5 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200">
-                            <div class="flex items-center justify-between gap-2 min-w-0 mb-1">
-                                <code class="text-xs font-mono text-primary bg-surface-container
-                                             px-2 py-0.5 rounded-lg tracking-wide min-w-0 truncate">
-                                    {{ $token->token_value }}
-                                </code>
-                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0
-                                             {{ $expired ? 'bg-surface-container text-on-surface-variant' : 'bg-gold/20 text-primary' }}">
-                                    <span class="w-1.5 h-1.5 rounded-full {{ $expired ? 'bg-outline-variant' : 'bg-gold' }}"></span>
-                                    {{ $expired ? 'Expired' : 'Active' }}
-                                </span>
-                            </div>
-                            <div class="flex items-center gap-2.5 flex-wrap justify-between">
-                                <div class="flex items-center gap-3 text-[11px] text-on-surface-variant flex-wrap">
-                                    <span class="flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-[13px]">schedule</span>
-                                        {{ $token->expires_at->format('M j, g:i A') }}
-                                    </span>
-                                    <span class="text-outline-variant/60">·</span>
-                                    <span class="flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-[13px]">group</span>
-                                        {{ $usesRemaining }}/{{ $token->max_uses }}
-                                    </span>
-                                </div>
-                                <button type="button"
-                                        onclick="confirmDelete('token', document.getElementById('delete-token-form-{{ $token->id }}'))"
-                                        class="inline-flex items-center gap-1 text-[11px] text-error shrink-0
-                                               hover:text-error/80 transition-colors cursor-pointer">
-                                    <span class="material-symbols-outlined text-[13px]">delete</span>
-                                    Revoke
-                                </button>
-                            </div>
-                        </li>
-                        @endforeach
-                    </ul>
-                @endif
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-on-surface">
+                            {{ $course->tokens->count() }} {{ Str::plural('token', $course->tokens->count()) }}
+                        </p>
+                        <p class="text-xs text-on-surface-variant">
+                            {{ $course->tokens->where(fn($t) => !$t->isExpired())->count() }} active
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ route('teacher.tokens.index') }}?course_id={{ $course->id }}#course-tokens"
+                   class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-on-surface-variant
+                          border border-outline-variant/60 rounded-[24px] shrink-0
+                          hover:bg-surface-container-low hover:text-primary
+                          transition-all duration-150 cursor-pointer">
+                    Manage tokens
+                    <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </a>
             </div>
 
             {{-- ─── Enrolled Students ─── --}}
             <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
-                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] order-7 overflow-hidden">
 
                 <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                     <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
@@ -964,12 +807,6 @@
 
 </form>
 
-{{-- Standalone token create form — outside #edit-course-form; fields linked via form="token-create-form" attribute --}}
-<form id="token-create-form" method="POST" action="{{ route('teacher.tokens.store') }}"
-      @submit="submittingToken = true" class="hidden">
-    @csrf
-</form>
-
 {{-- Standalone delete forms — outside #edit-course-form to prevent _method=DELETE polluting the PATCH submission --}}
 @foreach($course->units as $unit)
 <form id="delete-unit-form-{{ $unit->id }}" method="POST" action="{{ route('teacher.units.destroy', $unit->id) }}" class="hidden">
@@ -986,13 +823,6 @@
     <input type="hidden" name="is_published" value="{{ $unit->is_published ? '0' : '1' }}">
 </form>
 @endforeach
-@foreach($course->tokens as $token)
-<form id="delete-token-form-{{ $token->id }}" method="POST" action="{{ route('teacher.tokens.destroy', $token->id) }}" class="hidden">
-    @csrf
-    @method('DELETE')
-</form>
-@endforeach
-
 {{-- Standalone course file upload form — outside #edit-course-form; file input and button reference this via form= attribute. --}}
 <form id="upload-course-file-form" method="POST" action="{{ route('files.store') }}"
       enctype="multipart/form-data" class="hidden">

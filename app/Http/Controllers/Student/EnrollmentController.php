@@ -30,7 +30,7 @@ class EnrollmentController extends Controller
         if ($token->isClassToken()) {
             // Check not already in this teacher's class
             $alreadyEnrolled = $student->teachers()
-                ->where('teacher_id', $token->teacher_id)
+                ->where('teacher_student.teacher_id', $token->teacher_id)
                 ->exists();
 
             if ($alreadyEnrolled) {
@@ -44,8 +44,8 @@ class EnrollmentController extends Controller
         } else {
             // Course token — must be enrolled in teacher's class first
             $inClass = $student->teachers()
-                ->where('teacher_id', $token->teacher_id)
-                ->where('is_active', true)
+                ->where('teacher_student.teacher_id', $token->teacher_id)
+                ->where('teacher_student.is_active', true)
                 ->exists();
 
             if (!$inClass) {
@@ -53,7 +53,7 @@ class EnrollmentController extends Controller
             }
 
             $alreadyEnrolled = $student->enrolledCourses()
-                ->where('course_id', $token->course_id)
+                ->where('course_student.course_id', $token->course_id)
                 ->exists();
 
             if ($alreadyEnrolled) {

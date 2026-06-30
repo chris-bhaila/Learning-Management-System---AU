@@ -5,15 +5,19 @@ namespace App\Http\Controllers\Teacher;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Shared\StoreUnitRequest;
 use App\Http\Requests\Shared\UpdateUnitRequest;
+use App\Models\Unit;
 use App\Repositories\Contracts\UnitRepositoryInterface;
 use App\Repositories\Contracts\CourseRepositoryInterface;
+use App\Repositories\Contracts\FileRepositoryInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UnitController extends Controller
 {
     public function __construct(
         private UnitRepositoryInterface $units,
         private CourseRepositoryInterface $courses,
+        private FileRepositoryInterface $files,
     ) {}
 
     public function create(int $courseId)
@@ -34,7 +38,7 @@ class UnitController extends Controller
         $course = $this->courses->find($courseId);
         $this->authorize('update', $course);
 
-        $data              = $request->validated();
+        $data              = $request->safe()->except('files');
         $data['course_id'] = $courseId;
 
         if (empty($data['order'])) {
@@ -42,6 +46,15 @@ class UnitController extends Controller
         }
 
         $unit = $this->units->create($data);
+
+        if ($request->hasFile('files')) {
+            $this->files->storeUploads(
+                $request->file('files'),
+                Unit::class,
+                $unit->id,
+                Auth::id(),
+            );
+        }
 
         return redirect()->route('teacher.units.show', $unit->id)->with('success', 'Unit added.');
     }

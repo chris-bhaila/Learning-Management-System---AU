@@ -44,4 +44,39 @@ class EloquentTokenRepository implements TokenRepositoryInterface
     {
         return Token::with('teacher', 'course')->get();
     }
+
+    public function getClassTokensByTeacher(int $teacherId): Collection
+    {
+        return Token::where('teacher_id', $teacherId)
+            ->where('type', 'class')
+            ->latest()
+            ->get();
+    }
+
+    public function getCourseTokensByTeacher(int $teacherId): Collection
+    {
+        return Token::where('teacher_id', $teacherId)
+            ->where('type', 'course')
+            ->with('course')
+            ->latest()
+            ->get();
+    }
+
+    public function generateUniqueValue(string $type): string
+    {
+        $charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $length  = $type === 'class' ? 9 : 6;
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $value = '';
+            for ($i = 0; $i < $length; $i++) {
+                $value .= $charset[random_int(0, strlen($charset) - 1)];
+            }
+            if (!Token::withTrashed()->where('token_value', $value)->exists()) {
+                return $value;
+            }
+        }
+
+        throw new \RuntimeException('Failed to generate a unique token value after 5 attempts.');
+    }
 }

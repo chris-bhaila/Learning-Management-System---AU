@@ -14,7 +14,7 @@ class EnrollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token_value' => ['required', 'string', 'min:8', 'max:32'],
+            'token_value' => ['required', 'string', 'min:6', 'max:12'],
         ];
     }
 

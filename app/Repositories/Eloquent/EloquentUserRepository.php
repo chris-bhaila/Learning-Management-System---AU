@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class EloquentUserRepository implements UserRepositoryInterface
@@ -115,6 +116,59 @@ class EloquentUserRepository implements UserRepositoryInterface
         ]);
 
         return $user->fresh();
+    }
+
+    public function getStudentsForTeacher(int $teacherId): Collection
+    {
+        return User::select(
+                'users.*',
+                'teacher_student.is_active as class_is_active',
+                'teacher_student.enrolled_at as class_enrolled_at'
+            )
+            ->join('teacher_student', function ($join) use ($teacherId) {
+                $join->on('teacher_student.student_id', '=', 'users.id')
+                     ->where('teacher_student.teacher_id', '=', $teacherId);
+            })
+            ->withCount([
+                'enrolledCourses as teacher_course_count' => fn($q) =>
+                    $q->where('courses.teacher_id', $teacherId),
+            ])
+            ->orderBy('users.name')
+            ->get();
+    }
+
+    public function getStudentWithTeacherPivot(int $studentId, int $teacherId): ?User
+    {
+        return User::select(
+                'users.*',
+                'teacher_student.is_active as class_is_active',
+                'teacher_student.enrolled_at as class_enrolled_at'
+            )
+            ->join('teacher_student', function ($join) use ($teacherId) {
+                $join->on('teacher_student.student_id', '=', 'users.id')
+                     ->where('teacher_student.teacher_id', '=', $teacherId);
+            })
+            ->where('users.id', $studentId)
+            ->first();
+    }
+
+    public function getTeachersForStudent(int $studentId): Collection
+    {
+        return User::select(
+                'users.*',
+                'teacher_student.is_active as class_is_active',
+                'teacher_student.enrolled_at as class_enrolled_at'
+            )
+            ->join('teacher_student', function ($join) use ($studentId) {
+                $join->on('teacher_student.teacher_id', '=', 'users.id')
+                     ->where('teacher_student.student_id', '=', $studentId);
+            })
+            ->withCount([
+                'courses as enrolled_course_count' => fn($q) =>
+                    $q->whereHas('students', fn($q2) => $q2->where('student_id', $studentId)),
+            ])
+            ->orderBy('users.name')
+            ->get();
     }
 
     public function getRoleCounts(): array

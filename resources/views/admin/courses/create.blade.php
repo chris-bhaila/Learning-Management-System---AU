@@ -47,6 +47,7 @@
 <form
     method="POST"
     action="{{ route('admin.courses.store') }}"
+    enctype="multipart/form-data"
     @submit="onSubmit"
     x-data="{
         teacherId: '{{ old('teacher_id', '') }}',
@@ -58,6 +59,43 @@
         errors: {
             title:      '{{ addslashes($errors->first('title')) }}',
             teacher_id: '{{ addslashes($errors->first('teacher_id')) }}',
+        },
+
+        fileList: [],
+        fileErrors: [],
+        allowedExts: ['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','png','jpg','jpeg','zip'],
+        maxBytes: 20971520,
+
+        onFilesChange(event) {
+            const inputs = Array.from(event.target.files);
+            this.fileErrors = [];
+            this.fileList = [];
+            for (const file of inputs) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!this.allowedExts.includes(ext)) {
+                    this.fileErrors = ['File type not allowed. Accepted: PDF, Word, Excel, PowerPoint, text, images, ZIP.'];
+                    event.target.value = '';
+                    return;
+                }
+                if (file.size > this.maxBytes) {
+                    this.fileErrors = ['Each file must be 20 MB or smaller.'];
+                    event.target.value = '';
+                    return;
+                }
+                this.fileList.push({ name: file.name, size: file.size });
+            }
+        },
+
+        clearFiles() {
+            this.fileList = [];
+            this.fileErrors = [];
+            this.$refs.fileInput.value = '';
+        },
+
+        formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         },
 
         get filteredGroups() {
@@ -358,6 +396,78 @@
 
             <input type="hidden" name="is_published" :value="published ? '1' : '0'">
         </div>
+    </div>
+
+    {{-- ═══ SECTION 4 — Attachments ═══ --}}
+    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up mb-2">
+
+        <h2 class="text-sm font-semibold text-on-surface mb-1" style="font-family: var(--font-display);">
+            Attachments
+            <span class="ml-1 text-[10px] font-normal normal-case text-outline">(optional)</span>
+        </h2>
+        <p class="text-xs text-on-surface-variant mb-4">
+            PDF, Word, Excel, PowerPoint, images, text files, or ZIP — up to 20 MB each.
+        </p>
+
+        <label for="course-file-upload"
+               class="flex flex-col items-center justify-center gap-2 w-full px-4 py-8
+                      border-2 border-dashed border-outline-variant/60 rounded-[16px]
+                      cursor-pointer hover:border-primary hover:bg-surface-container-low
+                      transition-colors duration-150 group">
+            <span class="material-symbols-outlined text-[28px] text-outline group-hover:text-primary transition-colors">
+                upload_file
+            </span>
+            <span class="text-sm text-on-surface-variant group-hover:text-on-surface transition-colors">
+                Click to select files
+            </span>
+            <input
+                id="course-file-upload"
+                type="file"
+                name="files[]"
+                multiple
+                x-ref="fileInput"
+                @change="onFilesChange($event)"
+                class="hidden"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg,.zip"
+            >
+        </label>
+
+        <div x-show="fileErrors.length > 0"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 -translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="mt-3" x-cloak>
+            <template x-for="err in fileErrors" :key="err">
+                <p class="text-xs text-error" x-text="err"></p>
+            </template>
+        </div>
+
+        <div x-show="fileList.length > 0"
+             x-transition:enter="transition ease-out duration-150"
+             x-transition:enter-start="opacity-0 translate-y-1"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             class="mt-4" x-cloak>
+            <div class="flex items-center justify-between mb-2">
+                <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                    Selected (<span x-text="fileList.length"></span>)
+                </p>
+                <button type="button"
+                        @click="clearFiles()"
+                        class="text-xs text-on-surface-variant hover:text-error transition-colors cursor-pointer">
+                    Clear all
+                </button>
+            </div>
+            <ul class="space-y-1.5">
+                <template x-for="(file, index) in fileList" :key="index">
+                    <li class="flex items-center gap-2 px-3 py-2 bg-surface-container-low rounded-[12px]">
+                        <span class="material-symbols-outlined text-[18px] text-outline shrink-0">description</span>
+                        <span class="text-sm text-on-surface min-w-0 truncate" x-text="file.name"></span>
+                        <span class="text-xs text-on-surface-variant shrink-0 ml-auto" x-text="formatSize(file.size)"></span>
+                    </li>
+                </template>
+            </ul>
+        </div>
+
     </div>
 
     {{-- ═══ ACTIONS ═══ --}}

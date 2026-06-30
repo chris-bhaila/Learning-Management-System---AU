@@ -90,6 +90,12 @@
                 Courses
             </a>
 
+            <a href="{{ Route::has('admin.tokens.index') ? route('admin.tokens.index') : '#' }}"
+               class="nav-item {{ request()->routeIs('admin.tokens.*') ? 'active' : '' }}">
+                <span class="material-symbols-outlined text-[20px]">key</span>
+                Tokens
+            </a>
+
             <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 System
             </p>

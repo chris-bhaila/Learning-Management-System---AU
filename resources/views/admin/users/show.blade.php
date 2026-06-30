@@ -217,76 +217,93 @@
     </div>
 
 @else
-    {{-- ══ STUDENT: enrolled courses ══ --}}
-    @php $enrolledCourses = $subject->enrolledCourses; @endphp
+    {{-- ══ STUDENT: enrolled classes ══ --}}
+    @php $enrolledTeachers = $subject->getRelation('enrolledTeachers'); @endphp
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
                 shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden animate-fade-up">
 
         <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
             <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
-                Enrolled Courses
+                Enrolled Classes
             </p>
             <span class="text-xs text-on-surface-variant">
-                {{ $enrolledCourses->count() }} {{ Str::plural('course', $enrolledCourses->count()) }}
+                {{ $enrolledTeachers->count() }} {{ Str::plural('class', $enrolledTeachers->count()) }}
             </span>
         </div>
 
-        @if($enrolledCourses->isEmpty())
+        @if($enrolledTeachers->isEmpty())
             <div class="py-14 flex flex-col items-center gap-3 text-center px-4">
                 <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center animate-float">
                     <span class="material-symbols-outlined text-outline text-[24px]">school</span>
                 </div>
-                <p class="text-sm font-medium text-on-surface">Not enrolled in any courses</p>
-                <p class="text-xs text-on-surface-variant">This student hasn't joined any courses yet.</p>
+                <p class="text-sm font-medium text-on-surface">Not enrolled in any classes</p>
+                <p class="text-xs text-on-surface-variant">This student hasn't joined a teacher's class yet.</p>
             </div>
         @else
             <ul class="divide-y divide-outline-variant/20">
-                @foreach($enrolledCourses as $course)
+                @foreach($enrolledTeachers as $teacher)
                     @php
-                        $enrollmentActive = $course->pivot->is_active ?? true;
-                        $enrolledAt       = $course->pivot->enrolled_at
-                                                ? \Carbon\Carbon::parse($course->pivot->enrolled_at)->format('d M Y')
-                                                : '—';
+                        $classActive = (bool) $teacher->class_is_active;
+                        $joinedAt    = $teacher->class_enrolled_at
+                                           ? \Carbon\Carbon::parse($teacher->class_enrolled_at)->format('d M Y')
+                                           : '—';
                     @endphp
-                    <li class="flex items-center gap-4 px-6 py-4 min-w-0
-                               hover:bg-surface-container-low/40 transition-colors duration-200">
+                    <li>
+                        <a href="{{ route('admin.users.classes.show', [$subject->id, $teacher->id]) }}"
+                           class="flex items-center gap-4 px-6 py-4 min-w-0
+                                  hover:bg-surface-container-low/40 transition-colors duration-200
+                                  cursor-pointer group">
 
-                        {{-- Enrollment status dot --}}
-                        <span class="w-2 h-2 rounded-full shrink-0
-                                     {{ $enrollmentActive ? 'bg-green-500' : 'bg-outline-variant' }}"
-                              title="{{ $enrollmentActive ? 'Access active' : 'Access revoked' }}">
-                        </span>
+                            {{-- Teacher avatar --}}
+                            <div class="w-9 h-9 rounded-full shrink-0 overflow-hidden
+                                        bg-gold/20 flex items-center justify-center">
+                                @if($teacher->avatarUrl())
+                                    <img src="{{ $teacher->avatarUrl() }}"
+                                         alt="{{ $teacher->name }}"
+                                         class="w-full h-full object-cover">
+                                @else
+                                    <span class="text-xs font-semibold text-on-gold"
+                                          style="font-family: var(--font-display);">
+                                        {{ strtoupper(substr($teacher->name, 0, 1)) }}
+                                    </span>
+                                @endif
+                            </div>
 
-                        {{-- Title + meta --}}
-                        <div class="flex-1 min-w-0">
-                            <a href="{{ route('admin.courses.show', $course->id) }}"
-                               class="text-sm font-medium text-on-surface hover:text-gold
-                                      transition-colors truncate block cursor-pointer">
-                                {{ $course->title }}
-                            </a>
-                            <p class="text-xs text-on-surface-variant mt-0.5 flex items-center gap-2 flex-wrap">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[13px]">person</span>
-                                    {{ $course->teacher?->name ?? '—' }}
-                                </span>
-                                <span class="text-outline-variant/60">·</span>
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[13px]">menu_book</span>
-                                    {{ $course->units_count }} {{ Str::plural('unit', $course->units_count) }}
-                                </span>
-                                <span class="text-outline-variant/60">·</span>
-                                <span>Enrolled {{ $enrolledAt }}</span>
-                                @unless($enrollmentActive)
+                            {{-- Teacher name + meta --}}
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-on-surface truncate">
+                                    {{ $teacher->name }}'s Class
+                                </p>
+                                <p class="text-xs text-on-surface-variant mt-0.5 flex items-center gap-2 flex-wrap">
+                                    <span>Joined {{ $joinedAt }}</span>
                                     <span class="text-outline-variant/60">·</span>
-                                    <span class="text-error text-[11px] font-medium">Access revoked</span>
-                                @endunless
-                            </p>
-                        </div>
+                                    <span>
+                                        {{ $teacher->enrolled_course_count }}
+                                        {{ Str::plural('course', $teacher->enrolled_course_count) }} enrolled
+                                    </span>
+                                </p>
+                            </div>
 
-                        {{-- View arrow --}}
-                        <a href="{{ route('admin.courses.show', $course->id) }}"
-                           class="shrink-0 text-outline hover:text-primary transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                            {{-- Class status badge --}}
+                            <div class="shrink-0 flex items-center gap-3">
+                                @if($classActive)
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full
+                                                 text-xs font-medium bg-gold/20 text-primary">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
+                                        Active
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full
+                                                 text-xs font-medium bg-surface-container text-on-surface-variant">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-outline-variant"></span>
+                                        Inactive
+                                    </span>
+                                @endif
+                                <span class="material-symbols-outlined text-[18px] text-outline
+                                             group-hover:text-primary transition-colors">
+                                    chevron_right
+                                </span>
+                            </div>
                         </a>
                     </li>
                 @endforeach
