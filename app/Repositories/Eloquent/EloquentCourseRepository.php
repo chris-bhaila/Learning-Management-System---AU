@@ -110,4 +110,17 @@ class EloquentCourseRepository implements CourseRepositoryInterface
             ->orderBy('title')
             ->get();
     }
+
+    public function getEnrolledByStudentForTeacher(int $studentId, int $teacherId): Collection
+    {
+        return Course::where('teacher_id', $teacherId)
+            ->where('is_published', true)
+            ->whereHas('students', fn($q) => $q
+                ->where('student_id', $studentId)
+                ->where('course_student.is_active', true)
+            )
+            ->withCount('units')
+            ->orderBy('title')
+            ->get();
+    }
 }

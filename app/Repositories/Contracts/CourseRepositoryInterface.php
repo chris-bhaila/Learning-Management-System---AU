@@ -21,4 +21,7 @@ interface CourseRepositoryInterface
 
     /** Courses belonging to $teacherId that $studentId is enrolled in, with enrollment pivot. */
     public function getStudentCoursesForTeacher(int $studentId, int $teacherId): Collection;
+
+    /** Published courses belonging to $teacherId that $studentId is actively enrolled in (student-facing). */
+    public function getEnrolledByStudentForTeacher(int $studentId, int $teacherId): Collection;
 }

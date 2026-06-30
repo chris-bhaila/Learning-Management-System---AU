@@ -1,29 +1,20 @@
 {{--
     Enroll with Token modal — shared by Dashboard and My Courses pages.
-
-    Issue 1 fix: The inner panel lives in <template x-if="open"> rather than
-    being always in the DOM behind x-show. This ensures the x-token-input
-    components are only initialized while the modal is actually visible —
-    never in a hidden/zero-size container. Each close destroys them; each
-    open creates fresh instances with values = Array(N).fill('').
-
-    Standard form POST to student.enroll. Re-opens on server error via
-    old('_modal') === 'enroll', matching the existing admin modal pattern.
-    Success closes the modal (full page reload) and the flash toast fires.
-
-    Trigger:  openEnrollModal()  (defined in @push('scripts') below)
+    Single plain text input handles both class (9-char) and course (6-char) tokens.
+    The backend determines token type automatically from the submitted value.
 --}}
 @php
     $reopenModal = old('_modal') === 'enroll';
-    $savedType   = old('_token_type', 'class');
+    $oldToken    = old('token_value', '');
     $tokenError  = $reopenModal ? ($errors->first('token_value') ?? '') : '';
 @endphp
 
-{{-- ── Backdrop (x-show handles the fade, x-if on the panel handles initialization) ── --}}
+{{-- ── Backdrop ── --}}
 <div
     x-data="{
         open:       {{ $reopenModal ? 'true' : 'false' }},
-        tokenType:  '{{ $savedType }}',
+        tokenType:  'class',
+        tokenValue: @js(strtoupper($oldToken)),
         submitting: false,
         errorMsg:   @js($tokenError),
         shaking:    false,
@@ -33,28 +24,13 @@
             if (this.open) {
                 document.body.classList.add('overflow-hidden');
                 this.lockBg();
-                // Error-reopen path: panel x-if stamps synchronously since open=true,
-                // but inner tokenType x-if needs an extra tick to stamp the input.
                 this.$nextTick(() => {
                     this.$nextTick(() => {
-                        this.$el.querySelector('[data-token-box]')?.focus();
+                        this.$el.querySelector('#tokenInput')?.focus();
                         if (this.errorMsg) this.triggerShake();
                     });
                 });
             }
-        },
-
-        setType(type) {
-            if (this.tokenType === type) return;
-            this.tokenType = type;
-            this.errorMsg  = '';
-            this.shaking   = false;
-            // Focus first box of the newly rendered input after x-if swaps it in
-            this.$nextTick(() => {
-                this.$nextTick(() => {
-                    this.$el.querySelector('[data-token-box]')?.focus();
-                });
-            });
         },
 
         triggerShake() {
@@ -64,9 +40,15 @@
         },
 
         onSubmit(event) {
-            const hidden = this.$el.querySelector('input[name=token_value]');
-            if (!hidden || !hidden.value.trim()) {
+            const val = this.tokenValue.trim();
+            if (!val) {
                 this.errorMsg = 'Please enter your token.';
+                this.triggerShake();
+                event.preventDefault();
+                return;
+            }
+            if (val.length < 6 || val.length > 9) {
+                this.errorMsg = 'Tokens are 6 characters (course) or 9 characters (class).';
                 this.triggerShake();
                 event.preventDefault();
                 return;
@@ -95,7 +77,6 @@
             this.submitting = false;
             document.body.classList.remove('overflow-hidden');
             this.unlockBg();
-            // Return focus to whichever element opened the modal
             const target = this._opener;
             setTimeout(() => { target?.focus(); }, 200);
         },
@@ -140,9 +121,13 @@
     @open-enroll-modal.window="
         _opener = document.activeElement;
         open = true;
+        tokenType = 'class';
+        tokenValue = '';
+        errorMsg = '';
+        submitting = false;
         document.body.classList.add('overflow-hidden');
         lockBg();
-        $nextTick(() => $nextTick(() => { $el.querySelector('[data-token-box]')?.focus(); }))
+        $nextTick(() => $nextTick(() => { $el.querySelector('#tokenInput')?.focus(); }))
     "
     @keydown.escape.window="if(open) close()"
     @keydown.tab="if(open) trapFocus($event)"
@@ -152,12 +137,6 @@
     aria-labelledby="enrollModalTitle"
     class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
 >
-    {{--
-        Inner panel lives in x-if="open" so that x-token-input components
-        are created fresh on each modal open and destroyed on close.
-        x-transition on the root div inside the template plays the scale
-        animation — Alpine v3 honours x-transition on x-if stamped roots.
-    --}}
     <template x-if="open">
         <div
             x-transition:enter="transition ease-out duration-200"
@@ -166,7 +145,7 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100 scale-100 translate-y-0"
             x-transition:leave-end="opacity-0 scale-95 translate-y-1"
-            class="w-full max-w-xl"
+            class="w-full max-w-md"
         >
             <x-card class="overflow-hidden">
 
@@ -200,35 +179,32 @@
                     novalidate
                 >
                     @csrf
-                    <input type="hidden" name="_modal"      value="enroll">
-                    <input type="hidden" name="_token_type" :value="tokenType">
+                    <input type="hidden" name="_modal" value="enroll">
 
-                    <div class="px-6 py-5 space-y-5">
+                    <div class="px-6 py-5 space-y-4">
 
                         {{-- ── Class / Course toggle ── --}}
-                        <div class="flex items-center gap-1 p-1 bg-surface-container rounded-[16px]">
+                        <div class="flex items-center gap-2">
                             <button
                                 type="button"
-                                @click="setType('class')"
+                                @click="tokenType = 'class'; errorMsg = ''; $nextTick(() => $el.closest('form').querySelector('#tokenInput').focus())"
                                 :class="tokenType === 'class'
-                                    ? 'bg-surface-white text-primary shadow-sm'
-                                    : 'text-on-surface-variant hover:text-primary'"
-                                class="flex-1 flex items-center justify-center gap-1.5
-                                       px-4 py-2 rounded-[12px] text-sm font-medium
-                                       transition-all duration-150 cursor-pointer"
+                                    ? 'bg-gold text-primary shadow-sm'
+                                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium
+                                       cursor-pointer transition-all duration-150"
                             >
                                 <span class="material-symbols-outlined text-[16px]">group</span>
                                 Class
                             </button>
                             <button
                                 type="button"
-                                @click="setType('course')"
+                                @click="tokenType = 'course'; errorMsg = ''; $nextTick(() => $el.closest('form').querySelector('#tokenInput').focus())"
                                 :class="tokenType === 'course'
-                                    ? 'bg-surface-white text-primary shadow-sm'
-                                    : 'text-on-surface-variant hover:text-primary'"
-                                class="flex-1 flex items-center justify-center gap-1.5
-                                       px-4 py-2 rounded-[12px] text-sm font-medium
-                                       transition-all duration-150 cursor-pointer"
+                                    ? 'bg-gold text-primary shadow-sm'
+                                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium
+                                       cursor-pointer transition-all duration-150"
                             >
                                 <span class="material-symbols-outlined text-[16px]">library_books</span>
                                 Course
@@ -236,33 +212,34 @@
                         </div>
 
                         {{-- ── Token input ── --}}
-                        {{--
-                            x-if destroys/recreates the token-input component on toggle,
-                            giving a natural values-array reset. Only one hidden
-                            input[name=token_value] exists in the DOM at any time.
-                        --}}
                         <div>
-                            <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-3 text-center">
+                            <label for="tokenInput"
+                                   class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-2">
                                 Token
-                            </p>
+                            </label>
 
-                            {{-- Centered wrapper; overflow-x-auto as safety net on very narrow screens --}}
-                            <div :class="{ 'animate-shake': shaking }"
-                                 class="flex justify-center overflow-x-auto pb-1">
-                                <template x-if="tokenType === 'class'">
-                                    <div>
-                                        <x-token-input :length="9" :groups="[3,3,3]" name="token_value" />
-                                    </div>
-                                </template>
-                                <template x-if="tokenType === 'course'">
-                                    <div>
-                                        <x-token-input :length="6" :groups="[2,2,2]" name="token_value" />
-                                    </div>
-                                </template>
+                            <div :class="{ 'animate-shake': shaking }">
+                                <input
+                                    id="tokenInput"
+                                    type="text"
+                                    name="token_value"
+                                    autocomplete="off"
+                                    :maxlength="tokenType === 'class' ? 9 : 6"
+                                    :placeholder="tokenType === 'class' ? 'e.g. AX1BY2CZ3' : 'e.g. AX1BY2'"
+                                    x-model="tokenValue"
+                                    @input="tokenValue = $event.target.value.toUpperCase(); errorMsg = ''"
+                                    class="w-full px-4 py-2.5 text-base font-mono font-semibold tracking-widest uppercase
+                                           text-primary bg-surface-white
+                                           border border-outline-variant/60 rounded-[16px]
+                                           placeholder:text-outline-variant/40 placeholder:font-normal placeholder:tracking-normal
+                                           focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none
+                                           transition-all duration-150"
+                                    data-iodine-rules='["required","minLength:6","maxLength:9","regExp:^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]+$"]'
+                                >
                             </div>
 
                             {{-- Error --}}
-                            <div x-show="errorMsg" x-cloak class="mt-3 flex justify-center" aria-live="assertive">
+                            <div x-show="errorMsg" x-cloak class="mt-2" aria-live="assertive">
                                 <p class="text-xs font-medium text-error flex items-center gap-1">
                                     <span class="material-symbols-outlined text-[14px] shrink-0">error</span>
                                     <span x-text="errorMsg"></span>
@@ -271,16 +248,12 @@
                         </div>
 
                         {{-- ── Contextual hint ── --}}
-                        <div class="text-xs text-on-surface-variant text-center">
-                            <p x-show="tokenType === 'class'">
-                                <span class="font-semibold text-on-surface">Class token (9 chars)</span>
-                                — joins you to a teacher's class. Do this before enrolling in courses.
-                            </p>
-                            <p x-show="tokenType === 'course'" x-cloak>
-                                <span class="font-semibold text-on-surface">Course token (6 chars)</span>
-                                — enrolls you in a specific course. You must be in the class first.
-                            </p>
-                        </div>
+                        <p class="text-xs text-on-surface-variant" x-show="tokenType === 'class'">
+                            <span class="font-semibold text-on-surface">Class token (9 characters)</span> — joins you to a teacher's class. Do this before enrolling in courses.
+                        </p>
+                        <p class="text-xs text-on-surface-variant" x-show="tokenType === 'course'" x-cloak>
+                            <span class="font-semibold text-on-surface">Course token (6 characters)</span> — enrolls you in a specific course. You must be in the class first.
+                        </p>
 
                     </div>
 

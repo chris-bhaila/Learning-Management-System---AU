@@ -14,7 +14,7 @@ class EnrollRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'token_value' => ['required', 'string', 'min:6', 'max:12'],
+            'token_value' => ['required', 'string', 'min:6', 'max:9', 'regex:/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]+$/'],
         ];
     }
 
@@ -22,6 +22,9 @@ class EnrollRequest extends FormRequest
     {
         return [
             'token_value.required' => 'Please enter an enrollment token.',
+            'token_value.min'      => 'Tokens are at least 6 characters.',
+            'token_value.max'      => 'Tokens are at most 9 characters.',
+            'token_value.regex'    => 'Token contains invalid characters.',
         ];
     }
 }

@@ -161,14 +161,35 @@ class EloquentUserRepository implements UserRepositoryInterface
             )
             ->join('teacher_student', function ($join) use ($studentId) {
                 $join->on('teacher_student.teacher_id', '=', 'users.id')
-                     ->where('teacher_student.student_id', '=', $studentId);
+                     ->where('teacher_student.student_id', '=', $studentId)
+                     ->where('teacher_student.is_active', true);
             })
             ->withCount([
-                'courses as enrolled_course_count' => fn($q) =>
-                    $q->whereHas('students', fn($q2) => $q2->where('student_id', $studentId)),
+                'courses as enrolled_course_count' => fn($q) => $q
+                    ->where('is_published', true)
+                    ->whereHas('students', fn($q2) => $q2
+                        ->where('student_id', $studentId)
+                        ->where('course_student.is_active', true)
+                    ),
             ])
             ->orderBy('users.name')
             ->get();
+    }
+
+    public function getTeacherWithStudentPivot(int $teacherId, int $studentId): ?User
+    {
+        return User::select(
+                'users.*',
+                'teacher_student.is_active as class_is_active',
+                'teacher_student.enrolled_at as class_enrolled_at'
+            )
+            ->join('teacher_student', function ($join) use ($studentId) {
+                $join->on('teacher_student.teacher_id', '=', 'users.id')
+                     ->where('teacher_student.student_id', '=', $studentId)
+                     ->where('teacher_student.is_active', true);
+            })
+            ->where('users.id', $teacherId)
+            ->first();
     }
 
     public function getRoleCounts(): array

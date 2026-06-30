@@ -114,6 +114,8 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
     Route::get('/courses', [Student\CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{id}', [Student\CourseController::class, 'show'])->name('courses.show');
     Route::get('/courses/{courseId}/units/{unitId}', [Student\CourseController::class, 'showUnit'])->name('units.show');
+    Route::get('/classes', [Student\ClassController::class, 'index'])->name('classes.index');
+    Route::get('/classes/{teacherId}', [Student\ClassController::class, 'show'])->name('classes.show');
 });
 
 // Settings — shared across all roles

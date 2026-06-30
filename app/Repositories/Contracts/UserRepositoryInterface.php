@@ -29,6 +29,9 @@ interface UserRepositoryInterface
     /** A single student with teacher_student pivot data, or null if not in the class. */
     public function getStudentWithTeacherPivot(int $studentId, int $teacherId): ?User;
 
-    /** All teachers whose class a student is enrolled in, with pivot status and enrolled course count. */
+    /** All active teachers whose class a student is enrolled in, with enrolled published course count. */
     public function getTeachersForStudent(int $studentId): Collection;
+
+    /** Returns the teacher if the student has an active class relationship with them, or null. */
+    public function getTeacherWithStudentPivot(int $teacherId, int $studentId): ?User;
 }

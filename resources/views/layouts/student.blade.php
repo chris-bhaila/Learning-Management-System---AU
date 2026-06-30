@@ -65,6 +65,12 @@
                 Learning
             </p>
 
+            <a href="{{ route('student.classes.index') }}"
+               class="nav-item {{ request()->routeIs('student.classes.*') ? 'active' : '' }}">
+                <span class="material-symbols-outlined text-[20px]">school</span>
+                My Classes
+            </a>
+
             <a href="{{ route('student.courses.index') }}"
                class="nav-item {{ request()->routeIs('student.courses.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">library_books</span>

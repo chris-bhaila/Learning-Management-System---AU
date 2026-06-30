@@ -152,7 +152,7 @@
                 <button
                     type="submit"
                     form="class-token-create-form"
-                    @click="submitting = true"
+                    @click="setTimeout(() => submitting = true, 0)"
                     :disabled="submitting"
                     class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gold text-primary
                            text-sm font-semibold rounded-[24px] hover:bg-gold/90
@@ -195,11 +195,11 @@
                         <div class="flex items-center gap-2 min-w-0">
                             <code class="text-xs font-mono font-semibold text-primary bg-surface-container
                                          px-2.5 py-1 rounded-lg tracking-widest min-w-0 truncate">
-                                {{ $token->formattedValue() }}
+                                {{ $token->token_value }}
                             </code>
                             <button
                                 type="button"
-                                @click="navigator.clipboard.writeText('{{ $token->formattedValue() }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                @click="navigator.clipboard.writeText('{{ $token->token_value }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
                                 class="shrink-0 inline-flex items-center gap-1 text-[11px] text-outline
                                        hover:text-primary transition-colors cursor-pointer"
                                 :title="copied ? 'Copied!' : 'Copy token'">
@@ -217,7 +217,7 @@
                         <div class="flex items-center gap-3 text-[11px] text-on-surface-variant flex-wrap">
                             <span class="flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[13px]">schedule</span>
-                                {{ $token->expires_at->format('M j, g:i A') }}
+                                {{ $token->expires_at->diffForHumans() }}
                             </span>
                             <span class="text-outline-variant/60">·</span>
                             <span class="flex items-center gap-1">
@@ -383,7 +383,7 @@
                         <button
                             type="submit"
                             form="course-token-create-form"
-                            @click="submitting = true"
+                            @click="setTimeout(() => submitting = true, 0)"
                             :disabled="submitting || !courseId"
                             class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gold text-primary
                                    text-sm font-semibold rounded-[24px] hover:bg-gold/90
@@ -428,11 +428,11 @@
                         <div class="flex items-center gap-2 min-w-0">
                             <code class="text-xs font-mono font-semibold text-primary bg-surface-container
                                          px-2.5 py-1 rounded-lg tracking-widest min-w-0 truncate">
-                                {{ $token->formattedValue() }}
+                                {{ $token->token_value }}
                             </code>
                             <button
                                 type="button"
-                                @click="navigator.clipboard.writeText('{{ $token->formattedValue() }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                @click="navigator.clipboard.writeText('{{ $token->token_value }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
                                 class="shrink-0 inline-flex items-center gap-1 text-[11px] text-outline
                                        hover:text-primary transition-colors cursor-pointer"
                                 :title="copied ? 'Copied!' : 'Copy token'">
@@ -458,7 +458,7 @@
                             @endif
                             <span class="flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[13px]">schedule</span>
-                                {{ $token->expires_at->format('M j, g:i A') }}
+                                {{ $token->expires_at->diffForHumans() }}
                             </span>
                             <span class="text-outline-variant/60">·</span>
                             <span class="flex items-center gap-1">
