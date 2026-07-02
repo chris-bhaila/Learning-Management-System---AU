@@ -23,18 +23,18 @@ class CourseController extends Controller
 
     public function show(int $id)
     {
-        $course = $this->courses->find($id);
+        $course = $this->courses->findWithRelations($id);
         $this->authorize('view', $course);
 
         return view('student.courses.show', [
             'course' => $course,
-            'units'  => $this->units->getByCourse($id),
+            'units'  => $course->units->where('is_published', true)->values(),
         ]);
     }
 
     public function showUnit(int $courseId, int $unitId)
     {
-        $course = $this->courses->find($courseId);
+        $course = $this->courses->findWithRelations($courseId);
         $this->authorize('view', $course);
 
         $unit = $this->units->find($unitId);

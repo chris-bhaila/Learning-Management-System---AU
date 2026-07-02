@@ -493,7 +493,7 @@
                                     in_array($ext, ['doc','docx','xls','xlsx','ppt','pptx']) => 'office',
                                     default                                         => null,
                                 };
-                                $canView = $viewType !== null && !($viewType === 'office' && app()->environment('local'));
+                                $canView = $viewType !== null;
                             @endphp
                             <li class="flex items-center gap-3 px-6 py-3.5 min-w-0
                                        hover:bg-surface-container-low/40 transition-colors duration-200">
