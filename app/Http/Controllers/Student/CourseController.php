@@ -38,6 +38,7 @@ class CourseController extends Controller
         $this->authorize('view', $course);
 
         $unit = $this->units->find($unitId);
+        abort_if(is_null($unit) || $unit->course_id !== $courseId, 404);
 
         return view('student.units.show', compact('course', 'unit'));
     }

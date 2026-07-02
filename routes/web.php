@@ -116,7 +116,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 // Student
 Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [Student\DashboardController::class, 'index'])->name('dashboard');
-    Route::post('/enroll', [Student\EnrollmentController::class, 'store'])->name('enroll');
+    Route::post('/enroll', [Student\EnrollmentController::class, 'store'])->middleware('throttle:10,1')->name('enroll');
     Route::get('/courses', [Student\CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{id}', [Student\CourseController::class, 'show'])->name('courses.show');
     Route::get('/courses/{courseId}/units/{unitId}', [Student\CourseController::class, 'showUnit'])->name('units.show');
@@ -139,7 +139,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/files/{id}', [FileController::class, 'destroy'])->name('files.destroy');
 });
 
-// Raw file stream — signed URL only, no session auth (hit by the browser or external viewers)
+// Raw file stream — signed URL + auth required
 Route::get('/files/{id}/raw', [FileController::class, 'raw'])
-    ->middleware('signed')
+    ->middleware(['auth', 'signed'])
     ->name('files.raw');

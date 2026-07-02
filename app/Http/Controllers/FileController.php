@@ -53,6 +53,7 @@ class FileController extends Controller
     {
         $file = $this->files->find($id);
         abort_if(is_null($file), 404);
+        $this->authorize('download', $file);
 
         return Storage::disk('private')->response($file->path, $file->original_name, [
             'Content-Type' => $file->mime_type,
