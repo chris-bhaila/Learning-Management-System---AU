@@ -222,13 +222,13 @@
             </x-card>
         </div>
 
-        {{-- Class Tokens List --}}
+        {{-- Class Tokens List (preview — 5 most recent) --}}
         <x-card class="overflow-hidden animate-fade-up">
             <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                 <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
                     Class Tokens
                 </p>
-                <span class="text-xs text-on-surface-variant">{{ $classTokens->count() }} total</span>
+                <span class="text-xs text-on-surface-variant">{{ $classTokensTotal }} total</span>
             </div>
 
             @if($classTokens->isEmpty())
@@ -243,29 +243,29 @@
                         $expired       = $token->isExpired();
                         $usesRemaining = max(0, $token->max_uses - $token->uses_count);
                     @endphp
-                    <li class="px-5 py-3.5 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200"
-                        x-data="{ copied: false }">
-                        <div class="flex items-center justify-between gap-2 min-w-0 mb-1">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <code class="text-xs font-mono font-semibold text-primary bg-surface-container
-                                             px-2.5 py-1 rounded-lg tracking-widest min-w-0 truncate">
-                                    {{ $token->token_value }}
-                                </code>
-                                <button
-                                    type="button"
-                                    @click="navigator.clipboard.writeText('{{ $token->token_value }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-                                    class="shrink-0 inline-flex items-center gap-1 text-[11px] text-outline
-                                           hover:text-primary transition-colors cursor-pointer"
-                                    :title="copied ? 'Copied!' : 'Copy token'">
-                                    <span class="material-symbols-outlined text-[14px]"
-                                          x-text="copied ? 'check' : 'content_copy'">content_copy</span>
-                                </button>
-                            </div>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0
-                                         {{ $expired ? 'bg-surface-container text-on-surface-variant' : 'bg-gold/20 text-primary' }}">
-                                <span class="w-1.5 h-1.5 rounded-full {{ $expired ? 'bg-outline-variant' : 'bg-gold' }}"></span>
+                    <li class="px-5 py-3.5 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200">
+                        <div class="flex items-center gap-2 min-w-0 mb-1">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
+                                         {{ $expired ? 'bg-error/10 text-error' : 'bg-gold/20 text-primary' }}">
+                                <span class="material-symbols-outlined text-[13px]">
+                                    {{ $expired ? 'cancel' : 'check_circle' }}
+                                </span>
                                 {{ $expired ? 'Expired' : 'Active' }}
                             </span>
+                            <code class="text-xs font-mono font-semibold {{ $expired ? 'text-on-surface-variant line-through' : 'text-primary' }} bg-surface-container
+                                         px-2.5 py-1 rounded-lg tracking-widest min-w-0 truncate">
+                                {{ $token->token_value }}
+                            </code>
+                            @if(!$expired)
+                            <button type="button"
+                                    x-data="{ copied: false }"
+                                    @click="navigator.clipboard.writeText('{{ $token->token_value }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant
+                                           hover:text-primary transition-colors duration-150 cursor-pointer shrink-0">
+                                <span class="material-symbols-outlined text-[13px]"
+                                      x-text="copied ? 'check' : 'content_copy'">content_copy</span>
+                            </button>
+                            @endif
                         </div>
                         <div class="flex items-center gap-2.5 flex-wrap justify-between">
                             <div class="flex items-center gap-3 text-[11px] text-on-surface-variant flex-wrap">
@@ -279,17 +279,36 @@
                                     {{ $usesRemaining }}/{{ $token->max_uses }} uses remaining
                                 </span>
                             </div>
-                            <button type="button"
-                                    onclick="confirmDelete('class token', document.getElementById('delete-token-form-{{ $token->id }}'))"
-                                    class="inline-flex items-center gap-1 text-[11px] text-error shrink-0
-                                           hover:text-error/80 transition-colors cursor-pointer">
-                                <span class="material-symbols-outlined text-[13px]">delete</span>
-                                Revoke
-                            </button>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="{{ route('admin.tokens.usage', $token->token_value) }}"
+                                   class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant
+                                          hover:text-primary transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[13px]">bar_chart</span>
+                                    View usage
+                                </a>
+                                <button type="button"
+                                        onclick="confirmDelete('class token', document.getElementById('delete-token-form-{{ $token->id }}'))"
+                                        class="inline-flex items-center gap-1 text-[11px] text-error
+                                               hover:text-error/80 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[13px]">delete</span>
+                                    {{ $expired ? 'Delete' : 'Revoke' }}
+                                </button>
+                            </div>
                         </div>
                     </li>
                     @endforeach
                 </ul>
+                <div class="px-5 py-3 border-t border-outline-variant/20 flex items-center justify-between gap-3">
+                    <span class="text-xs text-on-surface-variant">
+                        Showing {{ $classTokens->count() }} of {{ $classTokensTotal }} token{{ $classTokensTotal !== 1 ? 's' : '' }}
+                    </span>
+                    <a href="{{ route('admin.tokens.class', ['teacher_id' => $teacher->id]) }}"
+                       class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary
+                              hover:text-primary/70 transition-colors duration-150 cursor-pointer">
+                        View all class tokens
+                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </a>
+                </div>
             @endif
         </x-card>
 
@@ -315,13 +334,19 @@
 
         {{-- Generate Course Token --}}
         <div x-data="{
-                courseId: '',
+                courseId: new URLSearchParams(location.search).get('course_id') ?? '',
                 lifetimeValue: 30,
                 lifetimeUnit: 'minutes',
                 maxUses: 30,
                 submitting: false,
                 options: @js($lifetimeOptions),
                 setLifetime(opt) { this.lifetimeValue = opt.value; this.lifetimeUnit = opt.unit; },
+                setCourse(id) {
+                    this.courseId = id;
+                    const p = new URLSearchParams(location.search);
+                    id ? p.set('course_id', id) : p.delete('course_id');
+                    history.replaceState(null, '', '?' + p.toString());
+                },
                 get selectedLabel() {
                     const o = this.options.find(o => o.value === this.lifetimeValue && o.unit === this.lifetimeUnit);
                     return o ? o.label : this.lifetimeValue + ' ' + this.lifetimeUnit;
@@ -357,13 +382,14 @@
                             </label>
                             <select
                                 id="course-token-course"
-                                x-model="courseId"
+                                @change="setCourse($event.target.value)"
                                 class="w-full px-4 py-2.5 bg-surface-white border border-outline-variant/60 rounded-[16px]
                                        text-sm text-on-surface focus:outline-none focus:ring-1 focus:ring-primary
                                        focus:border-primary transition-colors cursor-pointer">
                                 <option value="">Select a course…</option>
                                 @foreach($courses as $course)
-                                    <option value="{{ $course->id }}">{{ $course->title }}</option>
+                                    <option value="{{ $course->id }}"
+                                        :selected="courseId == '{{ $course->id }}'">{{ $course->title }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -454,13 +480,13 @@
             </x-card>
         </div>
 
-        {{-- Course Tokens List --}}
+        {{-- Course Tokens List (preview — 5 most recent) --}}
         <x-card class="overflow-hidden animate-fade-up">
             <div class="flex items-center justify-between gap-3 px-6 py-4 border-b border-outline-variant/20">
                 <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
                     Course Tokens
                 </p>
-                <span class="text-xs text-on-surface-variant">{{ $courseTokens->count() }} total</span>
+                <span class="text-xs text-on-surface-variant">{{ $courseTokensTotal }} total</span>
             </div>
 
             @if($courseTokens->isEmpty())
@@ -475,29 +501,29 @@
                         $expired       = $token->isExpired();
                         $usesRemaining = max(0, $token->max_uses - $token->uses_count);
                     @endphp
-                    <li class="px-5 py-3.5 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200"
-                        x-data="{ copied: false }">
-                        <div class="flex items-center justify-between gap-2 min-w-0 mb-1">
-                            <div class="flex items-center gap-2 min-w-0">
-                                <code class="text-xs font-mono font-semibold text-primary bg-surface-container
-                                             px-2.5 py-1 rounded-lg tracking-widest min-w-0 truncate">
-                                    {{ $token->token_value }}
-                                </code>
-                                <button
-                                    type="button"
-                                    @click="navigator.clipboard.writeText('{{ $token->token_value }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-                                    class="shrink-0 inline-flex items-center gap-1 text-[11px] text-outline
-                                           hover:text-primary transition-colors cursor-pointer"
-                                    :title="copied ? 'Copied!' : 'Copy token'">
-                                    <span class="material-symbols-outlined text-[14px]"
-                                          x-text="copied ? 'check' : 'content_copy'">content_copy</span>
-                                </button>
-                            </div>
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0
-                                         {{ $expired ? 'bg-surface-container text-on-surface-variant' : 'bg-gold/20 text-primary' }}">
-                                <span class="w-1.5 h-1.5 rounded-full {{ $expired ? 'bg-outline-variant' : 'bg-gold' }}"></span>
+                    <li class="px-5 py-3.5 min-w-0 hover:bg-surface-container-low/40 transition-colors duration-200">
+                        <div class="flex items-center gap-2 min-w-0 mb-1">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
+                                         {{ $expired ? 'bg-error/10 text-error' : 'bg-gold/20 text-primary' }}">
+                                <span class="material-symbols-outlined text-[13px]">
+                                    {{ $expired ? 'cancel' : 'check_circle' }}
+                                </span>
                                 {{ $expired ? 'Expired' : 'Active' }}
                             </span>
+                            <code class="text-xs font-mono font-semibold {{ $expired ? 'text-on-surface-variant line-through' : 'text-primary' }} bg-surface-container
+                                         px-2.5 py-1 rounded-lg tracking-widest min-w-0 truncate">
+                                {{ $token->token_value }}
+                            </code>
+                            @if(!$expired)
+                            <button type="button"
+                                    x-data="{ copied: false }"
+                                    @click="navigator.clipboard.writeText('{{ $token->token_value }}').then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                    class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant
+                                           hover:text-primary transition-colors duration-150 cursor-pointer shrink-0">
+                                <span class="material-symbols-outlined text-[13px]"
+                                      x-text="copied ? 'check' : 'content_copy'">content_copy</span>
+                            </button>
+                            @endif
                         </div>
                         <div class="flex items-center gap-2.5 flex-wrap justify-between">
                             <div class="flex items-center gap-3 text-[11px] text-on-surface-variant flex-wrap">
@@ -518,17 +544,36 @@
                                     {{ $usesRemaining }}/{{ $token->max_uses }} uses remaining
                                 </span>
                             </div>
-                            <button type="button"
-                                    onclick="confirmDelete('course token', document.getElementById('delete-token-form-{{ $token->id }}'))"
-                                    class="inline-flex items-center gap-1 text-[11px] text-error shrink-0
-                                           hover:text-error/80 transition-colors cursor-pointer">
-                                <span class="material-symbols-outlined text-[13px]">delete</span>
-                                Revoke
-                            </button>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <a href="{{ route('admin.tokens.usage', $token->token_value) }}"
+                                   class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant
+                                          hover:text-primary transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[13px]">bar_chart</span>
+                                    View usage
+                                </a>
+                                <button type="button"
+                                        onclick="confirmDelete('course token', document.getElementById('delete-token-form-{{ $token->id }}'))"
+                                        class="inline-flex items-center gap-1 text-[11px] text-error
+                                               hover:text-error/80 transition-colors cursor-pointer">
+                                    <span class="material-symbols-outlined text-[13px]">delete</span>
+                                    {{ $expired ? 'Delete' : 'Revoke' }}
+                                </button>
+                            </div>
                         </div>
                     </li>
                     @endforeach
                 </ul>
+                <div class="px-5 py-3 border-t border-outline-variant/20 flex items-center justify-between gap-3">
+                    <span class="text-xs text-on-surface-variant">
+                        Showing {{ $courseTokens->count() }} of {{ $courseTokensTotal }} token{{ $courseTokensTotal !== 1 ? 's' : '' }}
+                    </span>
+                    <a href="{{ route('admin.tokens.course', ['teacher_id' => $teacher->id]) }}"
+                       class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary
+                              hover:text-primary/70 transition-colors duration-150 cursor-pointer">
+                        View all course tokens
+                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                    </a>
+                </div>
             @endif
         </x-card>
 

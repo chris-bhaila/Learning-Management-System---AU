@@ -59,6 +59,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Tokens
     Route::get('/tokens', [Admin\TokenController::class, 'index'])->name('tokens.index');
+    Route::get('/tokens/class', [Admin\TokenController::class, 'classTokens'])->name('tokens.class');
+    Route::get('/tokens/course', [Admin\TokenController::class, 'courseTokens'])->name('tokens.course');
+    Route::get('/tokens/{tokenValue}/usage', [Admin\TokenController::class, 'usage'])->name('tokens.usage');
     Route::post('/tokens', [Admin\TokenController::class, 'store'])->name('tokens.store');
     Route::delete('/tokens/{id}', [Admin\TokenController::class, 'destroy'])->name('tokens.destroy');
 
@@ -94,6 +97,9 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 
     // Tokens
     Route::get('/tokens', [Teacher\TokenController::class, 'index'])->name('tokens.index');
+    Route::get('/tokens/class', [Teacher\TokenController::class, 'classTokens'])->name('tokens.class');
+    Route::get('/tokens/course', [Teacher\TokenController::class, 'courseTokens'])->name('tokens.course');
+    Route::get('/tokens/{tokenValue}/usage', [Teacher\TokenController::class, 'usage'])->name('tokens.usage');
     Route::post('/tokens', [Teacher\TokenController::class, 'store'])->name('tokens.store');
     Route::delete('/tokens/{id}', [Teacher\TokenController::class, 'destroy'])->name('tokens.destroy');
 

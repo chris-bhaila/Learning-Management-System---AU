@@ -174,7 +174,7 @@
             <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
                 Class Tokens
             </p>
-            <span class="text-xs text-on-surface-variant">{{ $classTokens->count() }} total</span>
+            <span class="text-xs text-on-surface-variant">{{ $classTokensTotal }} total</span>
         </div>
 
         @if($classTokens->isEmpty())
@@ -225,17 +225,36 @@
                                 {{ $usesRemaining }}/{{ $token->max_uses }} uses remaining
                             </span>
                         </div>
-                        <button type="button"
-                                onclick="confirmDelete('class token', document.getElementById('delete-token-form-{{ $token->id }}'))"
-                                class="inline-flex items-center gap-1 text-[11px] text-error shrink-0
-                                       hover:text-error/80 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[13px]">delete</span>
-                            Revoke
-                        </button>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <a href="{{ route('teacher.tokens.usage', $token->token_value) }}"
+                               class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant
+                                      hover:text-primary transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">bar_chart</span>
+                                View usage
+                            </a>
+                            <button type="button"
+                                    onclick="confirmDelete('class token', document.getElementById('delete-token-form-{{ $token->id }}'))"
+                                    class="inline-flex items-center gap-1 text-[11px] text-error
+                                           hover:text-error/80 transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">delete</span>
+                                Revoke
+                            </button>
+                        </div>
                     </div>
                 </li>
                 @endforeach
             </ul>
+            <div class="px-5 py-3 border-t border-outline-variant/20 flex items-center justify-between gap-3">
+                <span class="text-xs text-on-surface-variant">
+                    Showing {{ $classTokens->count() }} of {{ $classTokensTotal }} token{{ $classTokensTotal !== 1 ? 's' : '' }}
+                </span>
+                <a href="{{ route('teacher.tokens.class') }}"
+                   class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary
+                          hover:text-primary/70 transition-colors duration-150 cursor-pointer">
+                    View all class tokens
+                    <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </a>
+            </div>
         @endif
     </x-card>
 
@@ -407,7 +426,7 @@
             <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
                 Course Tokens
             </p>
-            <span class="text-xs text-on-surface-variant">{{ $courseTokens->count() }} total</span>
+            <span class="text-xs text-on-surface-variant">{{ $courseTokensTotal }} total</span>
         </div>
 
         @if($courseTokens->isEmpty())
@@ -466,17 +485,36 @@
                                 {{ $usesRemaining }}/{{ $token->max_uses }} uses remaining
                             </span>
                         </div>
-                        <button type="button"
-                                onclick="confirmDelete('course token', document.getElementById('delete-token-form-{{ $token->id }}'))"
-                                class="inline-flex items-center gap-1 text-[11px] text-error shrink-0
-                                       hover:text-error/80 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[13px]">delete</span>
-                            Revoke
-                        </button>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <a href="{{ route('teacher.tokens.usage', $token->token_value) }}"
+                               class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant
+                                      hover:text-primary transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">bar_chart</span>
+                                View usage
+                            </a>
+                            <button type="button"
+                                    onclick="confirmDelete('course token', document.getElementById('delete-token-form-{{ $token->id }}'))"
+                                    class="inline-flex items-center gap-1 text-[11px] text-error
+                                           hover:text-error/80 transition-colors cursor-pointer">
+                                <span class="material-symbols-outlined text-[13px]">delete</span>
+                                Revoke
+                            </button>
+                        </div>
                     </div>
                 </li>
                 @endforeach
             </ul>
+            <div class="px-5 py-3 border-t border-outline-variant/20 flex items-center justify-between gap-3">
+                <span class="text-xs text-on-surface-variant">
+                    Showing {{ $courseTokens->count() }} of {{ $courseTokensTotal }} token{{ $courseTokensTotal !== 1 ? 's' : '' }}
+                </span>
+                <a href="{{ route('teacher.tokens.course') }}"
+                   class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary
+                          hover:text-primary/70 transition-colors duration-150 cursor-pointer">
+                    View all course tokens
+                    <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                </a>
+            </div>
         @endif
     </x-card>
 

@@ -4,21 +4,25 @@
     The backend determines token type automatically from the submitted value.
 --}}
 @php
-    $reopenModal = old('_modal') === 'enroll';
-    $oldToken    = old('token_value', '');
-    $tokenError  = $reopenModal ? ($errors->first('token_value') ?? '') : '';
+    $reopenModal   = old('_modal') === 'enroll'
+                        || $errors->has('token_value')
+                        || session()->has('enroll_success');
+    $oldToken      = old('token_value', '');
+    $tokenError    = $errors->first('token_value') ?? '';
+    $enrollSuccess = session('enroll_success') ?? '';
 @endphp
 
 {{-- ── Backdrop ── --}}
 <div
     x-data="{
-        open:       {{ $reopenModal ? 'true' : 'false' }},
-        tokenType:  'class',
-        tokenValue: @js(strtoupper($oldToken)),
-        submitting: false,
-        errorMsg:   @js($tokenError),
-        shaking:    false,
-        _opener:    null,
+        open:        {{ $reopenModal ? 'true' : 'false' }},
+        tokenType:   'class',
+        tokenValue:  @js(strtoupper($oldToken)),
+        submitting:  false,
+        errorMsg:    @js($tokenError),
+        successMsg:  @js($enrollSuccess),
+        shaking:     false,
+        _opener:     null,
 
         init() {
             if (this.open) {
@@ -26,8 +30,12 @@
                 this.lockBg();
                 this.$nextTick(() => {
                     this.$nextTick(() => {
-                        this.$el.querySelector('#tokenInput')?.focus();
-                        if (this.errorMsg) this.triggerShake();
+                        if (this.successMsg) {
+                            setTimeout(() => this.close(), 2500);
+                        } else {
+                            this.$el.querySelector('#tokenInput')?.focus();
+                            if (this.errorMsg) this.triggerShake();
+                        }
                     });
                 });
             }
@@ -73,6 +81,7 @@
         close() {
             this.open       = false;
             this.errorMsg   = '';
+            this.successMsg = '';
             this.shaking    = false;
             this.submitting = false;
             document.body.classList.remove('overflow-hidden');
@@ -124,6 +133,7 @@
         tokenType = 'class';
         tokenValue = '';
         errorMsg = '';
+        successMsg = '';
         submitting = false;
         document.body.classList.add('overflow-hidden');
         lockBg();
@@ -181,7 +191,18 @@
                     @csrf
                     <input type="hidden" name="_modal" value="enroll">
 
-                    <div class="px-6 py-5 space-y-4">
+                    {{-- ── Success state ── --}}
+                    <div x-show="successMsg" x-cloak
+                         class="px-6 py-8 flex flex-col items-center gap-3 text-center">
+                        <div class="w-12 h-12 rounded-2xl bg-gold/20 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[28px] text-primary">check_circle</span>
+                        </div>
+                        <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);"
+                           x-text="successMsg"></p>
+                        <p class="text-xs text-on-surface-variant">Closing in a moment…</p>
+                    </div>
+
+                    <div x-show="!successMsg" class="px-6 py-5 space-y-4">
 
                         {{-- ── Class / Course toggle ── --}}
                         <div class="flex items-center gap-2">
@@ -255,10 +276,11 @@
                             <span class="font-semibold text-on-surface">Course token (6 characters)</span> — enrolls you in a specific course. You must be in the class first.
                         </p>
 
-                    </div>
+                    </div>{{-- end !successMsg body --}}
 
                     {{-- ── Footer ── --}}
-                    <div class="flex items-center justify-end gap-3 px-6 py-4
+                    <div x-show="!successMsg"
+                         class="flex items-center justify-end gap-3 px-6 py-4
                                 border-t border-outline-variant/30 bg-surface-container-low/40">
                         <x-button type="button" variant="secondary" @click="close()">
                             Cancel

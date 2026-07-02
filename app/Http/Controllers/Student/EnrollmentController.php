@@ -19,58 +19,159 @@ class EnrollmentController extends Controller
 
     public function store(EnrollRequest $request)
     {
-        $token = $this->tokens->findByValue($request->validated('token_value'));
+        $attemptedValue = $request->validated('token_value');
+        $student        = Auth::user();
+        $token          = $this->tokens->findByValue($attemptedValue);
 
-        if (!$token || $token->isExpired()) {
-            return back()->withErrors(['token_value' => 'This token is invalid or has expired.']);
+        if (!$token) {
+            activity()
+                ->causedBy($student)
+                ->withProperties([
+                    'token_value' => $attemptedValue,
+                    'reason'      => 'not_found',
+                ])
+                ->log('Student enrollment failed: token not found');
+
+            return back()
+                ->withErrors(['token_value' => "That token doesn't exist. Double-check the code your teacher gave you."])
+                ->withInput();
         }
 
-        $student = Auth::user();
+        if ($token->isExpired()) {
+            activity()
+                ->causedBy($student)
+                ->withProperties([
+                    'token_value'  => $token->token_value,
+                    'token_type'   => $token->type,
+                    'teacher_id'   => $token->teacher_id,
+                    'teacher_name' => $token->teacher?->name ?? 'Unknown',
+                    'reason'       => 'expired',
+                ])
+                ->log('Student enrollment failed: token expired');
+
+            return back()
+                ->withErrors(['token_value' => 'That token has expired. Ask your teacher to generate a new one.'])
+                ->withInput();
+        }
+
+        $teacher = $token->teacher;
 
         if ($token->isClassToken()) {
-            // Check not already in this teacher's class
             $alreadyEnrolled = $student->teachers()
                 ->where('teacher_student.teacher_id', $token->teacher_id)
                 ->exists();
 
             if ($alreadyEnrolled) {
-                return back()->withErrors(['token_value' => 'You are already enrolled in this class.']);
+                activity()
+                    ->causedBy($student)
+                    ->withProperties([
+                        'token_value'  => $token->token_value,
+                        'token_type'   => 'class',
+                        'teacher_id'   => $token->teacher_id,
+                        'teacher_name' => $teacher?->name ?? 'Unknown',
+                        'reason'       => 'already_in_class',
+                    ])
+                    ->log('Student enrollment failed: already in class');
+
+                return back()
+                    ->withErrors(['token_value' => "You're already enrolled in {$teacher?->name}'s class."])
+                    ->withInput();
             }
 
             $student->teachers()->attach($token->teacher_id, [
                 'is_active'   => true,
                 'enrolled_at' => now(),
             ]);
-        } else {
-            // Course token — must be enrolled in teacher's class first
-            $inClass = $student->teachers()
-                ->where('teacher_student.teacher_id', $token->teacher_id)
-                ->where('teacher_student.is_active', true)
-                ->exists();
 
-            if (!$inClass) {
-                return back()->withErrors(['token_value' => 'You must join the teacher\'s class before enrolling in a course.']);
-            }
+            activity()
+                ->causedBy($student)
+                ->withProperties([
+                    'token_value'  => $token->token_value,
+                    'token_type'   => 'class',
+                    'teacher_id'   => $token->teacher_id,
+                    'teacher_name' => $teacher?->name ?? 'Unknown',
+                ])
+                ->log('Student joined teacher class via class token');
 
-            $alreadyEnrolled = $student->enrolledCourses()
-                ->where('course_student.course_id', $token->course_id)
-                ->exists();
+            $this->tokens->incrementUses($token);
 
-            if ($alreadyEnrolled) {
-                return back()->withErrors(['token_value' => 'You are already enrolled in this course.']);
-            }
-
-            $student->enrolledCourses()->attach($token->course_id, [
-                'is_active'   => true,
-                'enrolled_at' => now(),
-            ]);
+            return back()
+                ->with('enroll_success', "You've joined {$teacher?->name}'s class!")
+                ->withInput(['_modal' => 'enroll']);
         }
+
+        // Course token — must be enrolled in teacher's class first
+        $inClass = $student->teachers()
+            ->where('teacher_student.teacher_id', $token->teacher_id)
+            ->where('teacher_student.is_active', true)
+            ->exists();
+
+        if (!$inClass) {
+            activity()
+                ->causedBy($student)
+                ->withProperties([
+                    'token_value'  => $token->token_value,
+                    'token_type'   => 'course',
+                    'teacher_id'   => $token->teacher_id,
+                    'teacher_name' => $teacher?->name ?? 'Unknown',
+                    'course_id'    => $token->course_id,
+                    'reason'       => 'not_in_class',
+                ])
+                ->log('Student enrollment failed: not in teacher class');
+
+            return back()
+                ->withErrors(['token_value' => "You need to join {$teacher?->name}'s class before enrolling in a course. Use your 9-character class token first."])
+                ->withInput();
+        }
+
+        $alreadyEnrolled = $student->enrolledCourses()
+            ->where('course_student.course_id', $token->course_id)
+            ->exists();
+
+        if ($alreadyEnrolled) {
+            $course = $token->course;
+
+            activity()
+                ->causedBy($student)
+                ->withProperties([
+                    'token_value'  => $token->token_value,
+                    'token_type'   => 'course',
+                    'teacher_id'   => $token->teacher_id,
+                    'teacher_name' => $teacher?->name ?? 'Unknown',
+                    'course_id'    => $token->course_id,
+                    'course_title' => $course?->title ?? 'Unknown',
+                    'reason'       => 'already_enrolled',
+                ])
+                ->log('Student enrollment failed: already enrolled in course');
+
+            return back()
+                ->withErrors(['token_value' => "You're already enrolled in {$course?->title}."])
+                ->withInput();
+        }
+
+        $course = $token->course;
+
+        $student->enrolledCourses()->attach($token->course_id, [
+            'is_active'   => true,
+            'enrolled_at' => now(),
+        ]);
+
+        activity()
+            ->causedBy($student)
+            ->withProperties([
+                'token_value'  => $token->token_value,
+                'token_type'   => 'course',
+                'teacher_id'   => $token->teacher_id,
+                'teacher_name' => $teacher?->name ?? 'Unknown',
+                'course_id'    => $token->course_id,
+                'course_title' => $course?->title ?? 'Unknown',
+            ])
+            ->log('Student enrolled in course via course token');
 
         $this->tokens->incrementUses($token);
 
-        return back()->with('success', $token->isClassToken()
-            ? 'You have joined the class.'
-            : 'You have enrolled in the course.'
-        );
+        return back()
+            ->with('enroll_success', "You've enrolled in {$course?->title}!")
+            ->withInput(['_modal' => 'enroll']);
     }
 }

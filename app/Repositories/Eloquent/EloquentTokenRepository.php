@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Token;
 use App\Repositories\Contracts\TokenRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class EloquentTokenRepository implements TokenRepositoryInterface
@@ -62,6 +63,23 @@ class EloquentTokenRepository implements TokenRepositoryInterface
             ->get();
     }
 
+    public function getClassTokensByTeacherPaginated(int $teacherId, int $perPage = 20): LengthAwarePaginator
+    {
+        return Token::where('teacher_id', $teacherId)
+            ->where('type', 'class')
+            ->latest()
+            ->paginate($perPage);
+    }
+
+    public function getCourseTokensByTeacherPaginated(int $teacherId, int $perPage = 20): LengthAwarePaginator
+    {
+        return Token::where('teacher_id', $teacherId)
+            ->where('type', 'course')
+            ->with('course')
+            ->latest()
+            ->paginate($perPage);
+    }
+
     public function generateUniqueValue(string $type): string
     {
         $charset = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -72,7 +90,7 @@ class EloquentTokenRepository implements TokenRepositoryInterface
             for ($i = 0; $i < $length; $i++) {
                 $value .= $charset[random_int(0, strlen($charset) - 1)];
             }
-            if (!Token::withTrashed()->where('token_value', $value)->exists()) {
+            if (!Token::where('token_value', $value)->exists()) {
                 return $value;
             }
         }

@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreTokenRequest;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\TokenRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Spatie\Activitylog\Models\Activity;
 
 class TokenController extends Controller
 {
@@ -22,12 +23,43 @@ class TokenController extends Controller
         $teacherId  = request()->integer('teacher_id') ?: null;
         $teacher    = $teacherId ? $teachers->firstWhere('id', $teacherId) : null;
 
+        $allClassTokens  = $teacher ? $this->tokens->getClassTokensByTeacher($teacher->id) : collect();
+        $allCourseTokens = $teacher ? $this->tokens->getCourseTokensByTeacher($teacher->id) : collect();
+
         return view('admin.tokens.index', [
-            'teachers'     => $teachers,
-            'teacher'      => $teacher,
-            'classTokens'  => $teacher ? $this->tokens->getClassTokensByTeacher($teacher->id) : collect(),
-            'courseTokens' => $teacher ? $this->tokens->getCourseTokensByTeacher($teacher->id) : collect(),
-            'courses'      => $teacher ? $this->courses->getByTeacher($teacher->id) : collect(),
+            'teachers'          => $teachers,
+            'teacher'           => $teacher,
+            'classTokens'       => $allClassTokens->take(3),
+            'classTokensTotal'  => $allClassTokens->count(),
+            'courseTokens'      => $allCourseTokens->take(3),
+            'courseTokensTotal' => $allCourseTokens->count(),
+            'courses'           => $teacher ? $this->courses->getByTeacher($teacher->id) : collect(),
+        ]);
+    }
+
+    public function classTokens()
+    {
+        $teachers  = $this->users->getAllTeachers();
+        $teacherId = request()->integer('teacher_id') ?: null;
+        $teacher   = $teacherId ? $teachers->firstWhere('id', $teacherId) : null;
+
+        return view('admin.tokens.class', [
+            'teachers' => $teachers,
+            'teacher'  => $teacher,
+            'tokens'   => $teacher ? $this->tokens->getClassTokensByTeacherPaginated($teacher->id, 20) : null,
+        ]);
+    }
+
+    public function courseTokens()
+    {
+        $teachers  = $this->users->getAllTeachers();
+        $teacherId = request()->integer('teacher_id') ?: null;
+        $teacher   = $teacherId ? $teachers->firstWhere('id', $teacherId) : null;
+
+        return view('admin.tokens.course', [
+            'teachers' => $teachers,
+            'teacher'  => $teacher,
+            'tokens'   => $teacher ? $this->tokens->getCourseTokensByTeacherPaginated($teacher->id, 20) : null,
         ]);
     }
 
@@ -47,6 +79,35 @@ class TokenController extends Controller
 
         return redirect()->route('admin.tokens.index', ['teacher_id' => $data['teacher_id']])
             ->with('success', 'Token generated.');
+    }
+
+    public function usage(string $tokenValue)
+    {
+        $token = $this->tokens->findByValue($tokenValue);
+
+        $activities = Activity::where('properties->token_value', $tokenValue)
+            ->with('causer')
+            ->latest()
+            ->get();
+
+        if (!$token && $activities->isEmpty()) {
+            abort(404);
+        }
+
+        $teacherId = $token?->teacher_id
+            ?? (int) $activities->first()?->properties->get('teacher_id');
+
+        $backRoute = $teacherId
+            ? route('admin.tokens.index', ['teacher_id' => $teacherId])
+            : route('admin.tokens.index');
+
+        return view('tokens.usage', [
+            'tokenValue' => $tokenValue,
+            'token'      => $token,
+            'activities' => $activities,
+            'layout'     => 'layouts.admin',
+            'backRoute'  => $backRoute,
+        ]);
     }
 
     public function destroy(int $id)

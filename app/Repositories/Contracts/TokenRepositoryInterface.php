@@ -3,6 +3,7 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\Token;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 interface TokenRepositoryInterface
@@ -19,6 +20,12 @@ interface TokenRepositoryInterface
 
     /** All course tokens for a teacher, newest first, with course eager-loaded. */
     public function getCourseTokensByTeacher(int $teacherId): Collection;
+
+    /** Paginated class tokens for a teacher, newest first. */
+    public function getClassTokensByTeacherPaginated(int $teacherId, int $perPage = 20): LengthAwarePaginator;
+
+    /** Paginated course tokens for a teacher, newest first, with course eager-loaded. */
+    public function getCourseTokensByTeacherPaginated(int $teacherId, int $perPage = 20): LengthAwarePaginator;
 
     /** Generate a collision-safe token value for the given type ('class'=9 chars, 'course'=6 chars). */
     public function generateUniqueValue(string $type): string;
