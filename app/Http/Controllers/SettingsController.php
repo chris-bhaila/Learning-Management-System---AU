@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateAvatarRequest;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,6 +26,24 @@ class SettingsController extends Controller
         $layout = 'layouts.' . $role;
 
         return view('settings.index', compact('layout'));
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        $user = Auth::user();
+        $this->users->update($user, $request->validated());
+
+        return back()->with('success', 'Name updated successfully.');
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request)
+    {
+        $user = Auth::user();
+        $this->users->update($user, [
+            'password' => $request->validated('password'), // hashed by User model cast
+        ]);
+
+        return back()->with('success', 'Password updated successfully.');
     }
 
     public function updateAvatar(UpdateAvatarRequest $request)

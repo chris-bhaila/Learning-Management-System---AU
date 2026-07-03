@@ -103,6 +103,48 @@ window.showToast = function (message, type = 'success') {
     });
 };
 
+// ─── Raw HTML editor toggle (TipTap ⇄ plain textarea) ─────────────────────
+// Per-session UI only — no persistence. Shared by every <x-editor-raw-toggle>
+// instance (course description + unit content, admin/teacher, create/show).
+// Assumes exactly one active TipTap instance on the page at a time, exposed
+// as window.tiptap, matching the existing convention in these editor pages.
+window.rawHtmlToggle = function (hiddenInputId) {
+    return {
+        raw: false,
+        error: '',
+
+        toggle() {
+            const hidden = document.getElementById(hiddenInputId);
+
+            if (!this.raw) {
+                this.$refs.rawTextarea.value = window.tiptap ? window.tiptap.getHTML() : (hidden?.value ?? '');
+                this.raw = true;
+                return;
+            }
+
+            this.error = '';
+            try {
+                if (window.tiptap) {
+                    // Default emitUpdate re-fires the page's onUpdate handler,
+                    // which syncs the hidden field from editor.getHTML().
+                    window.tiptap.commands.setContent(this.$refs.rawTextarea.value);
+                } else if (hidden) {
+                    hidden.value = this.$refs.rawTextarea.value;
+                }
+                this.raw = false;
+            } catch (e) {
+                console.error('Raw HTML toggle: failed to load content back into the editor.', e);
+                this.error = 'That HTML could not be loaded back into the editor. Fix the markup above, or keep editing here in raw mode.';
+            }
+        },
+
+        onInput(value) {
+            const hidden = document.getElementById(hiddenInputId);
+            if (hidden) hidden.value = value;
+        },
+    };
+};
+
 // ─── Flash messages from layout ───────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {

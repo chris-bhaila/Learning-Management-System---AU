@@ -90,6 +90,7 @@
                 window.tiptap.commands.setContent(@js($course->description ?? ''), false);
                 document.getElementById('edit-description').value = @js($course->description ?? '');
             }
+            window.dispatchEvent(new CustomEvent('reset-raw-html'));
         },
 
         init() {
@@ -322,6 +323,7 @@
                      x-transition:leave-start="opacity-100 translate-y-0"
                      x-transition:leave-end="opacity-0 -translate-y-1">
 
+                    <x-editor-raw-toggle hidden-input-id="edit-description">
                     {{-- Toolbar --}}
                     <div class="flex items-center gap-0.5 px-3 py-2 bg-surface-container-low
                                 border border-outline-variant/60 rounded-t-[16px] border-b-0 flex-wrap">
@@ -388,6 +390,7 @@
                                 prose prose-sm max-w-none
                                 [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[160px]">
                     </div>
+                    </x-editor-raw-toggle>
 
                     <input type="hidden" name="description" id="edit-description"
                            value="{{ old('description', $course->description) }}">

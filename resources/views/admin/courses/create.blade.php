@@ -165,6 +165,7 @@
                 Description
             </label>
 
+            <x-editor-raw-toggle hidden-input-id="description-hidden">
             {{-- Toolbar --}}
             <div class="flex items-center gap-0.5 px-3 py-2 bg-surface-container-low
                         border border-outline-variant/60 rounded-t-[16px] border-b-0 flex-wrap">
@@ -265,6 +266,7 @@
                         prose prose-sm max-w-none
                         [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[160px]">
             </div>
+            </x-editor-raw-toggle>
 
             {{-- Hidden field synced by TipTap --}}
             <input type="hidden" name="description" id="description-hidden"

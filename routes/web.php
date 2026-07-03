@@ -127,6 +127,8 @@ Route::middleware(['auth', 'student', 'prevent.back'])->prefix('student')->name(
 // Settings — shared across all roles
 Route::middleware(['auth', 'prevent.back'])->prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [SettingsController::class, 'index'])->name('index');
+    Route::patch('/profile', [SettingsController::class, 'updateProfile'])->name('profile.update');
+    Route::patch('/password', [SettingsController::class, 'updatePassword'])->name('password.update');
     Route::post('/avatar', [SettingsController::class, 'updateAvatar'])->name('avatar.update');
     Route::delete('/avatar', [SettingsController::class, 'removeAvatar'])->name('avatar.destroy');
 });
