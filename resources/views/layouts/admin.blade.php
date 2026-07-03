@@ -106,7 +106,7 @@
                 Activity Log
             </a>
 
-            <a href="{{ Route::has('admin.pages.index') ? route('admin.pages.index') : '#' }}"
+            <!-- <a href="{{ Route::has('admin.pages.index') ? route('admin.pages.index') : '#' }}"
                class="nav-item {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">article</span>
                 Pages
@@ -116,7 +116,7 @@
                class="nav-item {{ request()->routeIs('admin.site-content.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">edit_note</span>
                 Site Content
-            </a>
+            </a> -->
 
         </div>
 
@@ -128,9 +128,10 @@
                 Settings
             </a>
 
-            <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
+            <form id="logout-form" method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                 @csrf
-                <button type="submit" class="nav-item cursor-pointer w-full text-left">
+                <button type="button" class="nav-item cursor-pointer w-full text-left"
+                        onclick="confirmNeutral('Log out?', 'You will be signed out of your account.', document.getElementById('logout-form'), 'Log out', getComputedStyle(document.documentElement).getPropertyValue('--color-error').trim())">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
                     Log out
                 </button>
@@ -213,7 +214,7 @@
         {{-- ─── SCROLLABLE CONTENT ─── --}}
         <main class="flex-1 overflow-y-auto p-4 md:p-8"
               style="padding-bottom: max(2rem, env(safe-area-inset-bottom))">
-            <div class="max-w-full mx-auto space-y-8">
+            <div class="max-w-full mx-auto space-y-8 mb-8 md:mb-0">
                 @yield('content')
             </div>
         </main>

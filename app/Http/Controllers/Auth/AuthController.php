@@ -27,6 +27,13 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
+            activity()
+                ->causedBy(Auth::user())
+                ->withProperties(['method' => 'password'])
+                ->event('login')
+                ->log('Signed in');
+
             return redirect()->route(Auth::user()->role->name . '.dashboard');
         }
 
@@ -45,6 +52,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        $user = Auth::user();
+
+        activity()
+            ->causedBy($user)
+            ->event('logout')
+            ->log('Signed out');
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

@@ -33,9 +33,9 @@
 @endphp
 
 {{-- ─── Page Header ─── --}}
-<div class="flex items-start justify-between gap-4">
-    <div>
-        <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
+<div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 lg:gap-4">
+    <div class="min-w-0">
+        <h1 class="text-2xl font-bold text-primary break-words" style="font-family: var(--font-display);">
             Users
         </h1>
         <p class="mt-1 text-sm text-on-surface-variant">
@@ -43,7 +43,7 @@
         </p>
     </div>
 
-    <x-button type="button" variant="primary" icon="person_add" onclick="openCreateModal()">
+    <x-button type="button" variant="primary" icon="person_add" onclick="openCreateModal()" class="lg:shrink-0">
         Add User
     </x-button>
 </div>
@@ -125,7 +125,7 @@
     </div>
 
     {{-- Status filter + clear --}}
-    <div class="flex items-center justify-between gap-2 pt-1 border-t border-outline-variant/20">
+    <div class="flex items-center justify-between gap-2 pt-3 border-t border-outline-variant/20">
     <div class="flex items-center gap-2 flex-wrap">
         <span class="text-[11px] font-semibold text-outline uppercase tracking-wide mr-1">Status</span>
 

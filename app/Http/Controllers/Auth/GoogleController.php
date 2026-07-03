@@ -77,11 +77,12 @@ class GoogleController extends Controller
             }
         }
 
-        Auth::login($user);
+        Auth::login($user, true);
 
         activity()
             ->causedBy($user)
             ->withProperties(['method' => 'google_oauth'])
+            ->event('login')
             ->log('Signed in via Google');
 
         return redirect()->intended(route($user->role->name . '.dashboard'));

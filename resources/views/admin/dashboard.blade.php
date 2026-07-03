@@ -108,9 +108,9 @@
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fade-up">
 
     {{-- Recent Users Table (2/3 width) --}}
-    <div class="xl:col-span-2 bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden">
+    <div class="xl:col-span-2 h-[480px] bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden flex flex-col">
 
-        <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30 shrink-0">
             <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
                 Recent Users
             </h2>
@@ -121,10 +121,10 @@
             </a>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="flex-1 overflow-auto">
             <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-outline-variant/30 bg-surface-container-low/50">
+                <thead class="sticky top-0 z-10">
+                    <tr class="border-b border-outline-variant/30 bg-surface-container-low">
                         <th class="text-left px-6 py-3 text-[11px] font-semibold tracking-widest text-outline uppercase">
                             Name
                         </th>
@@ -203,7 +203,7 @@
     </div>
 
     {{-- Recent Activity (1/3 width) --}}
-    <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden flex flex-col">
+    <div class="h-[480px] bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden flex flex-col">
 
         <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30 shrink-0">
             <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">

@@ -21,6 +21,8 @@
         'updated'  => ['label' => 'Updated',  'icon' => 'edit',        'badge' => 'bg-blue-50 text-blue-700 border border-blue-200'],
         'deleted'  => ['label' => 'Deleted',  'icon' => 'delete',      'badge' => 'bg-red-50 text-error border border-red-200'],
         'restored' => ['label' => 'Restored', 'icon' => 'restore',     'badge' => 'bg-amber-50 text-amber-700 border border-amber-200'],
+        'login'    => ['label' => 'Login',    'icon' => 'login',       'badge' => 'bg-violet-50 text-violet-700 border border-violet-200'],
+        'logout'   => ['label' => 'Logout',   'icon' => 'logout',      'badge' => 'bg-surface-container text-on-surface-variant border border-outline-variant'],
     ];
 @endphp
 

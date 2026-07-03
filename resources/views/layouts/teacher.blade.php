@@ -94,15 +94,15 @@
                 Tokens
             </a>
 
-            <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
+            <!-- <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 Activity
-            </p>
+            </p> -->
 
-            <a href="{{ Route::has('teacher.notifications.index') ? route('teacher.notifications.index') : '#' }}"
+            <!-- <a href="{{ Route::has('teacher.notifications.index') ? route('teacher.notifications.index') : '#' }}"
                class="nav-item {{ request()->routeIs('teacher.notifications.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">notifications</span>
                 Notifications
-            </a>
+            </a> -->
 
         </div>
 
@@ -121,9 +121,10 @@
                 Settings
             </a>
 
-            <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
+            <form id="logout-form" method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                 @csrf
-                <button type="submit" class="nav-item cursor-pointer w-full text-left">
+                <button type="button" class="nav-item cursor-pointer w-full text-left"
+                        onclick="confirmNeutral('Log out?', 'You will be signed out of your account.', document.getElementById('logout-form'), 'Log out', getComputedStyle(document.documentElement).getPropertyValue('--color-error').trim())">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
                     Log out
                 </button>
@@ -209,7 +210,7 @@
         {{-- ─── SCROLLABLE CONTENT ─── --}}
         <main class="flex-1 overflow-y-auto p-4 md:p-8"
               style="padding-bottom: max(2rem, env(safe-area-inset-bottom))">
-            <div class="max-w-full space-y-8">
+            <div class="max-w-full space-y-8 mb-8 md:mb-0">
                 @yield('content')
             </div>
         </main>

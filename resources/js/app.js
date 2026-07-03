@@ -70,10 +70,10 @@ window.confirmAction = function (title, text, formOrCb) {
 };
 
 /**
- * Neutral confirmation — logout, navigate away with unsaved changes, etc.
+ * Neutral confirmation — navigate away with unsaved changes, etc.
  * Both buttons neutral gray; confirm is slightly darker and gets focus.
  */
-window.confirmNeutral = function (title, text, formOrCb) {
+window.confirmNeutral = function (title, text, formOrCb, confirmButtonText = 'Continue', confirmButtonColor = cssVar('--color-outline')) {
     _dispatch({
         title,
         text,
@@ -81,9 +81,9 @@ window.confirmNeutral = function (title, text, formOrCb) {
         showCancelButton: true,
         reverseButtons: true,
         focusConfirm: true,
-        confirmButtonText: 'Continue',
+        confirmButtonText,
         cancelButtonText: 'Cancel',
-        confirmButtonColor: cssVar('--color-outline'),         // #76777f
+        confirmButtonColor,                                    // #76777f by default
         cancelButtonColor:  cssVar('--color-outline-variant'), // #c6c6cf
     }, formOrCb);
 };

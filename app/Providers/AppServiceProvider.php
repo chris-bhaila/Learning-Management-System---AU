@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // "Remember me" cookies (password and Google SSO logins) expire after 10 days,
+        // instead of Laravel's default (~400 days).
+        Auth::setRememberDuration(10 * 24 * 60);
     }
 }

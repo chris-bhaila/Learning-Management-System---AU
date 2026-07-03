@@ -17,7 +17,7 @@ class ActivityLogController extends Controller
 
         $query = Activity::with('causer', 'subject')->latest();
 
-        if ($event && in_array($event, ['created', 'updated', 'deleted'])) {
+        if ($event && in_array($event, ['created', 'updated', 'deleted', 'login', 'logout'])) {
             $query->where('event', $event);
         }
 

@@ -31,7 +31,7 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Admin
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])->name('dashboard');
 
     // Users
@@ -76,7 +76,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 });
 
 // Teacher
-Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->group(function () {
+Route::middleware(['auth', 'teacher', 'prevent.back'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/dashboard', [Teacher\DashboardController::class, 'index'])->name('dashboard');
 
     // Courses
@@ -114,7 +114,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 });
 
 // Student
-Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->group(function () {
+Route::middleware(['auth', 'student', 'prevent.back'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [Student\DashboardController::class, 'index'])->name('dashboard');
     Route::post('/enroll', [Student\EnrollmentController::class, 'store'])->middleware('throttle:10,1')->name('enroll');
     Route::get('/courses', [Student\CourseController::class, 'index'])->name('courses.index');
@@ -125,7 +125,7 @@ Route::middleware(['auth', 'student'])->prefix('student')->name('student.')->gro
 });
 
 // Settings — shared across all roles
-Route::middleware('auth')->prefix('settings')->name('settings.')->group(function () {
+Route::middleware(['auth', 'prevent.back'])->prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [SettingsController::class, 'index'])->name('index');
     Route::post('/avatar', [SettingsController::class, 'updateAvatar'])->name('avatar.update');
     Route::delete('/avatar', [SettingsController::class, 'removeAvatar'])->name('avatar.destroy');
