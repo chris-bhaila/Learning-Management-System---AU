@@ -67,12 +67,12 @@
                             </template>
                         </div>
 
-                        @if(auth()->user()->avatar_source === 'google' && ! auth()->user()->hasManualAvatar())
+                        <!-- @if(auth()->user()->avatar_source === 'google' && ! auth()->user()->hasManualAvatar())
                             <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-surface-container
                                          flex items-center justify-center" title="Google photo">
                                 <span class="material-symbols-outlined text-[12px] text-outline">account_circle</span>
                             </span>
-                        @endif
+                        @endif -->
                     </div>
 
                     {{-- Upload form (icon-only edit button) --}}

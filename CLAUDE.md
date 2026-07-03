@@ -4,15 +4,24 @@
 A web-based Learning Management System for a teacher to deliver courses to students.
 No payments, no subscriptions, no public marketplace. Private tool only.
 
+## ⚠️ Known Unresolved Security Issues (fix before anything else)
+- **[HIGH] `FileController::raw()` does not re-authorize the requesting user.** The signed URL (`viewToken()`) is generated after an authorization check, but `raw()` only validates the URL signature — anyone who obtains the URL (shared link, browser history, Referer leak) can stream the file within its 5-minute window regardless of enrollment. Fix: call `$this->authorize('download', $file)` inside `raw()` itself, not just in `viewToken()`.
+- **[HIGH] `Student\CourseController::showUnit()` does not scope the unit to the requested course.** The course-level policy check passes, but the unit is fetched by ID alone with no `$unit->course_id === $courseId` verification — an enrolled student can access any unit in any course by ID, including unpublished/unauthorized content. Fix: abort 404 if the fetched unit's `course_id` doesn't match the route's `courseId`.
+- Do not build new features on top of these until both are fixed and independently verified (not just claimed fixed) — see Security Audits section below.
+
 ## Tech Stack
 - **Backend:** Laravel 11, PHP 8.3
 - **Database:** MySQL
 - **Frontend:** Blade, Tailwind CSS, Alpine.js
-- **Rich Text:** TipTap
-- **Auth:** Google SSO via Laravel Socialite (no passwords)
+- **Rich Text:** TipTap, with a per-session "Raw HTML" mode toggle (no persistence — every editor session starts in WYSIWYG; switching to raw HTML and back is a client-side view swap only, resets on page load)
+- **HTML Sanitization:** mews/purifier — config lives at `config/purifier.php`. Only the `default` named config is actually used anywhere in the codebase (`Purifier::clean($x)` with no second argument, in `EloquentUnitRepository` and `EloquentCourseRepository`). Any settings added under other named configs (e.g. a `youtube`-specific block) are dead code unless explicitly passed as a second argument — verify this before assuming a config change takes effect.
+- **Auth:** Google SSO via Laravel Socialite (no passwords) — Admin role is intentionally excluded from Google login; Admin email is the one exception that remains user-editable (self-service settings page), specifically because Admin accounts are seeded/SQL-created and never matched by Google's email-lookup flow. Every other role's email is immutable after creation because Google OAuth matches existing users by email.
 - **Auth (dev):** Email/password via Laravel Auth
 - **Design:** Stitch AI (connected via MCP)
 - **Client-side Validation:** Iodine.js (Alpine.js compatible, RegEx support)
+- **Confirmation Dialogs:** SweetAlert2
+- **Activity Logging:** Spatie laravel-activitylog — replaces the earlier custom ActivityLog model entirely
+- **Testing:** PHPUnit feature tests — `tests/Feature/EnrollmentTest.php` covers the full two-layer enrollment flow (9 tests: valid class/course enrollment, wrong-order rejection, expired token, max-uses-reached, duplicate enrollment, malformed token format, well-formed-but-nonexistent token, unauthenticated access). Run with `php artisan test --filter=EnrollmentTest` after any change to token or enrollment logic.
 
 ## Architecture
 - Repository Design Pattern — controllers receive repository interfaces via dependency injection, never interact with Eloquent or the database directly
@@ -42,28 +51,40 @@ resources/
     │   ├── teacher.blade.php
     │   └── admin.blade.php
     ├── student/
+    │   ├── dashboard.blade.php
+    │   ├── courses/ (index, show)
+    │   ├── classes/ (index, show — teacher-grouped view, separate from courses list)
+    │   └── _enroll_modal.blade.php (shared partial, triggered from Dashboard and My Courses)
     ├── teacher/
-    └── admin/
+    │   ├── students/ (index, show — this teacher's enrolled students only, IDOR-checked)
+    │   └── tokens/index.blade.php (both class and course token generation/list, unified page)
+    ├── admin/
+    │   └── tokens/index.blade.php (teacher-selector, then that teacher's tokens)
+    └── units/ (shared create.blade.php and show.blade.php — see Conventions)
 ```
 
 ## User Roles
-- **Super Admin** — highest privilege, manages Admins, can impersonate users, force delete, access system config
-- **Admin** — manages teachers and students, views activity logs, full course CRUD
-- **Teacher** — creates courses/units/tokens, manages their own students
-- **Student** — default on registration, enrolls via token, read-only
+- **Super Admin** — highest privilege, manages Admins, can impersonate users, force delete, access system config (not yet built, low priority)
+- **Admin** — manages teachers and students, views activity logs, full course CRUD, excluded from Google login, own email is editable via self-service settings
+- **Teacher** — creates courses/units/tokens, manages their own students, views only their own class's activity as notifications
+- **Student** — default on registration, enrolls via token, read-only, cannot see CourseGroups under any circumstance
 
 ## Key Business Rules
 - Students enroll in courses using a token generated by the Teacher
 - Token expiry blocks new enrollments only — existing enrolled students keep access
-- Students are read-only — no uploads, no posts
+- Students are read-only — no uploads, no posts, cannot self-unenroll (only Teacher/Admin can deactivate a `course_student`/`teacher_student` row)
 - File downloads must go through a controller (never direct public URLs) to enforce enrollment-based access
-- All rich-text input must be sanitized with HTMLPurifier before storing
+- All rich-text input must be sanitized with HTMLPurifier before storing — this applies identically regardless of whether the content came from the WYSIWYG editor or the Raw HTML toggle; the server treats both input methods as equally untrusted
 - Two-layer enrollment: student first joins a teacher's class via a class token, then joins individual courses via course tokens
 - Both token types live in the same tokens table differentiated by a type column (class | course)
 - Tokens expire when either the lifetime (teacher sets: 12, 30, 45 min or 1–24 hours) or the use limit (teacher sets a number) is reached, whichever comes first
 - uses_count increments on each successful enrollment — token is invalid when uses_count >= max_uses or expires_at is past
-- Teachers can organize courses into CourseGroups by any basis they choose (grade, subject, period, etc.)
-- Activity logs serve dual purpose — full audit trail for Admins, filtered notifications for Teachers
+- **Tokens are hard-deleted, not soft-deleted** — revoking a token deletes it outright; expired tokens are pruned after 7 days via a scheduled `tokens:prune` command (see Commands). The `deleted_at` column and `SoftDeletes` trait were deliberately removed from the Token model.
+- **Enrollment audit trail survives token deletion by design.** `Student\EnrollmentController::store()` logs a permanent, self-contained snapshot to Spatie's activity log on every successful enrollment — `token_value`, `token_type`, `teacher_id`/`teacher_name`, and for course tokens `course_id`/`course_title`, all captured as plain scalar values at the moment of enrollment, never as live foreign-key lookups. This is intentional: the log must remain fully readable even after the token row (or later, the course/teacher) no longer exists. Failed enrollment attempts are NOT logged — only successful ones. Do not add logging to the failure paths; this was a deliberate scope decision, not an oversight.
+- Token format: 9 characters for class tokens, 6 for course tokens, generated from a charset excluding visually-confusing characters (no 0/O/1/I). Displayed to teachers WITHOUT hyphen formatting (plain contiguous string) — an earlier hyphenated display format was deliberately reversed.
+- The per-token usage history page (`teacher.tokens.usage` / `admin.tokens.usage`) is routed by `token_value` string, not by database ID — this is deliberate, so the page keeps working via the activity log even after the token itself has been pruned. It explicitly branches between "live token exists" (shows current stats + history) and "token pruned" (history only, no live stats) — do not let one state silently fall through to the other.
+- Teachers can organize courses into CourseGroups by any basis they choose (grade, subject, period, etc.) — **Students never see CourseGroups anywhere, under any circumstance.** This is a hard rule, not a default; do not surface group names or group-based filtering on any student-facing view, ever, even indirectly (e.g. via a course card badge).
+- Activity logs serve dual purpose — full audit trail for Admins, filtered notifications for Teachers (filtered to only students enrolled in that teacher's class)
 - Notifications support both individual read tracking and clear all via the NotificationRead pivot
 
 ## Auth Flow
@@ -71,10 +92,11 @@ resources/
 - First login creates user with role: student
 - Passwords stored as bcrypt hashes via Laravel's Hash facade
 - Google SSO via Laravel Socialite is the intended production auth method
+- **Admin is excluded from the Google login flow entirely** — if an existing user matched by email has the `admin` role, the Google callback rejects the login attempt with a message directing them to email/password login instead. This is deliberate: Admin's email is user-editable (see Tech Stack), and Google's email-matching logic would break if Admin were allowed to both change their email freely and sign in via Google.
 
 ## Design System
 - Primary: Navy #1E2A4A (text and headings only, never backgrounds)
-- Accent: Gold #FBB740 (CTAs, active states, progress bars)
+- Accent: Gold #FBB740 (CTAs, active states, progress bars) — confirmation dialog colors do NOT follow this; see Conventions
 - Background: White dominant, light gray #F9FAFB for sidebar
 - Fonts: Plus Jakarta Sans (headings), Inter (body)
 - Border radius: Cards 20px, Buttons 24px, Inputs 16px
@@ -82,28 +104,33 @@ resources/
 - Mobile: fully responsive
 - All layouts use Tailwind responsive prefixes (sm:, md:, lg:) — no fixed pixel widths
 - Clickable items, boxes, buttons etc should have cursor-pointer
+- Reusable Blade components (`<x-button>`, `<x-badge>`, `<x-card>`, shared course card component) exist specifically to prevent visual drift between Admin/Teacher/Student pages — always use these, never hand-roll button/badge/card markup on a new page
 
 ## Commands
 ```bash
-php artisan serve          # Start dev server
-php artisan migrate        # Run migrations
-php artisan db:seed        # Seed admin user and roles
-php artisan test           # Run tests
-npm run dev                # Compile assets
-php artisan activitylog:clean  # Prune logs older than configured retention period
+php artisan serve              # Start dev server
+php artisan migrate            # Run migrations
+php artisan db:seed            # Seed admin user and roles
+php artisan test               # Run tests
+php artisan test --filter=EnrollmentTest  # Run just the enrollment test suite
+npm run dev                    # Compile assets
+php artisan activitylog:clean  # Prune activity logs older than configured retention period
+php artisan tokens:prune       # Hard-delete tokens expired more than 7 days ago (scheduled daily)
 ```
 
 ## Security
 - **XSS:** Sanitize all rich-text input with HTMLPurifier before storing; use DOMPurify on the client before rendering. Always use `{{ }}` in Blade — only use `{!! !!}` for pre-sanitized content
 - **SQL Injection:** Use Eloquent and query builder only — parameterized queries by default. No raw SQL unless strictly necessary; always use bindings if so
-- **IDOR:** Never expose direct object references for sensitive resources. Scope all route model binding — a student can only resolve a Unit if enrolled in its parent Course. File downloads served through a controller that checks authorization before streaming
-- **Input Validation:** All form input validated via Laravel Form Requests before reaching the controller. File uploads validated for MIME type and size — never use the original filename in storage paths
-- **Access Control:** Laravel Policies enforce ownership on every resource mutation. Middleware gates each role's routes — students cannot access teacher or admin routes under any circumstance
-- **Rate Limiting:** Apply Laravel rate limiting middleware to the auth routes and token enrollment endpoint to prevent brute force
+- **IDOR:** Never expose direct object references for sensitive resources. Scope all route model binding — a student can only resolve a Unit if enrolled in its parent Course **and the Unit actually belongs to the Course in the URL** (see Known Unresolved Security Issues — this specific rule is currently violated in `showUnit()`). File downloads served through a controller that checks authorization before streaming **on every request that serves file bytes, including signed/temporary URL routes** (see Known Unresolved Security Issues — currently violated in `FileController::raw()`)
+- **Input Validation:** All form input validated via Laravel Form Requests before reaching the controller. File uploads validated for MIME type and size — never use the original filename in storage paths. Every Form Request field should have a genuinely restrictive rule (bounded length, explicit format) — an unbounded `'string'` rule with no `max:` is not acceptable
+- **Data Minimization:** The application must not collect or store personal information beyond email address and full name (client requirement). Do not add profile fields, do not enable IP/user-agent capture in Spatie's activity log config, do not extract EXIF metadata from uploaded avatars
+- **Access Control:** Laravel Policies enforce ownership on every resource mutation, including write/upload paths, not just read/download paths. Middleware gates each role's routes — students cannot access teacher or admin routes under any circumstance
+- **Rate Limiting:** Apply Laravel rate limiting middleware to the auth routes and the token enrollment endpoint (`/student/enroll`) to prevent brute force — tokens are short (6-9 characters), making this endpoint a realistic brute-force target if unthrottled
 - **CSRF:** Laravel's CSRF protection enabled on all forms — never disable it
-- **DDoS:** Laravel rate limiting handles brute force; a CDN (Cloudflare) should be in place at the infrastructure level for volumetric attacks
+- **DDoS:** Laravel rate limiting handles application-level brute force only; a CDN (Cloudflare) must be in place at the infrastructure level for volumetric attacks — this is explicitly out of this codebase's scope and must be confirmed handled separately before production deployment, not silently assumed covered
 - **Client-side Validation:** Iodine.js handles client-side validation (UX only) — always paired with server-side Laravel Form Request validation which is the authoritative layer. Never rely on client-side validation alone.
-- HTMLPurifier must be called explicitly wherever rich-text (TipTap) content is saved — sanitization is not automatic and must never be deferred or left as a "before production" task. Add it to the repository's create/update methods, not the controller.
+- HTMLPurifier must be called explicitly wherever rich-text (TipTap) content is saved — sanitization is not automatic and must never be deferred or left as a "before production" task. Add it to the repository's create/update methods, not the controller. This applies identically to content submitted via the Raw HTML toggle — there is no separate, less-trusted or more-trusted input path; both go through the same sanitization call.
+- Mass assignment: avoid including role/privilege/status columns (`role_id`, `is_active`) in a model's `$fillable` where avoidable — construct explicit attribute arrays from validated Form Request data instead of relying on `$fillable` + `create($request->all())` patterns, even though current controllers already do this correctly
 
 ## Conventions
 - Blade views follow the layouts/app.blade.php base template
@@ -113,40 +140,45 @@ php artisan activitylog:clean  # Prune logs older than configured retention peri
 - Stitch MCP is connected — use it to reference or generate screens when building views
 - All database-driven content must have fallback states — empty states for no data, skeleton loaders while fetching, graceful error messages on failure. Never render a blank or broken UI
 - CourseRepositoryInterface, TokenRepositoryInterface, and CourseGroupRepositoryInterface each need a getAll() method — used by Admin controllers to fetch all records regardless of ownership
-- Activity logging handled by Spatie laravel-activitylog — add LogsActivity trait to models, never write manual log calls
-- Course and Unit pages use Alpine.js toggle between view mode and edit mode — page loads in view mode by default. Editing happens inline on the show page; there are no separate edit pages or modals for courses or units.
+- Activity logging handled by Spatie laravel-activitylog — add LogsActivity trait to models for automatic create/update/delete logging. Manual `activity()->causedBy(...)->withProperties([...])->log(...)` calls are used only for domain events that aren't simple model changes (e.g. enrollment success) — never for failure/rejection paths, which are deliberately not logged
+- Course and Unit pages use Alpine.js toggle between view mode and edit mode — page loads in view mode by default. Editing happens inline on the show page; there are no separate edit pages or modals for courses or units
 - Courses and Units always get a dedicated show page regardless of role — too much content for a modal
 - Unit create/show/edit views are shared: `resources/views/units/create.blade.php` and `resources/views/units/show.blade.php`. Each role's controller passes `$layout`, `$storeRoute`/`$updateRoute`/`$destroyRoute`, and `$backRoute` as view variables — no duplicate view files per role
 - getAll() is not needed on UnitRepositoryInterface — units are always scoped to a course via getByCourse(int $courseId)
-- Teacher's courses/show.blade.php includes drag-to-reorder for units via SortableJS (loaded from esm.sh). Admin's courses/show does not include reorder since admins don't own courses.
-- After any state-changing action (create, update, delete), prevent the user from returning to the stale page via the browser back button. Use POST-redirect-GET pattern (already default in Laravel redirects) and set Cache-Control headers (no-store) on form-bearing pages, or use Alpine.js to invalidate cached views via history.replaceState where needed.
-- Every new form must include Iodine.js client-side validation matching the server-side Form Request rules at the time it's built — not as a follow-up task. If a form ships without it, treat it as incomplete, not done.
-- All containers must constrain content properly — use max-w-full, overflow-hidden, and min-w-0 on flex children where text could overflow. Test every new page at narrow widths before considering it done.
-- All interactive elements (buttons, cards, modals, toggles, dropdowns) must have transition animations — use Tailwind's transition, duration-150/200, and ease-in-out utilities at minimum. Modals fade/scale in, toggles slide, page elements should not feel static. Treat missing animation as incomplete, not polish to add later.
+- Teacher's courses/show.blade.php includes drag-to-reorder for units via SortableJS (loaded from esm.sh). Admin's courses/show does not include reorder since admins don't own courses
+- After any state-changing action (create, update, delete), prevent the user from returning to the stale page via the browser back button. Use POST-redirect-GET pattern (already default in Laravel redirects) and set Cache-Control headers (no-store) on form-bearing pages, or use Alpine.js to invalidate cached views via history.replaceState where needed. This includes explicit handling for the browser's back-forward cache (bfcache) — a `pageshow` listener checking `event.persisted` clears stale flash messages/toasts globally, implemented once in `app.js`
+- Every new form must include Iodine.js client-side validation matching the server-side Form Request rules at the time it's built — not as a follow-up task. If a form ships without it, treat it as incomplete, not done
+- All containers must constrain content properly — use max-w-full, overflow-hidden, and min-w-0 on flex children where text could overflow. Test every new page at narrow widths (375px) AND wide (1440px) before considering it done — describe what was actually checked, a generic "confirmed responsive" claim is not sufficient
+- All interactive elements (buttons, cards, modals, toggles, dropdowns) must have transition animations — use Tailwind's transition, duration-150/200, and ease-in-out utilities at minimum. Modals fade/scale in, toggles slide, page elements should not feel static. Treat missing animation as incomplete, not polish to add later
 - Confirmation dialogs (SweetAlert2) follow standard action-color convention, not brand colors:
   - Destructive actions (delete, revoke, remove) — danger/error color for confirm, neutral gray for cancel
   - Positive/safe actions (publish, save, approve, enroll) — success color (or gold as fallback) for confirm, neutral gray for cancel
   - Neutral actions (logout, unsaved changes) — both buttons neutral gray
   - Reusable helpers (confirmDelete(), confirmAction()) live in resources/js/app.js — never one-off SweetAlert2 calls in Blade files
   - All colors reference existing CSS variables from resources/css/app.css — never hardcoded hex values, never guessed variable names without reading the file first
+- **Never nest a `<form>` element inside another `<form>` element.** Browsers silently discard the inner `<form>` tag but keep its child inputs, which corrupts Laravel's method-spoofing (`_method` field) if both forms have one — this has caused real production bugs multiple times in this project (delete buttons inside edit-toggle forms, token generation forms inside course edit forms). Any delete/secondary-action form must be a structurally separate `<form>` element, referenced via its `id` from a button outside the primary form, never nested inside it. Audit for this specifically any time markup is moved between pages or restructured.
+- **Watch for unqualified column references in queries joining tables that share a column name** (`is_active`, `id`, `created_at`, etc.) — always qualify with the table name (e.g. `teacher_student.is_active`, not just `is_active`) in any `where()` clause on a relationship query. An unqualified reference can silently resolve against the wrong table depending on the database driver — this has caused a real bug that MySQL handled silently incorrectly while SQLite correctly threw an error. Do not assume a single fixed instance was the only one; this is a pattern to actively check for, not a one-off.
+- When adding a raw HTML query in a database driver-dependent feature (e.g. querying inside a JSON column like Spatie's `properties`), confirm the query syntax against the actual database driver in use (MySQL vs SQLite) — do not assume compatibility, these can differ in JSON path query syntax.
+- Before treating a test as "fixed" by changing its input value, verify WHY the original input failed — a test that passes for the wrong reason (e.g. failing validation instead of exercising the intended controller logic) provides false confidence and silently loses coverage of the actual code path it was meant to test.
+- Feature tests exist in `tests/Feature/` and use Laravel's testing HTTP client (`actingAs()->post()`), not manually-constructed Form Request objects — manually instantiating a `FormRequest` outside the HTTP kernel does not run Laravel's validation pipeline and will produce misleading errors.
 
 ## Models
 - User (roles: super_admin, admin, teacher, student)
 - Role (lookup table for user roles)
 - Course (belongs to teacher/User)
 - Unit (belongs to Course)
-- Token (type: class | course — one table handles both enrollment layers)
-- CourseGroup (teacher-defined groupings — by grade, subject, period, or any basis)
+- Token (type: class | course — one table handles both enrollment layers; hard-deleted, not soft-deleted — see Key Business Rules)
+- CourseGroup (teacher-defined groupings — by grade, subject, period, or any basis; never visible to Students)
 - TeacherStudent (pivot — teacher/student relationship, has is_active)
 - CourseStudent (pivot — course enrollment, has is_active for access revocation)
 - File (polymorphic — belongs to Course or Unit)
 - NotificationRead (pivot — tracks per-notification read state, supports clear all)
 - SiteContent (landing page editable content — hero, subheading, CTA, about text)
 - Page (static editable pages)
-- Activity (Spatie — audit trail, replaces custom ActivityLog model)
+- Activity (Spatie — audit trail, replaces custom ActivityLog model; also used for permanent enrollment-success snapshots, see Key Business Rules)
 
 ## Security Audits
-When asked to perform a security audit, write findings to `SECURITY_AUDIT.md` 
+When asked to perform a security audit, write findings to `SECURITY_AUDIT.md`
 in the project root. Do not modify any other files during an audit.
 
 Format each finding as:
@@ -154,3 +186,7 @@ Format each finding as:
 - **File:** path/to/file.php:line
 - **Issue:** What the vulnerability is
 - **Fix:** What should be done (no code changes)
+
+Do not mark a finding as resolved based on a prior session's summary alone —
+re-verify the actual current code before treating any previously-reported
+issue as fixed.
