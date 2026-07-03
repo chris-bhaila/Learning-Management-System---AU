@@ -235,9 +235,9 @@
          x-transition:leave-end="opacity-0 scale-95">
 
         {{-- Header --}}
-        <div class="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20 shrink-0">
-            <div>
-                <h2 class="text-base font-semibold text-on-surface" style="font-family: var(--font-display);">
+        <div class="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-outline-variant/20 shrink-0">
+            <div class="min-w-0">
+                <h2 class="text-base font-semibold text-on-surface truncate" style="font-family: var(--font-display);">
                     <span x-show="view === 'list'">All Course Groups</span>
                     <span x-show="view === 'edit'" x-cloak>Edit Group</span>
                 </h2>
@@ -246,7 +246,7 @@
                 </p>
             </div>
             <button type="button" @click="closeModal()"
-                    class="w-8 h-8 flex items-center justify-center rounded-full
+                    class="w-8 h-8 flex items-center justify-center rounded-full shrink-0
                            text-on-surface-variant hover:bg-surface-container
                            transition-colors duration-150 cursor-pointer">
                 <span class="material-symbols-outlined text-[18px]">close</span>
@@ -259,7 +259,7 @@
             {{-- LIST view --}}
             <div x-show="view === 'list'">
                 @if($groups->isEmpty())
-                    <div class="py-16 flex flex-col items-center gap-4 text-center px-6">
+                    <div class="py-16 flex flex-col items-center gap-4 text-center px-4 sm:px-6">
                         <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
                             <span class="material-symbols-outlined text-outline text-[32px]">folder_open</span>
                         </div>
@@ -273,27 +273,29 @@
                 @else
                     <ul class="divide-y divide-outline-variant/20">
                         @foreach($groups as $group)
-                        <li class="flex items-center gap-3 px-6 py-4
+                        <li class="flex flex-col sm:flex-row sm:items-center gap-3 px-4 sm:px-6 py-4
                                    hover:bg-surface-container-low/40 transition-colors duration-150">
-                            <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
-                                <span class="material-symbols-outlined text-outline text-[18px]">folder</span>
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-outline text-[18px]">folder</span>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold text-on-surface truncate">{{ $group->name }}</p>
+                                    @if($group->description)
+                                        <p class="text-xs text-on-surface-variant truncate mt-0.5">{{ $group->description }}</p>
+                                    @endif
+                                    <p class="text-[11px] text-outline mt-0.5">
+                                        {{ $group->courses_count }} {{ Str::plural('course', $group->courses_count) }}
+                                    </p>
+                                </div>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-semibold text-on-surface truncate">{{ $group->name }}</p>
-                                @if($group->description)
-                                    <p class="text-xs text-on-surface-variant truncate mt-0.5">{{ $group->description }}</p>
-                                @endif
-                                <p class="text-[11px] text-outline mt-0.5">
-                                    {{ $group->courses_count }} {{ Str::plural('course', $group->courses_count) }}
-                                </p>
-                            </div>
-                            <div class="min-w-[120px] shrink-0">
+                            <div class="min-w-0 sm:min-w-[120px] shrink-0 pl-12 sm:pl-0">
                                 <p class="text-xs font-medium text-on-surface-variant truncate">
                                     {{ $group->teacher?->name ?? '—' }}
                                 </p>
                                 <p class="text-[10px] text-outline mt-0.5">Teacher</p>
                             </div>
-                            <div class="flex items-center gap-3 shrink-0">
+                            <div class="flex items-center gap-3 shrink-0 pl-12 sm:pl-0">
                                 <button type="button"
                                         @click="editGroup({{ $group->id }}, @js($group->name), @js($group->description ?? ''))"
                                         class="inline-flex items-center gap-1 text-xs font-medium text-primary
@@ -319,7 +321,7 @@
             <form x-show="view === 'edit'" x-cloak
                   method="POST"
                   :action="'/admin/groups/' + editId"
-                  class="p-6"
+                  class="p-4 sm:p-6"
                   @submit.prevent="
                       editErrors.name = check(document.getElementById('admin-edit-group-name').value, ['required', 'maxLength:255']);
                       if (!editErrors.name) $el.submit();
@@ -355,16 +357,16 @@
                                      focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"></textarea>
                 </div>
 
-                <div class="flex items-center justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
                     <button type="button" @click="cancelEdit()"
-                            class="px-5 py-2.5 border border-outline-variant/60 text-sm font-medium
+                            class="w-full sm:w-auto px-5 py-2.5 border border-outline-variant/60 text-sm font-medium
                                    text-on-surface-variant rounded-[24px]
                                    hover:bg-surface-container-low hover:text-primary
                                    transition-colors duration-150 cursor-pointer">
                         Cancel
                     </button>
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
+                            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gold text-primary
                                    text-sm font-semibold rounded-[24px] hover:bg-gold/90
                                    active:scale-[0.96] transition-all duration-150 cursor-pointer">
                         <span class="material-symbols-outlined text-[16px]">save</span>
