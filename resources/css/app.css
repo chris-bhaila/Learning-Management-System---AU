@@ -72,6 +72,55 @@
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r bg-gold;
 }
 
+/* ─── Sidebar collapse (desktop only — mobile off-canvas behavior is
+   untouched, these rules only take effect at the md breakpoint) ───────── */
+#sidebar {
+    transition-property: width, transform;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in-out;
+}
+#main-content {
+    transition-property: margin-left;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in-out;
+}
+/* Nav-item / footer text that sits inline next to an icon. */
+.sidebar-label {
+    white-space: nowrap;
+}
+.sidebar-collapse-btn .material-symbols-outlined {
+    transition: transform 200ms ease-in-out;
+}
+@media (min-width: 768px) {
+    html.sidebar-collapsed #sidebar {
+        width: 5.5rem;
+    }
+    html.sidebar-collapsed #main-content {
+        margin-left: 5.5rem;
+    }
+    /* Text hides instantly; the sidebar/main-content width transition
+       above is what carries the motion for the collapse/expand action. */
+    html.sidebar-collapsed .sidebar-label,
+    html.sidebar-collapsed .sidebar-block {
+        display: none;
+    }
+    html.sidebar-collapsed .sidebar-header {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+        gap: 0;
+    }
+    html.sidebar-collapsed .nav-item {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+        gap: 0;
+    }
+    html.sidebar-collapsed .sidebar-collapse-btn .material-symbols-outlined {
+        transform: rotate(180deg);
+    }
+}
+
 /* ─── SweetAlert2 overrides ──────────────────────── */
 
 /* Gold confirm button needs dark text — white on #FBB740 fails contrast */

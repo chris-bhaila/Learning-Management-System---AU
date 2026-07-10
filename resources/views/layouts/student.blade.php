@@ -17,6 +17,14 @@
             error:   @js(session('error')),
             warning: @js(session('warning')),
         };
+        // Applied before first paint to avoid a flash of the expanded sidebar.
+        (function () {
+            try {
+                if (localStorage.getItem('sidebarCollapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -34,14 +42,26 @@
                shadow-[4px_0px_24px_rgba(30,42,74,0.08)]
                -translate-x-full md:translate-x-0 transition-transform duration-200"
     >
+        {{-- Desktop collapse toggle — floats on the sidebar's edge, hidden on mobile --}}
+        <button type="button"
+                onclick="toggleSidebarCollapse()"
+                title="Collapse sidebar"
+                class="sidebar-collapse-btn hidden md:flex absolute top-5 -right-3 z-10
+                       w-6 h-6 items-center justify-center rounded-full
+                       bg-surface-white border border-outline-variant/50 shadow-sm
+                       text-primary/60 hover:text-primary hover:bg-primary/5
+                       transition-colors duration-150 cursor-pointer">
+            <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+        </button>
+
         {{-- Logo --}}
-        <div class="h-16 flex items-center gap-3 px-6 border-b border-outline-variant/30 shrink-0">
+        <div class="sidebar-header h-16 flex items-center gap-3 px-6 border-b border-outline-variant/30 shrink-0">
             <div class="w-9 h-9 rounded-full bg-gold flex items-center justify-center
                         font-bold text-primary text-sm shrink-0"
                  style="font-family: var(--font-display);">
                 EN
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 sidebar-block">
                 <p class="font-semibold text-primary text-base leading-tight truncate"
                    style="font-family: var(--font-display);">EduNest</p>
                 <p class="text-[11px] text-primary/50 leading-tight">Student Portal</p>
@@ -51,55 +71,55 @@
         {{-- Navigation --}}
         <div class="flex-1 overflow-y-auto py-3 flex flex-col">
 
-            <p class="px-6 pb-1 pt-2 text-[10px] font-semibold tracking-widest text-outline uppercase">
+            <p class="sidebar-block px-6 pb-1 pt-2 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 Overview
             </p>
 
-            <a href="{{ route('student.dashboard') }}"
+            <a href="{{ route('student.dashboard') }}" title="Dashboard"
                class="nav-item {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">dashboard</span>
-                Dashboard
+                <span class="sidebar-label">Dashboard</span>
             </a>
 
-            <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
+            <p class="sidebar-block px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 Learning
             </p>
 
-            <a href="{{ route('student.classes.index') }}"
+            <a href="{{ route('student.classes.index') }}" title="My Classes"
                class="nav-item {{ request()->routeIs('student.classes.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">school</span>
-                My Classes
+                <span class="sidebar-label">My Classes</span>
             </a>
 
-            <a href="{{ route('student.courses.index') }}"
+            <a href="{{ route('student.courses.index') }}" title="My Courses"
                class="nav-item {{ request()->routeIs('student.courses.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">library_books</span>
-                My Courses
+                <span class="sidebar-label">My Courses</span>
             </a>
 
         </div>
 
         {{-- Optional sidebar CTA --}}
         @hasSection('sidebar-cta')
-            <div class="px-4 pb-4 shrink-0">
+            <div class="sidebar-block px-4 pb-4 shrink-0">
                 @yield('sidebar-cta')
             </div>
         @endif
 
         {{-- Footer: Settings + Logout --}}
         <div class="border-t border-outline-variant/30 py-2 flex flex-col shrink-0">
-            <a href="{{ route('settings.index') }}"
+            <a href="{{ route('settings.index') }}" title="Settings"
                class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
-                Settings
+                <span class="sidebar-label">Settings</span>
             </a>
 
             <form id="logout-form" method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="button" class="nav-item cursor-pointer w-full text-left"
+                <button type="button" title="Log out" class="nav-item cursor-pointer w-full text-left"
                         onclick="confirmNeutral('Log out?', 'You will be signed out of your account.', document.getElementById('logout-form'), 'Log out', getComputedStyle(document.documentElement).getPropertyValue('--color-error').trim())">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
-                    Log out
+                    <span class="sidebar-label">Log out</span>
                 </button>
             </form>
         </div>
@@ -184,6 +204,11 @@
             sidebar.classList.add('-translate-x-full');
             backdrop.classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
+        }
+
+        function toggleSidebarCollapse() {
+            const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+            try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
         }
     </script>
 

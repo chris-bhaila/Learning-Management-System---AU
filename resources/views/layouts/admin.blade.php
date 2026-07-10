@@ -17,6 +17,14 @@
             error:   @js(session('error')),
             warning: @js(session('warning')),
         };
+        // Applied before first paint to avoid a flash of the expanded sidebar.
+        (function () {
+            try {
+                if (localStorage.getItem('sidebarCollapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
+            } catch (e) {}
+        })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -47,14 +55,26 @@
                shadow-[4px_0px_24px_rgba(30,42,74,0.08)]
                -translate-x-full md:translate-x-0 transition-transform duration-200"
     >
+        {{-- Desktop collapse toggle — floats on the sidebar's edge, hidden on mobile --}}
+        <button type="button"
+                onclick="toggleSidebarCollapse()"
+                title="Collapse sidebar"
+                class="sidebar-collapse-btn hidden md:flex absolute top-5 -right-3 z-10
+                       w-6 h-6 items-center justify-center rounded-full
+                       bg-surface-white border border-outline-variant/50 shadow-sm
+                       text-primary/60 hover:text-primary hover:bg-primary/5
+                       transition-colors duration-150 cursor-pointer">
+            <span class="material-symbols-outlined text-[16px]">chevron_left</span>
+        </button>
+
         {{-- Logo --}}
-        <div class="h-16 flex items-center gap-3 px-6 border-b border-outline-variant/30 shrink-0">
+        <div class="sidebar-header h-16 flex items-center gap-3 px-6 border-b border-outline-variant/30 shrink-0">
             <div class="w-9 h-9 rounded-full bg-gold flex items-center justify-center
                         font-bold text-primary text-sm shrink-0"
                  style="font-family: var(--font-display);">
                 EN
             </div>
-            <div class="min-w-0">
+            <div class="min-w-0 sidebar-block">
                 <p class="font-semibold text-primary text-base leading-tight truncate"
                    style="font-family: var(--font-display);">EduNest</p>
                 <p class="text-[11px] text-primary/50 leading-tight">Admin Portal</p>
@@ -64,46 +84,46 @@
         {{-- Navigation --}}
         <div class="flex-1 overflow-y-auto py-3 flex flex-col">
 
-            <p class="px-6 pb-1 pt-2 text-[10px] font-semibold tracking-widest text-outline uppercase">
+            <p class="sidebar-block px-6 pb-1 pt-2 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 Overview
             </p>
 
-            <a href="{{ route('admin.dashboard') }}"
+            <a href="{{ route('admin.dashboard') }}" title="Dashboard"
                class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">dashboard</span>
-                Dashboard
+                <span class="sidebar-label">Dashboard</span>
             </a>
 
-            <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
+            <p class="sidebar-block px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 Management
             </p>
 
-            <a href="{{ Route::has('admin.users.index') ? route('admin.users.index') : '#' }}"
+            <a href="{{ Route::has('admin.users.index') ? route('admin.users.index') : '#' }}" title="Users"
                class="nav-item {{ request()->routeIs('admin.users.index') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">group</span>
-                Users
+                <span class="sidebar-label">Users</span>
             </a>
 
-            <a href="{{ Route::has('admin.courses.index') ? route('admin.courses.index') : '#' }}"
+            <a href="{{ Route::has('admin.courses.index') ? route('admin.courses.index') : '#' }}" title="Courses"
                class="nav-item {{ request()->routeIs('admin.courses.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">library_books</span>
-                Courses
+                <span class="sidebar-label">Courses</span>
             </a>
 
-            <a href="{{ Route::has('admin.tokens.index') ? route('admin.tokens.index') : '#' }}"
+            <a href="{{ Route::has('admin.tokens.index') ? route('admin.tokens.index') : '#' }}" title="Tokens"
                class="nav-item {{ request()->routeIs('admin.tokens.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">key</span>
-                Tokens
+                <span class="sidebar-label">Tokens</span>
             </a>
 
-            <p class="px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
+            <p class="sidebar-block px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
                 System
             </p>
 
-            <a href="{{ Route::has('admin.logs.index') ? route('admin.logs.index') : '#' }}"
+            <a href="{{ Route::has('admin.logs.index') ? route('admin.logs.index') : '#' }}" title="Activity Log"
                class="nav-item {{ request()->routeIs('admin.logs.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">history</span>
-                Activity Log
+                <span class="sidebar-label">Activity Log</span>
             </a>
 
             <!-- <a href="{{ Route::has('admin.pages.index') ? route('admin.pages.index') : '#' }}"
@@ -122,18 +142,18 @@
 
         {{-- Footer: Settings + Logout --}}
         <div class="border-t border-outline-variant/30 py-2 flex flex-col shrink-0">
-            <a href="{{ route('settings.index') }}"
+            <a href="{{ route('settings.index') }}" title="Settings"
                class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">manage_accounts</span>
-                Settings
+                <span class="sidebar-label">Settings</span>
             </a>
 
             <form id="logout-form" method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}">
                 @csrf
-                <button type="button" class="nav-item cursor-pointer w-full text-left"
+                <button type="button" title="Log out" class="nav-item cursor-pointer w-full text-left"
                         onclick="confirmNeutral('Log out?', 'You will be signed out of your account.', document.getElementById('logout-form'), 'Log out', getComputedStyle(document.documentElement).getPropertyValue('--color-error').trim())">
                     <span class="material-symbols-outlined text-[20px]">logout</span>
-                    Log out
+                    <span class="sidebar-label">Log out</span>
                 </button>
             </form>
         </div>
@@ -150,7 +170,7 @@
     {{-- ═══════════════════════════════════════════════
          MAIN COLUMN (topbar + scrollable content)
     ═══════════════════════════════════════════════ --}}
-    <div class="flex-1 flex flex-col md:ml-[260px] min-w-0 h-full overflow-hidden">
+    <div id="main-content" class="flex-1 flex flex-col md:ml-[260px] min-w-0 h-full overflow-hidden">
 
         {{-- ─── TOPBAR ─── --}}
         <header class="h-16 sticky top-0 z-30 bg-surface-white border-b border-outline-variant/30
@@ -158,36 +178,22 @@
                         flex items-center gap-4 px-4 md:px-8 shrink-0">
 
             {{-- Mobile sidebar toggle --}}
-            <button onclick="openSidebar()" class="md:hidden text-primary -ml-1 shrink-0">
+            <button onclick="openSidebar()" class="md:hidden text-primary -ml-1 shrink-0 cursor-pointer">
                 <span class="material-symbols-outlined">menu</span>
             </button>
-
-            {{-- Search --}}
-            <div class="flex-1 max-w-md hidden sm:block">
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2
-                                 text-outline text-[18px] pointer-events-none">search</span>
-                    <input
-                        type="search"
-                        placeholder="Search users, courses…"
-                        class="w-full pl-10 pr-4 py-2 bg-surface-container-low rounded-full text-sm
-                               border border-outline-variant/60
-                               placeholder:text-outline
-                               focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                    >
-                </div>
-            </div>
 
             <div class="ml-auto flex items-center gap-3">
                 {{-- Page-level action buttons --}}
                 @yield('topbar-actions')
 
                 {{-- Notifications --}}
+                {{--
                 <button class="relative text-on-surface-variant hover:text-primary transition-colors">
                     <span class="material-symbols-outlined">notifications</span>
                     <span class="absolute top-0.5 right-0.5 w-2 h-2 bg-gold rounded-full
                                  border-2 border-surface-white"></span>
                 </button>
+                --}}
 
                 {{-- User avatar --}}
                 <a href="{{ route('settings.index') }}"
@@ -237,6 +243,11 @@
             sidebar.classList.add('-translate-x-full');
             backdrop.classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
+        }
+
+        function toggleSidebarCollapse() {
+            const collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+            try { localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0'); } catch (e) {}
         }
     </script>
 
