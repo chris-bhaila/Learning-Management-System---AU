@@ -203,11 +203,36 @@ class EnrollmentTest extends TestCase
     }
 
     /** @test */
+    public function test_enrollment_token_lookup_is_case_insensitive(): void
+    {
+        $teacher = $this->teacher();
+        $student = $this->student();
+        $token   = $this->classToken($teacher, ['token_value' => 'Sw2kF8tMr3v']);
+
+        // Student types/pastes the token in a different case than it was generated and stored in.
+        $response = $this->enroll($student, strtolower($token->token_value));
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('teacher_student', [
+            'teacher_id' => $teacher->id,
+            'student_id' => $student->id,
+            'is_active'  => true,
+        ]);
+
+        $this->assertDatabaseHas('tokens', [
+            'id'         => $token->id,
+            'uses_count' => 1,
+        ]);
+    }
+
+    /** @test */
     public function test_invalid_token_value_is_rejected(): void
     {
         $student = $this->student();
 
-        $response = $this->enroll($student, 'ABCDEF');
+        $response = $this->enroll($student, 'BCDFGHJKM');
 
         $response->assertSessionHasErrors('token_value');
         $response->assertSessionHasErrors(['token_value' => "That token doesn't exist. Double-check the code your teacher gave you."]);
@@ -216,7 +241,7 @@ class EnrollmentTest extends TestCase
     /** @test */
     public function test_unauthenticated_user_cannot_enroll(): void
     {
-        $response = $this->post(route('student.enroll'), ['token_value' => 'ABCDEFGHI']);
+        $response = $this->post(route('student.enroll'), ['token_value' => 'BCDFGHJKMNP']);
 
         $response->assertRedirect(route('login'));
     }

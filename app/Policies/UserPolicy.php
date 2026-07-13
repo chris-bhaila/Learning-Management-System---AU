@@ -17,6 +17,13 @@ class UserPolicy
         return $authUser->isAdmin() || $authUser->id === $targetUser->id;
     }
 
+    /** Exclusive to Super Admin — grants the admin role to a teacher/student. Not visible
+     *  to, or usable by, a regular Admin; this is the one differentiator between the roles. */
+    public function promoteToAdmin(User $authUser, User $targetUser): bool
+    {
+        return $authUser->isSuperAdmin() && !$targetUser->isAdmin();
+    }
+
     /** A teacher may only view a student profile if that student is in their class. */
     public function viewProfile(User $authUser, User $targetUser): bool
     {

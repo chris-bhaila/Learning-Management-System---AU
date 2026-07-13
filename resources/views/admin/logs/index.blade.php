@@ -131,6 +131,17 @@
             </a>
         @endif
 
+        {{-- Export CSV — carries the current filter state (whatever's in the URL right now) --}}
+        <x-button
+            href="{{ route('admin.logs.export', request()->query()) }}"
+            variant="secondary"
+            size="sm"
+            icon="download"
+            class="ml-auto"
+        >
+            Export CSV
+        </x-button>
+
     </div>
 
     {{-- Event tabs --}}

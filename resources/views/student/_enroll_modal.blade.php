@@ -1,6 +1,8 @@
 {{--
     Enroll with Token modal — shared by Dashboard and My Courses pages.
-    Single plain text input handles both class (9-char) and course (6-char) tokens.
+    Single plain text input handles both class (11-char) and course (9-char) tokens.
+    Tokens are generated and displayed in mixed case, but enrollment lookup is
+    case-insensitive server-side — students can type/paste in any case.
     The backend determines token type automatically from the submitted value.
 --}}
 @php
@@ -17,7 +19,7 @@
     x-data="{
         open:        {{ $reopenModal ? 'true' : 'false' }},
         tokenType:   'class',
-        tokenValue:  @js(strtoupper($oldToken)),
+        tokenValue:  @js($oldToken),
         submitting:  false,
         errorMsg:    @js($tokenError),
         successMsg:  @js($enrollSuccess),
@@ -55,8 +57,8 @@
                 event.preventDefault();
                 return;
             }
-            if (val.length < 6 || val.length > 9) {
-                this.errorMsg = 'Tokens are 6 characters (course) or 9 characters (class).';
+            if (val.length < 7 || val.length > 13) {
+                this.errorMsg = 'Tokens are 9 characters (course) or 11 characters (class).';
                 this.triggerShake();
                 event.preventDefault();
                 return;
@@ -245,17 +247,17 @@
                                     type="text"
                                     name="token_value"
                                     autocomplete="off"
-                                    :maxlength="tokenType === 'class' ? 9 : 6"
-                                    :placeholder="tokenType === 'class' ? 'e.g. AX1BY2CZ3' : 'e.g. AX1BY2'"
+                                    :maxlength="tokenType === 'class' ? 11 : 9"
+                                    :placeholder="tokenType === 'class' ? 'e.g. Xa8Fk3Qr7Wm' : 'e.g. Nt5Rq8Wgb'"
                                     x-model="tokenValue"
-                                    @input="tokenValue = $event.target.value.toUpperCase(); errorMsg = ''"
-                                    class="w-full px-4 py-2.5 text-base font-mono font-semibold tracking-widest uppercase
+                                    @input="errorMsg = ''"
+                                    class="w-full px-4 py-2.5 text-base font-mono font-semibold tracking-widest
                                            text-primary bg-surface-white
                                            border border-outline-variant/60 rounded-[16px]
                                            placeholder:text-outline-variant/40 placeholder:font-normal placeholder:tracking-normal
                                            focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none
                                            transition-all duration-150"
-                                    data-iodine-rules='["required","minLength:6","maxLength:9","regExp:^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]+$"]'
+                                    data-iodine-rules='["required","minLength:9","maxLength:11","regExp:^[ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789]+$"]'
                                 >
                             </div>
 
@@ -270,10 +272,10 @@
 
                         {{-- ── Contextual hint ── --}}
                         <p class="text-xs text-on-surface-variant" x-show="tokenType === 'class'">
-                            <span class="font-semibold text-on-surface">Class token (9 characters)</span> — joins you to a teacher's class. Do this before enrolling in courses.
+                            <span class="font-semibold text-on-surface">Class token (11 characters)</span> — joins you to a teacher's class. Do this before enrolling in courses.
                         </p>
                         <p class="text-xs text-on-surface-variant" x-show="tokenType === 'course'" x-cloak>
-                            <span class="font-semibold text-on-surface">Course token (6 characters)</span> — enrolls you in a specific course. You must be in the class first.
+                            <span class="font-semibold text-on-surface">Course token (9 characters)</span> — enrolls you in a specific course. You must be in the class first.
                         </p>
 
                     </div>{{-- end !successMsg body --}}

@@ -145,6 +145,26 @@
                                 <span class="material-symbols-outlined text-[18px]">edit</span>
                             </button>
 
+                            {{-- Promote to Admin — exclusive to Super Admin, never shown to a regular Admin.
+                                 Server-side enforcement is the real gate (UserPolicy::promoteToAdmin); this
+                                 @if is defense-in-depth for the UI only. --}}
+                            @if(auth()->user()->isSuperAdmin() && !$user->isAdmin())
+                                <form id="promote-form-{{ $user->id }}" method="POST"
+                                      action="{{ route('admin.users.promoteToAdmin', $user->id) }}" class="hidden">
+                                    @csrf
+                                    @method('PATCH')
+                                </form>
+                                <button
+                                    type="button"
+                                    title="Promote to Admin"
+                                    onclick="confirmAction('Promote to Admin?', {{ Js::from('Grant admin privileges to ' . $user->name . '? They will gain full access to the Admin panel.') }}, document.getElementById('promote-form-{{ $user->id }}'))"
+                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                           text-on-surface-variant hover:bg-gold/20 hover:text-primary
+                                           transition-colors">
+                                    <span class="material-symbols-outlined text-[18px]">military_tech</span>
+                                </button>
+                            @endif
+
                             {{-- Delete --}}
                             <button
                                 type="button"

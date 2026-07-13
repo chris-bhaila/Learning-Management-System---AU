@@ -13,13 +13,29 @@ class DatabaseSeeder extends Seeder
     {
         // ── Roles ────────────────────────────────────────────────
         $roles = [];
-        foreach (['admin', 'teacher', 'student'] as $name) {
+        foreach (['super_admin', 'admin', 'teacher', 'student'] as $name) {
             $roles[$name] = Role::firstOrCreate(['name' => $name]);
         }
 
         // Password convention: lowercase name (no spaces) + "123"
         $password = fn(string $name) => Hash::make(
             strtolower(str_replace(' ', '', $name)) . '123'
+        );
+
+        // ── Super Admin (1) ──────────────────────────────────────
+        // Deliberately singular — assigned once at handover, not a role admins or
+        // teachers can grant to each other. There is no UI or self-service path that
+        // creates a super_admin; this seeder entry is the only place one is ever created.
+        // Excluded from Google OAuth (see GoogleController) and never appears in the
+        // generic role-select UI (see UpdateUserRequest / StoreUserRequest).
+        User::updateOrCreate(
+            ['email' => 'superadmin@edunest.dev'],
+            [
+                'name'      => 'Sam Super',
+                'role_id'   => $roles['super_admin']->id,
+                'password'  => $password('Sam Super'),
+                'is_active' => true,
+            ]
         );
 
         // ── Admin (1) ────────────────────────────────────────────

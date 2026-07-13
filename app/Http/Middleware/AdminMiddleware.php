@@ -14,6 +14,12 @@ class AdminMiddleware
             abort(403);
         }
 
-        return $next($request)->header('Cache-Control', 'no-store');
+        // headers->set() (not ->header()) works for every response type, including a raw
+        // Symfony StreamedResponse (e.g. from response()->streamDownload()), which has no
+        // ->header() method and would fatal here otherwise.
+        $response = $next($request);
+        $response->headers->set('Cache-Control', 'no-store');
+
+        return $response;
     }
 }

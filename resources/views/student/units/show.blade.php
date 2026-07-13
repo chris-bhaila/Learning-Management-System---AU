@@ -77,26 +77,6 @@
 
             {{-- Attachments --}}
             <div
-                x-data="{
-                    viewLoading: null,
-                    async viewFile(fileId, viewType) {
-                        this.viewLoading = fileId;
-                        try {
-                            const res = await fetch('/files/' + fileId + '/view-token', { credentials: 'same-origin' });
-                            if (!res.ok) throw new Error('Unauthorised');
-                            const { url } = await res.json();
-                            if (viewType === 'office') {
-                                window.open('https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true', '_blank');
-                            } else {
-                                window.open(url, '_blank');
-                            }
-                        } catch (e) {
-                            console.error('File view error:', e);
-                        } finally {
-                            this.viewLoading = null;
-                        }
-                    },
-                }"
                 class="bg-surface-white border border-outline-variant/40 rounded-[20px]
                        shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden"
             >
@@ -122,14 +102,6 @@
                                 $fileSize = $file->size >= 1048576
                                     ? number_format($file->size / 1048576, 1) . ' MB'
                                     : number_format($file->size / 1024, 0) . ' KB';
-                                $ext      = strtolower(pathinfo($file->original_name ?? $file->filename, PATHINFO_EXTENSION));
-                                $viewType = match(true) {
-                                    in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) => 'image',
-                                    $ext === 'pdf'                                  => 'pdf',
-                                    in_array($ext, ['doc','docx','xls','xlsx','ppt','pptx']) => 'office',
-                                    default                                         => null,
-                                };
-                                $canView = $viewType !== null;
                             @endphp
                             <li class="flex items-center gap-3 px-6 py-3.5 min-w-0
                                        hover:bg-surface-container-low/40 transition-colors duration-200">
@@ -142,19 +114,6 @@
                                         {{ $fileSize }} · {{ $file->created_at->format('M j, Y') }}
                                     </p>
                                 </div>
-                                @if($canView)
-                                    <button type="button"
-                                            @click="viewFile({{ $file->id }}, '{{ $viewType }}')"
-                                            :disabled="viewLoading === {{ $file->id }}"
-                                            class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
-                                                   text-primary hover:text-gold transition-colors cursor-pointer
-                                                   disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <span class="material-symbols-outlined text-[14px]"
-                                              :class="viewLoading === {{ $file->id }} ? 'animate-spin' : ''"
-                                              x-text="viewLoading === {{ $file->id }} ? 'progress_activity' : 'visibility'">visibility</span>
-                                        <span x-show="viewLoading !== {{ $file->id }}">View</span>
-                                    </button>
-                                @endif
                                 <a href="{{ route('files.download', $file->id) }}"
                                    class="shrink-0 inline-flex items-center gap-1 text-xs font-medium
                                           text-primary hover:text-gold transition-colors cursor-pointer">

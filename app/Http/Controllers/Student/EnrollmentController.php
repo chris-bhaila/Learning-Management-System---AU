@@ -120,7 +120,7 @@ class EnrollmentController extends Controller
                 ->log('Student enrollment failed: not in teacher class');
 
             return back()
-                ->withErrors(['token_value' => "You need to join {$teacher?->name}'s class before enrolling in a course. Use your 9-character class token first."])
+                ->withErrors(['token_value' => "You need to join {$teacher?->name}'s class before enrolling in a course. Use your 11-character class token first."])
                 ->withInput();
         }
 

@@ -9,6 +9,7 @@ use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\ImageManager;
@@ -108,9 +109,16 @@ class UserController extends Controller
             'is_active' => $request->validated('is_active'),
         ];
 
-        // Admin role is locked — never allow role changes on an admin account.
+        // Admin/Super Admin role is locked — never allow role changes on an already-
+        // privileged account. And this generic endpoint must never be usable to grant
+        // admin to a non-admin target — that's an exclusive, separately-policy-gated
+        // action (see promoteToAdmin()), not something reachable via a crafted request
+        // here even though the FormRequest's format validation still nominally accepts
+        // "admin" as a shape-valid value for the admin's-own-profile-edit case above.
         if (!$user->isAdmin()) {
-            $updates['role_id'] = $this->roles->findByName($request->validated('role'))->id;
+            $requestedRole = $request->validated('role');
+            abort_if($requestedRole === 'admin', 403);
+            $updates['role_id'] = $this->roles->findByName($requestedRole)->id;
         }
 
         $this->users->update($user, $updates);
@@ -124,6 +132,33 @@ class UserController extends Controller
         }
 
         return back()->with('success', 'User updated.');
+    }
+
+    /** Exclusive to Super Admin (enforced by the Policy, not just hidden in the UI) —
+     *  grants the admin role to a teacher/student. See UserPolicy::promoteToAdmin(). */
+    public function promoteToAdmin(int $id)
+    {
+        $target = $this->users->find($id);
+        abort_if(is_null($target), 404);
+
+        $this->authorize('promoteToAdmin', $target);
+
+        $oldRole   = $target->role->name;
+        $adminRole = $this->roles->findByName('admin');
+
+        $this->users->update($target, ['role_id' => $adminRole->id]);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'target_user_id'   => $target->id,
+                'target_user_name' => $target->name,
+                'old_role'         => $oldRole,
+                'new_role'         => 'admin',
+            ])
+            ->log('Granted admin role to user');
+
+        return back()->with('success', "{$target->name} has been promoted to Admin.");
     }
 
     public function destroy(int $id)

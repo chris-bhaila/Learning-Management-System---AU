@@ -27,6 +27,6 @@ interface TokenRepositoryInterface
     /** Paginated course tokens for a teacher, newest first, with course eager-loaded. */
     public function getCourseTokensByTeacherPaginated(int $teacherId, int $perPage = 20): LengthAwarePaginator;
 
-    /** Generate a collision-safe token value for the given type ('class'=9 chars, 'course'=6 chars). */
+    /** Generate a collision-safe (case-insensitive) mixed-case token value for the given type ('class'=11 chars, 'course'=9 chars), guaranteeing 40-50% of characters are digits. */
     public function generateUniqueValue(string $type): string;
 }

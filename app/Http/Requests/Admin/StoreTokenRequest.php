@@ -8,7 +8,7 @@ class StoreTokenRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->isAdmin() || $this->user()->isSuperAdmin();
+        return $this->user()->isAdmin();
     }
 
     public function rules(): array

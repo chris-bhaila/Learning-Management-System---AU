@@ -22,8 +22,7 @@ class SettingsController extends Controller
 
     public function index()
     {
-        $role   = Auth::user()->role->name;
-        $layout = 'layouts.' . $role;
+        $layout = 'layouts.' . Auth::user()->panelRoleName();
 
         return view('settings.index', compact('layout'));
     }

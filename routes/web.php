@@ -14,7 +14,7 @@ use App\Http\Controllers\SettingsController;
 // Landing page
 Route::get('/', function () {
     if (Auth::check()) {
-        return redirect()->route(Auth::user()->role->name . '.dashboard');
+        return redirect()->route(Auth::user()->panelRoleName() . '.dashboard');
     }
     return view('landing');
 })->name('home');
@@ -39,6 +39,7 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
     Route::post('/users', [Admin\UserController::class, 'store'])->name('users.store');
     Route::get('/users/{id}', [Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{id}', [Admin\UserController::class, 'update'])->name('users.update');
+    Route::patch('/users/{id}/promote', [Admin\UserController::class, 'promoteToAdmin'])->name('users.promoteToAdmin');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/{userId}/classes/{teacherId}', [Admin\UserController::class, 'showStudentClass'])->name('users.classes.show');
 
@@ -73,6 +74,7 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
 
     // Activity Logs
     Route::get('/logs', [Admin\ActivityLogController::class, 'index'])->name('logs.index');
+    Route::get('/logs/export', [Admin\ActivityLogController::class, 'export'])->name('logs.export');
 });
 
 // Teacher
@@ -137,11 +139,5 @@ Route::middleware(['auth', 'prevent.back'])->prefix('settings')->name('settings.
 Route::middleware('auth')->group(function () {
     Route::post('/files', [FileController::class, 'store'])->name('files.store');
     Route::get('/files/{id}/download', [FileController::class, 'download'])->name('files.download');
-    Route::get('/files/{id}/view-token', [FileController::class, 'viewToken'])->name('files.viewToken');
     Route::delete('/files/{id}', [FileController::class, 'destroy'])->name('files.destroy');
 });
-
-// Raw file stream — signed URL + auth required
-Route::get('/files/{id}/raw', [FileController::class, 'raw'])
-    ->middleware(['auth', 'signed'])
-    ->name('files.raw');

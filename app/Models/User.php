@@ -113,9 +113,26 @@ class User extends Authenticatable
         return $this->avatar_source === 'upload';
     }
 
+    /** Admin-or-above — true for both 'admin' and 'super_admin'. This is the gate used
+     *  everywhere the admin panel/routes/policies check access; super_admin reuses the
+     *  entire admin experience, so it must satisfy every isAdmin() check too. */
     public function isAdmin(): bool
     {
-        return $this->role?->name === 'admin';
+        return in_array($this->role?->name, ['admin', 'super_admin'], true);
+    }
+
+    /** Strict — true only for 'super_admin'. Use this (not isAdmin()) for the one
+     *  capability exclusive to super_admin: granting the admin role to another user. */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role?->name === 'super_admin';
+    }
+
+    /** Route/layout namespace for this user's role — super_admin reuses the entire
+     *  admin panel (routes, layout, views), so it resolves to 'admin' here too. */
+    public function panelRoleName(): string
+    {
+        return $this->isAdmin() ? 'admin' : (string) $this->role?->name;
     }
 
     public function isTeacher(): bool

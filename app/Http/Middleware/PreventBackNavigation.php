@@ -12,7 +12,13 @@ class PreventBackNavigation
     {
         $response = $next($request);
 
-        return $response->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-                        ->header('Pragma', 'no-cache');
+        // Use the Symfony HeaderBag directly (not Laravel's ->header() sugar method) so this
+        // works for every response type in these route groups, not just Illuminate\Http\Response
+        // — a raw Symfony StreamedResponse (e.g. from response()->streamDownload()) has no
+        // ->header() method and would fatal here otherwise.
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+
+        return $response;
     }
 }

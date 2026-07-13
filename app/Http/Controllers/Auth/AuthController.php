@@ -34,7 +34,7 @@ class AuthController extends Controller
                 ->event('login')
                 ->log('Signed in');
 
-            return redirect()->route(Auth::user()->role->name . '.dashboard');
+            return redirect()->route(Auth::user()->panelRoleName() . '.dashboard');
         }
 
         // Give a specific message for Google-only accounts (null password)
