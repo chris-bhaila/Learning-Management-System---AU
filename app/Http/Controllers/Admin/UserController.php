@@ -85,17 +85,61 @@ class UserController extends Controller
         ]);
     }
 
+    /** Admin variant of Teacher\StudentController::kickFromClass() — $teacherId is explicit
+     *  (from the route, not Auth::id()) since Admin acts on a specific teacher's class. */
+    public function kickStudentFromClass(int $userId, int $teacherId)
+    {
+        $student = $this->users->find($userId);
+        abort_if(is_null($student), 404);
+
+        $teacher = $this->users->find($teacherId);
+        abort_if(is_null($teacher), 404);
+
+        $this->authorize('kickFromClass', [$student, $teacherId]);
+
+        $this->users->kickFromClass($teacherId, $student->id);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'student_id'   => $student->id,
+                'student_name' => $student->name,
+                'teacher_id'   => $teacher->id,
+                'teacher_name' => $teacher->name,
+                'scope'        => 'class',
+            ])
+            ->log('Teacher kicked student from class');
+
+        return redirect()->route('admin.users.show', $student->id)
+            ->with('success', "{$student->name} has been removed from {$teacher->name}'s class.");
+    }
+
     public function store(StoreUserRequest $request)
     {
-        $role = $this->roles->findByName($request->validated('role'));
+        $roleName = $request->validated('role');
+        $role     = $this->roles->findByName($roleName);
 
-        $this->users->create([
+        $newUser = $this->users->create([
             'name'      => $request->validated('name'),
             'email'     => $request->validated('email'),
             'role_id'   => $role->id,
             'password'  => $request->validated('password'), // hashed by User model cast
             'is_active' => true,
         ]);
+
+        // Privilege-sensitive event, same category as promoteToAdmin() — logged in addition
+        // to Spatie's automatic "created" log (User uses LogsActivity), since that generic
+        // log doesn't call out "this was created directly as admin" specifically.
+        if ($roleName === 'admin') {
+            activity()
+                ->causedBy(Auth::user())
+                ->withProperties([
+                    'new_user_id'    => $newUser->id,
+                    'new_user_name'  => $newUser->name,
+                    'new_user_email' => $newUser->email,
+                ])
+                ->log('Created new admin account');
+        }
 
         return back()->with('success', 'User created successfully.');
     }

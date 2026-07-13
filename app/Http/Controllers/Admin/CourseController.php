@@ -86,4 +86,34 @@ class CourseController extends Controller
 
         return redirect()->route('admin.courses.index')->with('success', 'Course deleted.');
     }
+
+    /** Admin variant of Teacher\CourseController::removeStudent() — same Policy, same
+     *  repository method, course ownership doesn't depend on who's performing the action. */
+    public function removeStudent(int $id, int $studentId)
+    {
+        $course = $this->courses->find($id);
+        abort_if(is_null($course), 404);
+
+        $this->authorize('removeStudent', $course);
+
+        $student = $this->users->find($studentId);
+        abort_if(is_null($student), 404);
+
+        $this->courses->removeStudentFromCourse($course->id, $student->id);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'student_id'   => $student->id,
+                'student_name' => $student->name,
+                'teacher_id'   => $course->teacher_id,
+                'teacher_name' => $course->teacher?->name ?? 'Unknown',
+                'scope'        => 'course',
+                'course_id'    => $course->id,
+                'course_title' => $course->title,
+            ])
+            ->log('Teacher removed student from course');
+
+        return back()->with('success', "{$student->name} has been removed from {$course->title}.");
+    }
 }

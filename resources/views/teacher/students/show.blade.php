@@ -68,6 +68,36 @@
                 </div>
             </div>
 
+            {{-- Actions — own distinct, right-aligned slot, separated from the Stats column
+                 by a divider (top border when stacked on mobile, left border once the header
+                 goes horizontal at sm:) so it reads as its own action area, not part of the
+                 stats. Only offered while the class relationship is active; kicking an
+                 already-inactive relationship doesn't mean anything. --}}
+            @if($student->class_is_active)
+                <div class="shrink-0 w-full sm:w-auto flex sm:flex-col items-center sm:items-end justify-center
+                            pt-4 sm:pt-0 mt-1 sm:mt-0 border-t sm:border-t-0 sm:border-l
+                            border-outline-variant/30 sm:pl-5">
+                    <form id="kick-form" method="POST"
+                          action="{{ route('teacher.students.kick', $student->id) }}" class="hidden">
+                        @csrf
+                        @method('PATCH')
+                    </form>
+                    <x-button
+                        type="button"
+                        variant="danger"
+                        icon="person_remove"
+                        onclick="confirmDestructive(
+                            {{ Js::from('Kick ' . $student->name . ' from your class?') }},
+                            {{ Js::from('This will also remove them from all of your courses. They can rejoin later if you give them a fresh token.') }},
+                            document.getElementById('kick-form'),
+                            'Kick from Class'
+                        )"
+                    >
+                        Kick from Class
+                    </x-button>
+                </div>
+            @endif
+
         </div>
     </x-card>
 

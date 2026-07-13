@@ -42,6 +42,7 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
     Route::patch('/users/{id}/promote', [Admin\UserController::class, 'promoteToAdmin'])->name('users.promoteToAdmin');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/{userId}/classes/{teacherId}', [Admin\UserController::class, 'showStudentClass'])->name('users.classes.show');
+    Route::patch('/users/{userId}/classes/{teacherId}/kick', [Admin\UserController::class, 'kickStudentFromClass'])->name('users.classes.kick');
 
     // Courses
     Route::get('/courses', [Admin\CourseController::class, 'index'])->name('courses.index');
@@ -50,6 +51,7 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
     Route::get('/courses/{id}', [Admin\CourseController::class, 'show'])->name('courses.show');
     Route::patch('/courses/{id}', [Admin\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [Admin\CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::patch('/courses/{id}/students/{studentId}/remove', [Admin\CourseController::class, 'removeStudent'])->name('courses.students.remove');
 
     // Units
     Route::get('/courses/{courseId}/units/create', [Admin\UnitController::class, 'create'])->name('units.create');
@@ -88,6 +90,7 @@ Route::middleware(['auth', 'teacher', 'prevent.back'])->prefix('teacher')->name(
     Route::get('/courses/{id}', [Teacher\CourseController::class, 'show'])->name('courses.show');
     Route::patch('/courses/{id}', [Teacher\CourseController::class, 'update'])->name('courses.update');
     Route::delete('/courses/{id}', [Teacher\CourseController::class, 'destroy'])->name('courses.destroy');
+    Route::patch('/courses/{id}/students/{studentId}/remove', [Teacher\CourseController::class, 'removeStudent'])->name('courses.students.remove');
 
     // Units
     Route::get('/courses/{courseId}/units/create', [Teacher\UnitController::class, 'create'])->name('units.create');
@@ -108,6 +111,7 @@ Route::middleware(['auth', 'teacher', 'prevent.back'])->prefix('teacher')->name(
     // Students
     Route::get('/students', [Teacher\StudentController::class, 'index'])->name('students.index');
     Route::get('/students/{id}', [Teacher\StudentController::class, 'show'])->name('students.show');
+    Route::patch('/students/{id}/kick', [Teacher\StudentController::class, 'kickFromClass'])->name('students.kick');
 
     // Course Groups — no dedicated index, handled on dashboard or courses page
     Route::post('/groups', [Teacher\CourseGroupController::class, 'store'])->name('groups.store');

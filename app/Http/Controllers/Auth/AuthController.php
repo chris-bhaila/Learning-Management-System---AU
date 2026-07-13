@@ -26,6 +26,20 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            // Auth::attempt() only checks credentials — it has no notion of is_active. Without
+            // this check, a deactivated user would successfully log in here, then get bounced
+            // by EnsureUserIsActive on their very next request. Checking here instead gives a
+            // clear message at the login form itself, not a confusing redirect straight back out.
+            if (! Auth::user()->is_active) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()
+                    ->withErrors(['email' => 'Your account has been deactivated. Contact your administrator.'])
+                    ->withInput($request->only('email'));
+            }
+
             $request->session()->regenerate();
 
             activity()

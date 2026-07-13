@@ -10,6 +10,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
 
+    {{-- Same window.__flash + showToast() mechanism every authenticated layout uses
+         (see resources/js/app.js) — this page never had it, so a flash set on redirect
+         here (e.g. the deactivated-account message) was silently dropped. --}}
+    <script>
+        window.__flash = {
+            success: @js(session('success')),
+            error:   @js(session('error')),
+            warning: @js(session('warning')),
+        };
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-surface-white text-on-surface font-sans antialiased">

@@ -34,4 +34,8 @@ interface UserRepositoryInterface
 
     /** Returns the teacher if the student has an active class relationship with them, or null. */
     public function getTeacherWithStudentPivot(int $teacherId, int $studentId): ?User;
+
+    /** Deactivates the teacher_student row AND every course_student row for this student
+     *  scoped to $teacherId's own courses only — never touches other teachers' enrollments. */
+    public function kickFromClass(int $teacherId, int $studentId): void;
 }

@@ -21,6 +21,15 @@ return Application::configure(basePath: dirname(__DIR__))
             'prevent.back' => \App\Http\Middleware\PreventBackNavigation::class,
         ]);
 
+        // Registered once, globally, on the 'web' group — not duplicated into each of the
+        // admin/teacher/student/settings route groups in routes/web.php. Runs before those
+        // groups' own 'admin'/'teacher'/'student' middleware (global 'web' middleware always
+        // precedes route-specific middleware in Laravel's pipeline), so a deactivated user
+        // is logged out and redirected before those middlewares' own is_active check would
+        // otherwise abort(403) into a redirect loop. See EnsureUserIsActive for why.
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

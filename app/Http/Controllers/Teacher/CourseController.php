@@ -9,6 +9,7 @@ use App\Models\Course;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\CourseGroupRepositoryInterface;
 use App\Repositories\Contracts\FileRepositoryInterface;
+use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
 
 class CourseController extends Controller
@@ -17,6 +18,7 @@ class CourseController extends Controller
         private CourseRepositoryInterface $courses,
         private CourseGroupRepositoryInterface $groups,
         private FileRepositoryInterface $files,
+        private UserRepositoryInterface $users,
     ) {}
 
     public function index()
@@ -102,5 +104,35 @@ class CourseController extends Controller
         $this->courses->delete($course);
 
         return redirect()->route('teacher.courses.index')->with('success', 'Course deleted.');
+    }
+
+    /** Removes (deactivates) a single student's enrollment in this course only — does not
+     *  touch the class relationship or the student's other courses. */
+    public function removeStudent(int $id, int $studentId)
+    {
+        $course = $this->courses->find($id);
+        abort_if(is_null($course), 404);
+
+        $this->authorize('removeStudent', $course);
+
+        $student = $this->users->find($studentId);
+        abort_if(is_null($student), 404);
+
+        $this->courses->removeStudentFromCourse($course->id, $student->id);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'student_id'   => $student->id,
+                'student_name' => $student->name,
+                'teacher_id'   => $course->teacher_id,
+                'teacher_name' => $course->teacher?->name ?? 'Unknown',
+                'scope'        => 'course',
+                'course_id'    => $course->id,
+                'course_title' => $course->title,
+            ])
+            ->log('Teacher removed student from course');
+
+        return back()->with('success', "{$student->name} has been removed from {$course->title}.");
     }
 }

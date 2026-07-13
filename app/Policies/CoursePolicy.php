@@ -28,4 +28,10 @@ class CoursePolicy
     {
         return $user->isAdmin() || ($user->isTeacher() && $course->teacher_id === $user->id);
     }
+
+    /** Removing a student from a single course — same ownership rule as update/delete. */
+    public function removeStudent(User $user, Course $course): bool
+    {
+        return $user->isAdmin() || ($user->isTeacher() && $course->teacher_id === $user->id);
+    }
 }

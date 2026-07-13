@@ -192,6 +192,27 @@ class EloquentUserRepository implements UserRepositoryInterface
             ->first();
     }
 
+    public function kickFromClass(int $teacherId, int $studentId): void
+    {
+        // Deactivate, never delete — preserves enrollment history/activity log integrity
+        // and allows re-enrollment later via a fresh token (see EnrollmentController::store()).
+        DB::table('teacher_student')
+            ->where('teacher_id', $teacherId)
+            ->where('student_id', $studentId)
+            ->update(['is_active' => false, 'updated_at' => now()]);
+
+        // Cascade: every course_student row for this student, scoped to THIS teacher's
+        // courses only — a student can independently belong to other teachers' classes too
+        // (teacher_student has no uniqueness constraint beyond the teacher/student pair
+        // itself), so this must never touch courses outside $teacherId's own.
+        DB::table('course_student')
+            ->where('student_id', $studentId)
+            ->whereIn('course_id', function ($query) use ($teacherId) {
+                $query->select('id')->from('courses')->where('teacher_id', $teacherId);
+            })
+            ->update(['is_active' => false, 'updated_at' => now()]);
+    }
+
     public function getRoleCounts(): array
     {
         return User::selectRaw('roles.name as role_name, count(*) as total')

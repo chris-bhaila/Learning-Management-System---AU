@@ -49,6 +49,28 @@ window.confirmDelete = function (label, formOrCb, text = 'This cannot be undone.
 };
 
 /**
+ * Destructive confirmation with a custom title/confirm label — kick from class, remove
+ * from course, etc. Same red/error styling as confirmDelete(), but that helper's title
+ * and button text are hardcoded to "Delete", which doesn't fit destructive actions that
+ * aren't literally a deletion.
+ * Confirm: error red. Cancel: neutral gray. Focus defaults to cancel.
+ */
+window.confirmDestructive = function (title, text, formOrCb, confirmButtonText = 'Confirm') {
+    _dispatch({
+        title,
+        text,
+        icon: 'warning',
+        showCancelButton: true,
+        reverseButtons: true,
+        focusCancel: true,
+        confirmButtonText,
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: cssVar('--color-error'),           // #ba1a1a
+        cancelButtonColor:  cssVar('--color-outline-variant'), // #c6c6cf
+    }, formOrCb);
+};
+
+/**
  * Positive / safe confirmation — publish, approve, enroll, save, etc.
  * Confirm: gold (dark text via .swal-confirm-positive CSS override).
  * Cancel: neutral gray. Focus defaults to confirm.

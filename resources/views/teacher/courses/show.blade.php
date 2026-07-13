@@ -759,6 +759,20 @@
                                         ? \Carbon\Carbon::parse($student->pivot->enrolled_at)->format('M j')
                                         : '—' }}
                                 </span>
+                                <button
+                                    type="button"
+                                    title="Remove from course"
+                                    onclick="confirmDestructive(
+                                        {{ Js::from('Remove ' . $student->name . ' from ' . $course->title . '?') }},
+                                        {{ Js::from('They will lose access to this course only — their class enrollment and other courses are unaffected.') }},
+                                        document.getElementById('remove-student-form-{{ $student->id }}'),
+                                        'Remove'
+                                    )"
+                                    class="w-7 h-7 shrink-0 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                           text-on-surface-variant hover:bg-error-container hover:text-error
+                                           transition-colors duration-150">
+                                    <span class="material-symbols-outlined text-[16px]">person_remove</span>
+                                </button>
                             </li>
                         @endforeach
                     </ul>
@@ -770,6 +784,16 @@
     </div>{{-- end grid --}}
 
 </form>
+
+{{-- Standalone remove-student forms — outside #edit-course-form, same reason as the unit
+     delete/publish forms below (prevents _method spoofing from polluting the PATCH submission). --}}
+@foreach($course->students as $student)
+<form id="remove-student-form-{{ $student->id }}" method="POST"
+      action="{{ route('teacher.courses.students.remove', [$course->id, $student->id]) }}" class="hidden">
+    @csrf
+    @method('PATCH')
+</form>
+@endforeach
 
 {{-- Standalone delete forms — outside #edit-course-form to prevent _method=DELETE polluting the PATCH submission --}}
 @foreach($course->units as $unit)

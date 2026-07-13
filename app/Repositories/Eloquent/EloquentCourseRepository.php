@@ -123,4 +123,12 @@ class EloquentCourseRepository implements CourseRepositoryInterface
             ->orderBy('title')
             ->get();
     }
+
+    public function removeStudentFromCourse(int $courseId, int $studentId): void
+    {
+        // Deactivate, never delete — preserves enrollment history/activity log integrity
+        // and allows re-enrollment later via a fresh token (see EnrollmentController::store()).
+        $course = Course::find($courseId);
+        $course?->students()->updateExistingPivot($studentId, ['is_active' => false]);
+    }
 }

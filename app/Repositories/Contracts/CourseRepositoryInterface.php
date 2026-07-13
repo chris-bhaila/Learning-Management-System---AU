@@ -24,4 +24,7 @@ interface CourseRepositoryInterface
 
     /** Published courses belonging to $teacherId that $studentId is actively enrolled in (student-facing). */
     public function getEnrolledByStudentForTeacher(int $studentId, int $teacherId): Collection;
+
+    /** Deactivates (never deletes) the course_student row for this course/student pair. */
+    public function removeStudentFromCourse(int $courseId, int $studentId): void;
 }

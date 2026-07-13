@@ -274,8 +274,11 @@
                         style="font-family: var(--font-display);">
                         Add User
                     </h3>
-                    <p class="text-xs text-on-surface-variant mt-0.5">
+                    <p class="text-xs text-on-surface-variant mt-0.5" x-show="role !== 'admin'">
                         New users can sign in with Google using the same email.
+                    </p>
+                    <p class="text-xs text-on-surface-variant mt-0.5" x-show="role === 'admin'" x-cloak>
+                        Admin accounts sign in with email and password only — no Google Sign-In.
                     </p>
                 </div>
                 <button
@@ -364,6 +367,12 @@
                                 <option value="" disabled selected>Select a role…</option>
                                 <option value="teacher">Teacher</option>
                                 <option value="student">Student</option>
+                                {{-- Server-side enforcement is the real gate (StoreUserRequest::authorize()
+                                     via UserPolicy::canAssignRole()) — this @if is defense-in-depth for
+                                     the UI only, same pattern as the Promote to Admin button. --}}
+                                @if(auth()->user()->isSuperAdmin())
+                                    <option value="admin">Admin</option>
+                                @endif
                             </select>
                             <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2
                                          text-outline text-[18px] pointer-events-none">expand_more</span>

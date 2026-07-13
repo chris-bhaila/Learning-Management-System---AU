@@ -57,11 +57,15 @@ class EnrollmentController extends Controller
         $teacher = $token->teacher;
 
         if ($token->isClassToken()) {
-            $alreadyEnrolled = $student->teachers()
+            // Look up the existing row (if any) rather than a plain exists() check — a
+            // kicked student has an INACTIVE row that still exists, and must be reactivated
+            // via updateExistingPivot(), not attach() (which would create a duplicate row
+            // for the same teacher/student pair, violating the composite primary key intent).
+            $existingClassRow = $student->teachers()
                 ->where('teacher_student.teacher_id', $token->teacher_id)
-                ->exists();
+                ->first();
 
-            if ($alreadyEnrolled) {
+            if ($existingClassRow && $existingClassRow->pivot->is_active) {
                 activity()
                     ->causedBy($student)
                     ->withProperties([
@@ -78,10 +82,17 @@ class EnrollmentController extends Controller
                     ->withInput();
             }
 
-            $student->teachers()->attach($token->teacher_id, [
-                'is_active'   => true,
-                'enrolled_at' => now(),
-            ]);
+            if ($existingClassRow) {
+                $student->teachers()->updateExistingPivot($token->teacher_id, [
+                    'is_active'   => true,
+                    'enrolled_at' => now(),
+                ]);
+            } else {
+                $student->teachers()->attach($token->teacher_id, [
+                    'is_active'   => true,
+                    'enrolled_at' => now(),
+                ]);
+            }
 
             activity()
                 ->causedBy($student)
@@ -124,11 +135,14 @@ class EnrollmentController extends Controller
                 ->withInput();
         }
 
-        $alreadyEnrolled = $student->enrolledCourses()
+        // Same reasoning as the class-token branch above — look up the existing row rather
+        // than a plain exists() check, so a kicked student's inactive row is reactivated
+        // instead of blocked or duplicated.
+        $existingCourseRow = $student->enrolledCourses()
             ->where('course_student.course_id', $token->course_id)
-            ->exists();
+            ->first();
 
-        if ($alreadyEnrolled) {
+        if ($existingCourseRow && $existingCourseRow->pivot->is_active) {
             $course = $token->course;
 
             activity()
@@ -151,10 +165,17 @@ class EnrollmentController extends Controller
 
         $course = $token->course;
 
-        $student->enrolledCourses()->attach($token->course_id, [
-            'is_active'   => true,
-            'enrolled_at' => now(),
-        ]);
+        if ($existingCourseRow) {
+            $student->enrolledCourses()->updateExistingPivot($token->course_id, [
+                'is_active'   => true,
+                'enrolled_at' => now(),
+            ]);
+        } else {
+            $student->enrolledCourses()->attach($token->course_id, [
+                'is_active'   => true,
+                'enrolled_at' => now(),
+            ]);
+        }
 
         activity()
             ->causedBy($student)
