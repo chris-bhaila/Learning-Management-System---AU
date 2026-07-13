@@ -191,6 +191,23 @@
                 <span class="material-symbols-outlined text-[18px]">edit</span>
                 Edit Course
             </button>
+            <button
+                type="button"
+                x-show="!editing"
+                x-transition:leave="transition ease-in duration-100"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                onclick="confirmDelete(
+                    {{ Js::from($course->title) }},
+                    document.getElementById('delete-course-form'),
+                    'This permanently deletes all its units, revokes its tokens, and removes every student\'s enrollment. This cannot be undone.'
+                )"
+                class="inline-flex items-center gap-2 px-5 py-2.5 border border-error/40 text-error
+                       text-sm font-semibold rounded-[24px] hover:bg-error hover:text-white hover:border-error
+                       active:scale-[0.96] transition-all duration-150 cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+                Delete Course
+            </button>
 
             {{-- Edit mode --}}
             <div class="flex items-center gap-2"
@@ -783,6 +800,13 @@
 
     </div>{{-- end grid --}}
 
+</form>
+
+{{-- Standalone delete-course form — outside #edit-course-form, same reason as every other
+     standalone form on this page (prevents _method spoofing from polluting the PATCH submission). --}}
+<form id="delete-course-form" method="POST" action="{{ route('teacher.courses.destroy', $course->id) }}" class="hidden">
+    @csrf
+    @method('DELETE')
 </form>
 
 {{-- Standalone remove-student forms — outside #edit-course-form, same reason as the unit

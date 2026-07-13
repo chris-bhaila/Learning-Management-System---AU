@@ -160,7 +160,11 @@ class ActivityLogController extends Controller
 
         if ($search) {
             $query->whereHasMorph('causer', '*', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+                // Both conditions must stay inside this closure, scoped by whereHasMorph's
+                // own outer grouping — an orWhere() here only widens the match within the
+                // causer subquery, it can't leak out and match unrelated activity rows.
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
             });
         }
 

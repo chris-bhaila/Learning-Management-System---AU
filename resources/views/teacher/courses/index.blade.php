@@ -74,7 +74,7 @@
 {{-- No courses at all --}}
 <div class="bg-surface-white border border-outline-variant/40 rounded-[20px] py-20
             flex flex-col items-center gap-4 text-center">
-    <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
+    <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center animate-float">
         <span class="material-symbols-outlined text-outline text-[32px]">library_books</span>
     </div>
     <div>
@@ -156,7 +156,6 @@
             <x-course-card
                 :course="$course"
                 :show-route="route('teacher.courses.show', $course)"
-                :delete-route="route('teacher.courses.destroy', $course)"
                 :show-teacher="false"
                 data-card
                 x-show="matches({{ Js::from($course->title) }}, '{{ $published ? 'published' : 'draft' }}')"
@@ -216,7 +215,6 @@
                 <x-course-card
                     :course="$course"
                     :show-route="route('teacher.courses.show', $course)"
-                    :delete-route="route('teacher.courses.destroy', $course)"
                     :show-teacher="false"
                     data-card
                     x-show="matches({{ Js::from($course->title) }}, '{{ $published ? 'published' : 'draft' }}')"
@@ -273,7 +271,6 @@
                 <x-course-card
                     :course="$course"
                     :show-route="route('teacher.courses.show', $course)"
-                    :delete-route="route('teacher.courses.destroy', $course)"
                     :show-teacher="false"
                     data-card
                     x-show="matches({{ Js::from($course->title) }}, '{{ $published ? 'published' : 'draft' }}')"
@@ -294,7 +291,7 @@
     <div x-show="visibleCount === 0" x-cloak
          class="bg-surface-white border border-outline-variant/40 rounded-[20px] py-16
                 flex flex-col items-center gap-3 text-center">
-        <div class="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center">
+        <div class="w-14 h-14 rounded-full bg-surface-container flex items-center justify-center animate-float">
             <span class="material-symbols-outlined text-outline text-[28px]">search_off</span>
         </div>
         <p class="text-sm font-semibold text-on-surface">No courses match your filters</p>
@@ -371,7 +368,7 @@
             <div x-show="view === 'list'">
                 @if($groups->isEmpty())
                     <div class="py-16 flex flex-col items-center gap-4 text-center px-4 sm:px-6">
-                        <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center">
+                        <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center animate-float">
                             <span class="material-symbols-outlined text-outline text-[32px]">folder_open</span>
                         </div>
                         <div>

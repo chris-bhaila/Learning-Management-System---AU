@@ -31,8 +31,12 @@
     {{-- Top accent strip --}}
     <div class="h-1 w-full {{ $published ? 'bg-gold' : 'bg-outline-variant/40' }}"></div>
 
-    {{-- Main clickable area --}}
-    <a href="{{ $showRoute }}" class="block p-5 cursor-pointer">
+    {{-- Main clickable area — ring-inset keeps the focus ring inside the card's own box so
+         the outer overflow-hidden never clips it, and matches the focus-ring color already
+         used on every form input in this app (focus:ring-primary), not a new one-off color. --}}
+    <a href="{{ $showRoute }}"
+       class="block p-5 cursor-pointer focus-visible:outline-none
+              focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50">
         <div class="flex flex-col gap-4">
 
             {{-- Header: title + status chip --}}
@@ -105,21 +109,30 @@
 
         <div class="relative flex items-center">
 
-            {{-- "View course" label — fades out when card is hovered --}}
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-primary/60
-                         transition-all duration-150 ease-in-out
-                         group-hover:opacity-0 group-hover:translate-x-1
-                         pointer-events-none select-none whitespace-nowrap">
+            {{-- "View course" — a real link (not just a label) so clicking it does the same
+                 thing as clicking the card. Only fades out on hover/focus when a delete pill
+                 is about to take its place; with no delete pill there's nothing to reveal, so
+                 it stays put. Sibling of the delete <form> below, not nested inside it.
+                 group-focus-within (not just group-hover) so tabbing to the delete button
+                 also triggers the swap — otherwise a keyboard user could focus an invisible
+                 button while "View course" stays on top of it. --}}
+            <a href="{{ $showRoute }}"
+               class="inline-flex items-center gap-1 text-xs font-medium text-primary/60
+                      hover:text-primary transition-all duration-150 ease-in-out
+                      {{ $deleteRoute ? 'group-hover:opacity-0 group-hover:translate-x-1 group-focus-within:opacity-0 group-focus-within:translate-x-1' : '' }}
+                      cursor-pointer whitespace-nowrap rounded-md
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50">
                 View course
                 <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-            </span>
+            </a>
 
             @if($deleteRoute)
-            {{-- Delete pill — fades in when card is hovered, overlays exact same position --}}
+            {{-- Delete pill — fades in on hover OR keyboard focus, overlays exact same position --}}
             <form method="POST" action="{{ $deleteRoute }}"
                   class="absolute inset-0 flex items-center justify-end
                          opacity-0 -translate-x-1
                          group-hover:opacity-100 group-hover:translate-x-0
+                         group-focus-within:opacity-100 group-focus-within:translate-x-0
                          transition-all duration-150 ease-in-out">
                 @csrf
                 @method('DELETE')
@@ -128,6 +141,7 @@
                         class="inline-flex items-center gap-1 px-3 py-1 rounded-full
                                border border-error/40 text-error text-xs font-medium
                                hover:bg-error hover:text-white hover:border-error
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-error/50
                                transition-all duration-150 cursor-pointer whitespace-nowrap">
                     <span class="material-symbols-outlined text-[13px]">delete</span>
                     Delete

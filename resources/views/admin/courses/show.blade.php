@@ -226,6 +226,23 @@
                 <span class="material-symbols-outlined text-[18px]">edit</span>
                 Edit Course
             </button>
+            <button
+                type="button"
+                x-show="!editing"
+                x-transition:leave="transition ease-in duration-100"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                onclick="confirmDelete(
+                    {{ Js::from($course->title) }},
+                    document.getElementById('delete-course-form'),
+                    'This permanently deletes all its units, revokes its tokens, and removes every student\'s enrollment. This cannot be undone.'
+                )"
+                class="inline-flex items-center gap-2 px-5 py-2.5 border border-error/40 text-error
+                       text-sm font-semibold rounded-[24px] hover:bg-error hover:text-white hover:border-error
+                       active:scale-[0.96] transition-all duration-150 cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">delete</span>
+                Delete Course
+            </button>
 
             {{-- Edit mode --}}
             <div class="flex items-center gap-2"
@@ -427,7 +444,14 @@
                         <div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center animate-float">
                             <span class="material-symbols-outlined text-outline text-[24px]">menu_book</span>
                         </div>
-                        <p class="text-sm text-on-surface-variant">No units yet.</p>
+                        <p class="text-sm font-semibold text-on-surface">No units yet</p>
+                        <p class="text-xs text-on-surface-variant">Add the first unit to start building this course.</p>
+                        <a href="{{ route('admin.units.create', $course->id) }}"
+                           class="mt-1 inline-flex items-center gap-1.5 px-4 py-2 bg-gold text-primary
+                                  text-sm font-semibold rounded-[24px] hover:bg-gold/90 transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">add</span>
+                            Add Unit
+                        </a>
                     </div>
                 @else
                     <ul class="divide-y divide-outline-variant/20">
@@ -639,7 +663,7 @@
                             </span>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium">Teacher</p>
+                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Teacher</p>
                             <p class="text-sm font-medium text-on-surface truncate">{{ $teacherName }}</p>
                         </div>
                     </div>
@@ -650,7 +674,7 @@
                             <span class="material-symbols-outlined text-outline text-[18px]">folder</span>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium">Group</p>
+                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Group</p>
                             <p class="text-sm text-on-surface truncate">{{ $groupName ?? '—' }}</p>
                         </div>
                     </div>
@@ -663,7 +687,7 @@
                             </span>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium">Status</p>
+                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Status</p>
                             <p class="text-sm font-medium {{ $published ? 'text-primary' : 'text-on-surface-variant' }}">
                                 {{ $published ? 'Published' : 'Draft' }}
                             </p>
@@ -888,6 +912,13 @@
 
     </div>{{-- end grid --}}
 
+</form>
+
+{{-- Standalone delete-course form — outside #edit-course-form, same reason as every other
+     standalone form on this page (prevents _method spoofing from polluting the PATCH submission). --}}
+<form id="delete-course-form" method="POST" action="{{ route('admin.courses.destroy', $course->id) }}" class="hidden">
+    @csrf
+    @method('DELETE')
 </form>
 
 {{-- Standalone remove-student forms — outside #edit-course-form, same reason as the unit

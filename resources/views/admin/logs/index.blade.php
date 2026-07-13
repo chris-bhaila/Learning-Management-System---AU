@@ -80,7 +80,7 @@
                 type="text"
                 name="search"
                 value="{{ $currentSearch }}"
-                placeholder="Search by user name…"
+                placeholder="Search by name or email…"
                 autocomplete="off"
                 class="w-full pl-10 pr-4 py-2.5 rounded-[16px] text-sm bg-surface-container-low
                        border border-outline-variant/60 placeholder:text-outline
