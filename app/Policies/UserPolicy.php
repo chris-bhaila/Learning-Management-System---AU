@@ -22,13 +22,15 @@ class UserPolicy
         return $authUser->isAdmin();
     }
 
-    /** Generic "delete this user" gate for Admin\UserController::destroy(). Same rule as
-     *  update() — another Super Admin's account can never be deleted through this
-     *  endpoint; a Super Admin's own row is exempt (not that self-deletion is a good
-     *  idea, but that's an existing, unrelated risk this task doesn't ask to change). */
+    /** Generic "delete this user" gate for Admin\UserController::destroy(). A Super Admin
+     *  account can never be deleted through this endpoint — neither another Super Admin's
+     *  row nor, unlike update(), their own. Self-deletion has no legitimate use case and
+     *  would either lock the system out of its one seeded Super Admin or leave a demoted-
+     *  looking gap with no clean recovery path, so it is not exempted the way self-editing
+     *  is. */
     public function delete(User $authUser, User $targetUser): bool
     {
-        if ($targetUser->isSuperAdmin() && $targetUser->id !== $authUser->id) {
+        if ($targetUser->isSuperAdmin()) {
             return false;
         }
 

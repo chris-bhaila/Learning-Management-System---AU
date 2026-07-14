@@ -174,6 +174,17 @@ class AdminUsersSuperAdminVisibilityTest extends TestCase
         $this->assertTrue($otherSuper->fresh()->is_active);
     }
 
+    public function test_super_admin_cannot_delete_themselves(): void
+    {
+        $viewer = $this->superAdmin(['name' => 'Sam Super']);
+
+        $response = $this->actingAs($viewer)->delete(route('admin.users.destroy', $viewer->id));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertNotNull(User::find($viewer->id));
+    }
+
     public function test_regular_admin_can_still_deactivate_themselves(): void
     {
         // The self-deactivation guard is Super Admin-specific — a regular Admin
@@ -220,8 +231,9 @@ class AdminUsersSuperAdminVisibilityTest extends TestCase
 
         $this->assertStringNotContainsString("openEditModal({$otherSuper->id}", $html);
         $this->assertStringNotContainsString("openDeleteModal({$otherSuper->id}", $html);
-        // Viewer's own row still has both actions.
+        // Viewer's own row still has Edit, but never Delete — a Super Admin can never
+        // delete themselves either (UserPolicy::delete() never exempts self).
         $this->assertStringContainsString("openEditModal({$viewer->id}", $html);
-        $this->assertStringContainsString("openDeleteModal({$viewer->id}", $html);
+        $this->assertStringNotContainsString("openDeleteModal({$viewer->id}", $html);
     }
 }

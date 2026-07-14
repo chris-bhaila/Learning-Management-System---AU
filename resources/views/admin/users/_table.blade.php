@@ -135,6 +135,9 @@
                         // Server-side enforcement is the real gate (UserPolicy::update/delete) —
                         // these @if checks are defense-in-depth for the UI only.
                         $isOtherSuperAdmin = $user->isSuperAdmin() && $user->id !== auth()->id();
+                        // Delete is blocked for every super_admin row, including your own
+                        // (UserPolicy::delete() never exempts self, unlike update()).
+                        $isSuperAdminRow = $user->isSuperAdmin();
                     @endphp
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-0.5">
@@ -210,8 +213,8 @@
                                 </button>
                             @endif
 
-                            {{-- Delete — never shown for another Super Admin's row. --}}
-                            @unless($isOtherSuperAdmin)
+                            {{-- Delete — never shown for any Super Admin row, including your own. --}}
+                            @unless($isSuperAdminRow)
                                 <button
                                     type="button"
                                     title="Delete user"
