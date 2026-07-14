@@ -165,6 +165,35 @@
                                 </button>
                             @endif
 
+                            {{-- Demote — exclusive to Super Admin, only on rows whose role is exactly
+                                 "admin" (never on super_admin's own row — its role.name is "super_admin",
+                                 not "admin", so it's naturally excluded here, not just self-excluded).
+                                 Server-side enforcement is the real gate (UserPolicy::demoteAdmin); this
+                                 @if is defense-in-depth for the UI only. --}}
+                            @if(auth()->user()->isSuperAdmin() && $user->role->name === 'admin')
+                                <form id="demote-form-{{ $user->id }}" method="POST"
+                                      action="{{ route('admin.users.demoteAdmin', $user->id) }}" class="hidden">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="role" value="">
+                                </form>
+                                <button
+                                    type="button"
+                                    title="Demote Admin"
+                                    onclick="confirmDestructiveSelect(
+                                        {{ Js::from('Demote ' . $user->name . '?') }},
+                                        {{ Js::from('Choose the role ' . $user->name . ' will be demoted to. They will lose admin privileges immediately.') }},
+                                        { teacher: 'Teacher', student: 'Student' },
+                                        document.getElementById('demote-form-{{ $user->id }}'),
+                                        'Demote'
+                                    )"
+                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                           text-on-surface-variant hover:bg-error-container hover:text-error
+                                           transition-colors">
+                                    <span class="material-symbols-outlined text-[18px]">move_down</span>
+                                </button>
+                            @endif
+
                             {{-- Delete --}}
                             <button
                                 type="button"

@@ -40,6 +40,7 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
     Route::get('/users/{id}', [Admin\UserController::class, 'show'])->name('users.show');
     Route::patch('/users/{id}', [Admin\UserController::class, 'update'])->name('users.update');
     Route::patch('/users/{id}/promote', [Admin\UserController::class, 'promoteToAdmin'])->name('users.promoteToAdmin');
+    Route::patch('/users/{id}/demote', [Admin\UserController::class, 'demoteAdmin'])->name('users.demoteAdmin');
     Route::delete('/users/{id}', [Admin\UserController::class, 'destroy'])->name('users.destroy');
     Route::get('/users/{userId}/classes/{teacherId}', [Admin\UserController::class, 'showStudentClass'])->name('users.classes.show');
     Route::patch('/users/{userId}/classes/{teacherId}/kick', [Admin\UserController::class, 'kickStudentFromClass'])->name('users.classes.kick');

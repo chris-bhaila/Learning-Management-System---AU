@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Http\Requests\Admin\UpdateUserRoleRequest;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
@@ -203,6 +204,39 @@ class UserController extends Controller
             ->log('Granted admin role to user');
 
         return back()->with('success', "{$target->name} has been promoted to Admin.");
+    }
+
+    /** Exclusive to Super Admin (enforced by the Policy, not just hidden in the UI) —
+     *  demotes an existing admin down to teacher or student, picked at demotion time.
+     *  Deliberately a separate endpoint from update(): that endpoint's role handling is
+     *  built defensively around a narrower case (blocking escalation to admin) and was
+     *  never meant to carry a demotion path — mixing the two risks the same kind of gap
+     *  the mass-assignment role_id issue exposed. See UserPolicy::demoteAdmin(). */
+    public function demoteAdmin(UpdateUserRoleRequest $request, int $id)
+    {
+        $target = $this->users->find($id);
+        abort_if(is_null($target), 404);
+
+        $newRole = $request->validated('role');
+
+        $this->authorize('demoteAdmin', [$target, $newRole]);
+
+        $oldRole = $target->role->name;
+        $role    = $this->roles->findByName($newRole);
+
+        $this->users->update($target, ['role_id' => $role->id]);
+
+        activity()
+            ->causedBy(Auth::user())
+            ->withProperties([
+                'target_user_id'   => $target->id,
+                'target_user_name' => $target->name,
+                'old_role'         => $oldRole,
+                'new_role'         => $newRole,
+            ])
+            ->log('Demoted admin role to user');
+
+        return back()->with('success', "{$target->name} has been demoted to " . ucfirst($newRole) . '.');
     }
 
     public function destroy(int $id)

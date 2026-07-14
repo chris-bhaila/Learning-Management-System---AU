@@ -71,6 +71,36 @@ window.confirmDestructive = function (title, text, formOrCb, confirmButtonText =
 };
 
 /**
+ * Destructive confirmation with a role-select input — demoting an admin down to
+ * teacher/student, where the target role is picked as part of the confirmation itself.
+ * Same red/error styling as confirmDelete()/confirmDestructive(); the selected value is
+ * written into the given form's hidden `role` input before submit.
+ * Confirm: error red. Cancel: neutral gray. Focus defaults to cancel.
+ */
+window.confirmDestructiveSelect = function (title, text, inputOptions, form, confirmButtonText = 'Confirm') {
+    Swal.fire({
+        title,
+        text,
+        icon: 'warning',
+        input: 'select',
+        inputOptions,
+        inputPlaceholder: 'Select a role',
+        showCancelButton: true,
+        reverseButtons: true,
+        focusCancel: true,
+        confirmButtonText,
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: cssVar('--color-error'),
+        cancelButtonColor:  cssVar('--color-outline-variant'),
+        inputValidator: (value) => !value ? 'Please select a role.' : undefined,
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+        form.querySelector('input[name="role"]').value = result.value;
+        form.submit();
+    });
+};
+
+/**
  * Positive / safe confirmation — publish, approve, enroll, save, etc.
  * Confirm: gold (dark text via .swal-confirm-positive CSS override).
  * Cancel: neutral gray. Focus defaults to confirm.

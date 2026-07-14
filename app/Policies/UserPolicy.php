@@ -38,6 +38,19 @@ class UserPolicy
         return $this->canAssignRole($authUser, 'admin') && !$targetUser->isAdmin();
     }
 
+    /** Exclusive to Super Admin — demotes an existing admin down to teacher or student,
+     *  the target role picked at demotion time. Mirrors promoteToAdmin() but in the
+     *  opposite direction and with a different allowed-target-role set, so it is not
+     *  expressed via canAssignRole() (that method only answers "who may grant role X",
+     *  not "who may move an admin down to X"). $targetUser->role must be exactly
+     *  'admin' — a super_admin is never demotable through this or any other path. */
+    public function demoteAdmin(User $authUser, User $targetUser, string $newRole): bool
+    {
+        return $authUser->isSuperAdmin()
+            && $targetUser->role?->name === 'admin'
+            && in_array($newRole, ['teacher', 'student'], true);
+    }
+
     /** A teacher may only view a student profile if that student is in their class. */
     public function viewProfile(User $authUser, User $targetUser): bool
     {
