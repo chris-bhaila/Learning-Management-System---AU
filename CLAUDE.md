@@ -14,7 +14,7 @@ This was a HIGH-severity issue, now fixed and independently re-verified against 
 - **Frontend:** Blade, Tailwind CSS, Alpine.js
 - **Rich Text:** TipTap, with a per-session "Raw HTML" mode toggle (no persistence — every editor session starts in WYSIWYG; switching to raw HTML and back is a client-side view swap only, resets on page load)
 - **HTML Sanitization:** mews/purifier — config lives at `config/purifier.php`. Only the `default` named config is actually used anywhere in the codebase (`Purifier::clean($x)` with no second argument, in `EloquentUnitRepository` and `EloquentCourseRepository`). Any settings added under other named configs (e.g. a `youtube`-specific block) are dead code unless explicitly passed as a second argument — verify this before assuming a config change takes effect.
-- **Auth:** Google SSO via Laravel Socialite (no passwords) — Admin role is intentionally excluded from Google login; Admin email is the one exception that remains user-editable (self-service settings page), specifically because Admin accounts are seeded/SQL-created and never matched by Google's email-lookup flow. Every other role's email is immutable after creation because Google OAuth matches existing users by email.
+- **Auth:** Google SSO via Laravel Socialite (no passwords) — all roles, including Admin and Super Admin, can sign in via Google; matching is by `google_id` first, then by email. Email is immutable after creation for every role (no self-service field exists to change it) — this is what keeps Google's email-matching flow stable.
 - **Auth (dev):** Email/password via Laravel Auth
 - **Design:** Stitch AI (connected via MCP)
 - **Client-side Validation:** Iodine.js (Alpine.js compatible, RegEx support)
@@ -63,8 +63,8 @@ resources/
 ```
 
 ## User Roles
-- **Super Admin** — highest privilege, identical access to Admin panel, plus the ability to grant the admin role to another user. Seeded at handover, no self-service creation, excluded from Google OAuth (same as Admin). Impersonation/force-delete/system config are explicitly out of scope, not this role's responsibility.
-- **Admin** — manages teachers and students, views activity logs, full course CRUD, excluded from Google login, own email is editable via self-service settings
+- **Super Admin** — highest privilege, identical access to Admin panel, plus the ability to grant the admin role to another user. Seeded at handover, no self-service creation. Impersonation/force-delete/system config are explicitly out of scope, not this role's responsibility.
+- **Admin** — manages teachers and students, views activity logs, full course CRUD. Email is not editable by any role (see Auth Flow) — no self-service field exists for it today.
 - **Teacher** — creates courses/units/tokens, manages their own students, views only their own class's activity as notifications
 - **Student** — default on registration, enrolls via token, read-only, cannot see CourseGroups under any circumstance
 
@@ -91,7 +91,7 @@ resources/
 - First login creates user with role: student
 - Passwords stored as bcrypt hashes via Laravel's Hash facade
 - Google SSO via Laravel Socialite is the intended production auth method
-- **Admin is excluded from the Google login flow entirely** — if an existing user matched by email has the `admin` role, the Google callback rejects the login attempt with a message directing them to email/password login instead. This is deliberate: Admin's email is user-editable (see Tech Stack), and Google's email-matching logic would break if Admin were allowed to both change their email freely and sign in via Google.
+- **All roles, including Admin and Super Admin, can sign in via Google.** The callback matches by `google_id` first, then falls back to matching by email for admin-created Teacher/Admin accounts, attaching the `google_id` on first successful match. No role is special-cased or excluded — this relies on email being immutable after creation for every role (there is no self-service field to change it; see Tech Stack).
 
 ## Design System
 - Primary: Navy #1E2A4A (text and headings only, never backgrounds)

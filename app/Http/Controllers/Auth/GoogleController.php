@@ -40,16 +40,6 @@ class GoogleController extends Controller
         $user = $this->users->findByGoogleId($googleUser->getId());
 
         if ($user) {
-            // Admin/Super Admin are excluded from Google login entirely (see Auth Flow in
-            // CLAUDE.md) — their email is user-editable via self-service settings, and
-            // Google's email-matching logic would break if they could both change their
-            // email freely and sign in via Google. This guards a repeat sign-in in case an
-            // admin account somehow already has a google_id attached.
-            if ($user->isAdmin()) {
-                return redirect()->route('login')
-                    ->with('error', 'Admin accounts cannot sign in with Google. Please use email and password login instead.');
-            }
-
             $updates = ['name' => $googleUser->getName()];
             // Only update avatar from Google if the user hasn't manually uploaded one.
             if ($user->avatar_source !== 'upload') {
@@ -62,13 +52,6 @@ class GoogleController extends Controller
             $user = $this->users->findByEmail($googleUser->getEmail());
 
             if ($user) {
-                // Admin/Super Admin are excluded from Google login entirely — reject before
-                // ever attaching a google_id to the account (see comment above).
-                if ($user->isAdmin()) {
-                    return redirect()->route('login')
-                        ->with('error', 'Admin accounts cannot sign in with Google. Please use email and password login instead.');
-                }
-
                 // Attach Google ID to the existing account — never touch their role.
                 $updates = [
                     'google_id' => $googleUser->getId(),
