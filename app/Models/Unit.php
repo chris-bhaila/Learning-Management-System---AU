@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use App\Models\Concerns\GroupsFilesByDate;
 
 class Unit extends Model
 {
-    use HasFactory, SoftDeletes, LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivity, GroupsFilesByDate;
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -41,6 +42,6 @@ class Unit extends Model
 
     public function files(): MorphMany
     {
-        return $this->morphMany(File::class, 'fileable');
+        return $this->morphMany(File::class, 'fileable')->orderByDesc('created_at');
     }
 }

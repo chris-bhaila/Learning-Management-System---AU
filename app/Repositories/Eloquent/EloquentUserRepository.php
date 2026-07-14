@@ -58,10 +58,16 @@ class EloquentUserRepository implements UserRepositoryInterface
         return $user->fresh();
     }
 
-    public function getFilteredUsers(string $role, string $sort, ?string $search, ?string $status = null, int $perPage = 20): LengthAwarePaginator
+    public function getFilteredUsers(string $role, string $sort, ?string $search, ?string $status = null, int $perPage = 20, bool $includeSuperAdmins = false): LengthAwarePaginator
     {
         $query = User::with('role')
-            ->whereHas('role', fn($q) => $q->where('name', $role));
+            ->whereHas('role', function ($q) use ($role, $includeSuperAdmins) {
+                if ($role === 'admin' && $includeSuperAdmins) {
+                    $q->whereIn('name', ['admin', 'super_admin']);
+                } else {
+                    $q->where('name', $role);
+                }
+            });
 
         if ($search) {
             $query->where(function ($q) use ($search) {

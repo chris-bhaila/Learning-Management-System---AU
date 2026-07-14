@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\ActivityLogHelper;
 use App\Http\Controllers\Controller;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
@@ -35,7 +37,11 @@ class DashboardController extends Controller
                 'pct_students'   => $totalUsers > 0 ? round($totalStudents / $totalUsers * 100) : 0,
             ],
             'recentUsers'    => $this->users->getRecent(8),
-            'recentActivity' => Activity::with('causer')->latest()->take(20)->get(),
+            // 'subject' is eager-loaded (not just 'causer') so the Event Details modal
+            // can show the subject name without a per-row lazy query when opened.
+            'recentActivity' => ActivityLogHelper::scopeVisibleTo(Activity::with('causer', 'subject')->latest(), Auth::user())
+                ->take(20)
+                ->get(),
         ]);
     }
 }

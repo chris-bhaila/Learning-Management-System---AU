@@ -7,6 +7,34 @@ use Illuminate\Support\Facades\DB;
 
 class UserPolicy
 {
+    /** Generic "edit this user" gate for Admin\UserController::update() — the Users
+     *  management page. A Super Admin may never edit *another* Super Admin's account
+     *  through this endpoint (their own row is exempt, though self-service profile edits
+     *  normally go through /settings, not this admin-management endpoint). Mirrors
+     *  demoteAdmin()'s "a super_admin is never actionable through this path" rule,
+     *  scoped to other accounts only. */
+    public function update(User $authUser, User $targetUser): bool
+    {
+        if ($targetUser->isSuperAdmin() && $targetUser->id !== $authUser->id) {
+            return false;
+        }
+
+        return $authUser->isAdmin();
+    }
+
+    /** Generic "delete this user" gate for Admin\UserController::destroy(). Same rule as
+     *  update() — another Super Admin's account can never be deleted through this
+     *  endpoint; a Super Admin's own row is exempt (not that self-deletion is a good
+     *  idea, but that's an existing, unrelated risk this task doesn't ask to change). */
+    public function delete(User $authUser, User $targetUser): bool
+    {
+        if ($targetUser->isSuperAdmin() && $targetUser->id !== $authUser->id) {
+            return false;
+        }
+
+        return $authUser->isAdmin();
+    }
+
     public function updateAvatar(User $authUser, User $targetUser): bool
     {
         return $authUser->isAdmin() || $authUser->id === $targetUser->id;

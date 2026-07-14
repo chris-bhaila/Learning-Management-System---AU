@@ -3,28 +3,41 @@
 @section('title', $subject->name)
 
 @section('topbar-actions')
-    <a href="{{ route('admin.users.index', ['role' => $subject->role->name]) }}"
+    {{-- super_admin doesn't have its own tab — it's folded into the Admins tab for a
+         Super Admin viewer, so route there regardless of the subject's exact role. --}}
+    <a href="{{ route('admin.users.index', ['role' => $subject->isAdmin() ? 'admin' : $subject->role->name]) }}"
        class="inline-flex items-center gap-1.5 px-4 py-2 border border-outline-variant/60
               text-sm font-medium text-on-surface-variant rounded-[24px]
               hover:bg-surface-container-low hover:text-primary transition-colors cursor-pointer">
         <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-        Back to {{ ucfirst($subject->role->name) }}s
+        Back to {{ $subject->isAdmin() ? 'Admins' : ucfirst($subject->role->name) . 's' }}
     </a>
 @endsection
 
 @section('content')
 @php
     $roleName  = $subject->role->name;
+    $roleLabel = [
+        'admin'       => 'Admin',
+        'super_admin' => 'Super Admin',
+        'teacher'     => 'Teacher',
+        'student'     => 'Student',
+    ][$roleName] ?? ucfirst($roleName);
     $avatarCls = match($roleName) {
-        'admin'   => 'bg-primary-container text-on-primary',
-        'teacher' => 'bg-gold/20 text-on-gold',
-        default   => 'bg-surface-container text-on-surface',
+        'admin'       => 'bg-primary-container text-on-primary',
+        'super_admin' => 'bg-primary text-white',
+        'teacher'     => 'bg-gold/20 text-on-gold',
+        default       => 'bg-surface-container text-on-surface',
     };
     $roleIcon  = match($roleName) {
-        'admin'   => 'admin_panel_settings',
-        'teacher' => 'school',
-        default   => 'menu_book',
+        'admin'       => 'admin_panel_settings',
+        'super_admin' => 'shield_person',
+        'teacher'     => 'school',
+        default       => 'menu_book',
     };
+    // Server-side enforcement is the real gate (UserPolicy::update) — this is
+    // defense-in-depth for the UI only.
+    $isOtherSuperAdmin = $subject->isSuperAdmin() && $subject->id !== auth()->id();
 @endphp
 
 {{-- ─── Profile header card ─── --}}
@@ -55,10 +68,11 @@
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full
                              text-xs font-medium
                              {{ $roleName === 'admin' ? 'bg-primary-container text-on-primary'
+                                : ($roleName === 'super_admin' ? 'bg-primary text-white'
                                 : ($roleName === 'teacher' ? 'bg-gold/20 text-on-gold'
-                                : 'bg-surface-container text-on-surface-variant') }}">
+                                : 'bg-surface-container text-on-surface-variant')) }}">
                     <span class="material-symbols-outlined text-[12px]">{{ $roleIcon }}</span>
-                    {{ ucfirst($roleName) }}
+                    {{ $roleLabel }}
                 </span>
                 {{-- Status badge --}}
                 @if($subject->is_active)
@@ -85,24 +99,26 @@
             </div>
         </div>
 
-        {{-- Quick actions --}}
-        <div class="flex items-center gap-2 shrink-0">
-            <button type="button"
-                    onclick="openUserEditModal()"
-                    class="inline-flex items-center gap-2 px-4 py-2 bg-gold text-primary
-                           text-sm font-semibold rounded-[24px] hover:bg-gold/90
-                           active:scale-[0.96] transition-all duration-150 cursor-pointer">
-                <span class="material-symbols-outlined text-[18px]">edit</span>
-                Edit
-            </button>
-        </div>
+        {{-- Quick actions — Edit is never shown for another Super Admin's profile. --}}
+        @unless($isOtherSuperAdmin)
+            <div class="flex items-center gap-2 shrink-0">
+                <button type="button"
+                        onclick="openUserEditModal()"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-gold text-primary
+                               text-sm font-semibold rounded-[24px] hover:bg-gold/90
+                               active:scale-[0.96] transition-all duration-150 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                    Edit
+                </button>
+            </div>
+        @endunless
     </div>
 </div>
 
 {{-- ─── Role-specific content ─── --}}
 
-@if($roleName === 'admin')
-    {{-- ══ ADMIN: account details ══ --}}
+@if($roleName === 'admin' || $roleName === 'super_admin')
+    {{-- ══ ADMIN / SUPER ADMIN: account details ══ --}}
     <div class="bg-surface-white border border-outline-variant/40 rounded-[20px]
                 shadow-[0px_1px_4px_rgba(30,42,74,0.06)] p-6 animate-fade-up">
         <p class="text-sm font-semibold text-on-surface mb-4" style="font-family: var(--font-display);">
@@ -125,7 +141,7 @@
                 <dt class="text-xs font-semibold text-outline uppercase tracking-wide w-32 shrink-0 mt-0.5">
                     Role
                 </dt>
-                <dd class="text-sm text-on-surface">Admin</dd>
+                <dd class="text-sm text-on-surface">{{ $roleLabel }}</dd>
             </div>
             <div class="flex items-start gap-4 py-3 first:pt-0 last:pb-0">
                 <dt class="text-xs font-semibold text-outline uppercase tracking-wide w-32 shrink-0 mt-0.5">
@@ -322,6 +338,7 @@
         email:         '{{ addslashes($subject->email) }}',
         role:          '{{ $subject->role->name }}',
         isActive:      {{ $subject->is_active ? 'true' : 'false' }},
+        isSelfSuperAdmin: {{ ($subject->isSuperAdmin() && $subject->id === auth()->id()) ? 'true' : 'false' }},
         avatarUrl:     '{{ addslashes($subject->avatarUrl() ?? '') }}',
         avatarPreview: null,
         removingAvatar: false,
@@ -362,7 +379,7 @@
         },
         onSubmit(event) {
             this.errors.name = this.check(this.name, ['required', 'maxLength:255']);
-            if (this.role !== 'admin') {
+            if (this.role !== 'admin' && this.role !== 'super_admin') {
                 this.errors.role = this.check(this.role, ['required']);
             }
             if (Object.values(this.errors).some(Boolean)) {
@@ -522,20 +539,25 @@
                     {{-- Role --}}
                     <div>
                         <p class="text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                            Role <span x-show="role !== 'admin'" class="text-error normal-case tracking-normal font-normal">*</span>
+                            Role <span x-show="role !== 'admin' && role !== 'super_admin'" class="text-error normal-case tracking-normal font-normal">*</span>
                         </p>
-                        <template x-if="role === 'admin'">
+                        {{-- Admin / Super Admin: locked display, hidden input carries a fixed
+                             placeholder value — never applied server-side for either role,
+                             since UserController::update() only ever sets role_id when the
+                             target is NOT already admin-or-above (isAdmin() covers both). --}}
+                        <template x-if="role === 'admin' || role === 'super_admin'">
                             <div>
                                 <div class="flex items-center gap-2 px-4 py-2.5 bg-surface-container-low
                                             border border-outline-variant/30 rounded-[16px] text-sm text-on-surface-variant">
                                     <span class="material-symbols-outlined text-[16px] text-outline shrink-0">lock</span>
-                                    <span>Admin</span>
+                                    <span x-text="role === 'super_admin' ? 'Super Admin' : 'Admin'"></span>
                                 </div>
-                                <p class="mt-1 text-[11px] text-outline">Admin role cannot be changed.</p>
+                                <p class="mt-1 text-[11px] text-outline"
+                                   x-text="(role === 'super_admin' ? 'Super Admin' : 'Admin') + ' role cannot be changed.'"></p>
                                 <input type="hidden" name="role" value="admin">
                             </div>
                         </template>
-                        <template x-if="role !== 'admin'">
+                        <template x-if="role !== 'admin' && role !== 'super_admin'">
                             <div>
                                 <div class="relative">
                                     <select name="role" x-model="role"
@@ -557,18 +579,26 @@
                         </template>
                     </div>
 
-                    {{-- Active toggle --}}
+                    {{-- Active toggle — locked when a Super Admin is editing their own row,
+                         so they can never deactivate their own account through this form.
+                         Server-side enforcement is the real gate (UserController::update());
+                         this is defense-in-depth for the UI only. --}}
                     <div class="flex items-center justify-between py-1">
                         <div>
                             <p class="text-sm font-medium text-on-surface">Active</p>
-                            <p class="text-xs text-on-surface-variant mt-0.5">Inactive users cannot sign in.</p>
+                            <p class="text-xs text-on-surface-variant mt-0.5">
+                                <span x-show="!isSelfSuperAdmin">Inactive users cannot sign in.</span>
+                                <span x-show="isSelfSuperAdmin" x-cloak>You cannot deactivate your own account.</span>
+                            </p>
                         </div>
                         <input type="hidden" name="is_active" :value="isActive ? '1' : '0'">
-                        <button type="button" @click="isActive = !isActive"
-                                :class="isActive ? 'bg-gold' : 'bg-outline-variant'"
-                                class="relative inline-flex w-11 h-6 shrink-0 rounded-full cursor-pointer
+                        <button type="button" @click="if (!isSelfSuperAdmin) isActive = !isActive"
+                                :disabled="isSelfSuperAdmin"
+                                :class="(isActive ? 'bg-gold' : 'bg-outline-variant') + (isSelfSuperAdmin ? '' : ' cursor-pointer')"
+                                class="relative inline-flex w-11 h-6 shrink-0 rounded-full
                                        transition-colors duration-200 ease-in-out
-                                       focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2"
+                                       focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2
+                                       disabled:opacity-50 disabled:cursor-not-allowed"
                                 role="switch" :aria-checked="isActive.toString()" aria-label="Active status">
                             <span :class="isActive ? 'translate-x-5' : 'translate-x-0.5'"
                                   class="inline-block w-5 h-5 mt-0.5 rounded-full bg-white shadow

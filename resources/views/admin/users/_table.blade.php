@@ -2,14 +2,22 @@
     $total = method_exists($users, 'total') ? $users->total() : $users->count();
     $roleHeadings = $roleHeadings ?? ['admin' => 'Admins', 'teacher' => 'Teachers', 'student' => 'Students'];
     $roleBadge = $roleBadge ?? [
-        'admin'   => 'bg-primary-container text-on-primary',
-        'teacher' => 'bg-gold/20 text-on-gold',
-        'student' => 'bg-surface-container text-on-surface-variant',
+        'admin'       => 'bg-primary-container text-on-primary',
+        'super_admin' => 'bg-primary text-white',
+        'teacher'     => 'bg-gold/20 text-on-gold',
+        'student'     => 'bg-surface-container text-on-surface-variant',
     ];
     $roleIcon = $roleIcon ?? [
-        'admin'   => 'admin_panel_settings',
-        'teacher' => 'school',
-        'student' => 'menu_book',
+        'admin'       => 'admin_panel_settings',
+        'super_admin' => 'shield_person',
+        'teacher'     => 'school',
+        'student'     => 'menu_book',
+    ];
+    $roleLabel = $roleLabel ?? [
+        'admin'       => 'Admin',
+        'super_admin' => 'Super Admin',
+        'teacher'     => 'Teacher',
+        'student'     => 'Student',
     ];
 @endphp
 
@@ -61,9 +69,10 @@
                     <td class="px-6 py-4">
                         @php
                             $avatarCls = [
-                                'admin'   => 'bg-primary-container text-on-primary',
-                                'teacher' => 'bg-gold/20 text-on-gold',
-                                'student' => 'bg-surface-container text-on-surface',
+                                'admin'       => 'bg-primary-container text-on-primary',
+                                'super_admin' => 'bg-primary text-white',
+                                'teacher'     => 'bg-gold/20 text-on-gold',
+                                'student'     => 'bg-surface-container text-on-surface',
                             ][$user->role->name] ?? 'bg-surface-container text-on-surface';
                         @endphp
                         <div class="flex items-center gap-3">
@@ -95,7 +104,7 @@
                             <span class="material-symbols-outlined text-[12px]">
                                 {{ $roleIcon[$user->role->name] ?? 'person' }}
                             </span>
-                            {{ ucfirst($user->role->name) }}
+                            {{ $roleLabel[$user->role->name] ?? ucfirst($user->role->name) }}
                         </span>
                     </td>
 
@@ -122,6 +131,11 @@
                     </td>
 
                     {{-- Actions --}}
+                    @php
+                        // Server-side enforcement is the real gate (UserPolicy::update/delete) —
+                        // these @if checks are defense-in-depth for the UI only.
+                        $isOtherSuperAdmin = $user->isSuperAdmin() && $user->id !== auth()->id();
+                    @endphp
                     <td class="px-6 py-4">
                         <div class="flex items-center justify-center gap-0.5">
 
@@ -134,16 +148,18 @@
                                 <span class="material-symbols-outlined text-[18px]">visibility</span>
                             </a>
 
-                            {{-- Edit --}}
-                            <button
-                                type="button"
-                                title="Edit user"
-                                onclick="openEditModal({{ $user->id }}, {{ Js::from($user->name) }}, {{ Js::from($user->email) }}, {{ Js::from($user->role->name) }}, {{ $user->is_active ? 'true' : 'false' }}, {{ Js::from($user->avatarUrl() ?? '') }})"
-                                class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
-                                       text-on-surface-variant hover:bg-surface-container hover:text-primary
-                                       transition-colors">
-                                <span class="material-symbols-outlined text-[18px]">edit</span>
-                            </button>
+                            {{-- Edit — never shown for another Super Admin's row. --}}
+                            @unless($isOtherSuperAdmin)
+                                <button
+                                    type="button"
+                                    title="Edit user"
+                                    onclick="openEditModal({{ $user->id }}, {{ Js::from($user->name) }}, {{ Js::from($user->email) }}, {{ Js::from($user->role->name) }}, {{ $user->is_active ? 'true' : 'false' }}, {{ Js::from($user->avatarUrl() ?? '') }})"
+                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                           text-on-surface-variant hover:bg-surface-container hover:text-primary
+                                           transition-colors">
+                                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                                </button>
+                            @endunless
 
                             {{-- Promote to Admin — exclusive to Super Admin, never shown to a regular Admin.
                                  Server-side enforcement is the real gate (UserPolicy::promoteToAdmin); this
@@ -194,16 +210,18 @@
                                 </button>
                             @endif
 
-                            {{-- Delete --}}
-                            <button
-                                type="button"
-                                title="Delete user"
-                                onclick="openDeleteModal({{ $user->id }}, '{{ e($user->name) }}')"
-                                class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
-                                       text-on-surface-variant hover:bg-error-container hover:text-error
-                                       transition-colors">
-                                <span class="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
+                            {{-- Delete — never shown for another Super Admin's row. --}}
+                            @unless($isOtherSuperAdmin)
+                                <button
+                                    type="button"
+                                    title="Delete user"
+                                    onclick="openDeleteModal({{ $user->id }}, '{{ e($user->name) }}')"
+                                    class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                           text-on-surface-variant hover:bg-error-container hover:text-error
+                                           transition-colors">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            @endunless
 
                         </div>
                     </td>

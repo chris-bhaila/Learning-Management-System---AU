@@ -38,9 +38,18 @@ class UserController extends Controller
                     : null;
         $search = $request->get('search');
 
+        // Only a Super Admin viewer sees other super_admin-role accounts folded into the
+        // Admins tab — a regular Admin's view of that tab is unchanged.
+        $viewerIsSuperAdmin = Auth::user()->isSuperAdmin();
+
+        $roleCounts = $this->users->getRoleCounts();
+        if ($viewerIsSuperAdmin) {
+            $roleCounts['admin'] = ($roleCounts['admin'] ?? 0) + ($roleCounts['super_admin'] ?? 0);
+        }
+
         $data = [
-            'users'          => $this->users->getFilteredUsers($role, $sort, $search, $status),
-            'roleCounts'     => $this->users->getRoleCounts(),
+            'users'          => $this->users->getFilteredUsers($role, $sort, $search, $status, 20, $viewerIsSuperAdmin),
+            'roleCounts'     => $roleCounts,
             'roles'          => $this->roles->all(),
             'currentRole'    => $role,
             'currentSort'    => $sort,
@@ -148,6 +157,16 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, int $id)
     {
         $user = $this->users->find($id);
+        abort_if(is_null($user), 404);
+
+        $this->authorize('update', $user);
+
+        // A Super Admin editing their own row (the one case update() allows for a
+        // super_admin target — see UserPolicy::update()) must never be able to lock
+        // themselves out by deactivating their own account through this form.
+        if ($user->id === Auth::id() && $user->isSuperAdmin() && !$request->validated('is_active')) {
+            return back()->with('error', 'You cannot deactivate your own Super Admin account.');
+        }
 
         $updates = [
             'name'      => $request->validated('name'),
@@ -242,6 +261,10 @@ class UserController extends Controller
     public function destroy(int $id)
     {
         $user = $this->users->find($id);
+        abort_if(is_null($user), 404);
+
+        $this->authorize('delete', $user);
+
         $this->users->delete($user);
 
         return back()->with('success', 'User deleted.');

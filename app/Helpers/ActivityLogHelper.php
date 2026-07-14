@@ -2,11 +2,67 @@
 
 namespace App\Helpers;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class ActivityLogHelper
 {
+    /**
+     * Restricts an Activity query to what $viewer is allowed to see. Regular Admin
+     * never sees rows caused by a Super Admin; Super Admin sees everything, including
+     * their own actions. This is an access-control scope, not a user-facing filter —
+     * apply it unconditionally to every query that surfaces Activity rows to an Admin
+     * (on-screen list, CSV export, dashboard widgets, anything added later), not just
+     * the ones that happen to need it today.
+     *
+     * whereHasMorph() alone would also exclude causer-less rows (e.g. a "System"-caused
+     * event with no authenticated actor) since it requires the causer relation to
+     * exist — those must stay visible to regular Admin, hence the outer
+     * whereNull('causer_id') branch.
+     */
+    public static function scopeVisibleTo(Builder $query, User $viewer): Builder
+    {
+        if ($viewer->isSuperAdmin()) {
+            return $query;
+        }
+
+        return $query->where(function ($outer) {
+            $outer->whereNull('causer_id')
+                ->orWhereHasMorph('causer', '*', function ($q) {
+                    $q->where(function ($q2) {
+                        $q2->whereNull('role_id')
+                           ->orWhereDoesntHave('role', fn($r) => $r->where('name', 'super_admin'));
+                    });
+                });
+        });
+    }
+
+    /**
+     * Per-event label/icon/badge styling — shared by the full Activity Log page and the
+     * Admin dashboard's Recent Activity panel so an event reads identically everywhere
+     * it appears, including inside the shared Event Details modal.
+     */
+    public static function eventConfig(): array
+    {
+        return [
+            'created'  => ['label' => 'Created',  'icon' => 'add_circle',  'badge' => 'bg-emerald-50 text-emerald-700 border border-emerald-200'],
+            'updated'  => ['label' => 'Updated',  'icon' => 'edit',        'badge' => 'bg-blue-50 text-blue-700 border border-blue-200'],
+            'deleted'  => ['label' => 'Deleted',  'icon' => 'delete',      'badge' => 'bg-red-50 text-error border border-red-200'],
+            'restored' => ['label' => 'Restored', 'icon' => 'restore',     'badge' => 'bg-amber-50 text-amber-700 border border-amber-200'],
+            'login'    => ['label' => 'Login',    'icon' => 'login',       'badge' => 'bg-violet-50 text-violet-700 border border-violet-200'],
+            'logout'   => ['label' => 'Logout',   'icon' => 'logout',      'badge' => 'bg-surface-container text-on-surface-variant border border-outline-variant'],
+        ];
+    }
+
+    /** Config for a single event, falling back to a generic style for unmapped events. */
+    public static function resolveEventConfig(string $event): array
+    {
+        return self::eventConfig()[$event]
+            ?? ['label' => Str::title($event), 'icon' => 'info', 'badge' => 'bg-surface-container text-on-surface-variant border border-outline-variant'];
+    }
+
     /**
      * Human-readable labels for every column that appears in activity_changes
      * across all logged models (User, Course, Unit, Token, CourseGroup, File).

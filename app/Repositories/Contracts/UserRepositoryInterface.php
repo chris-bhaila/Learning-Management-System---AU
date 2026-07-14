@@ -17,7 +17,10 @@ interface UserRepositoryInterface
     public function getAllStudents(): Collection;
     public function getAllTeachers(): Collection;
     public function updateRole(User $user, int $roleId): User;
-    public function getFilteredUsers(string $role, string $sort, ?string $search, ?string $status = null, int $perPage = 20): LengthAwarePaginator;
+    /** $includeSuperAdmins only has an effect when $role === 'admin' — folds super_admin-role
+     *  users into the "admin" tab's result set. Callers must gate this on the viewer being a
+     *  Super Admin themselves (see UserController::index()); this method does not check that. */
+    public function getFilteredUsers(string $role, string $sort, ?string $search, ?string $status = null, int $perPage = 20, bool $includeSuperAdmins = false): LengthAwarePaginator;
     public function getRoleCounts(): array;
     public function getRecent(int $limit = 10): Collection;
     public function updateAvatar(User $user, string $path): User;

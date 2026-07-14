@@ -6,6 +6,7 @@ use App\Helpers\ActivityLogHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\Models\Activity;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -176,7 +177,10 @@ class ActivityLogController extends Controller
             $query->where('created_at', '>=', now()->startOfMonth());
         }
 
-        return $query;
+        // Access-control scope, not a user-facing filter — unconditional, never skippable
+        // via query params. See ActivityLogHelper::scopeVisibleTo() for the exact logic
+        // and why it's not just whereHasMorph('causer', ...) alone.
+        return ActivityLogHelper::scopeVisibleTo($query, Auth::user());
     }
 
     /** Prefix cells starting with =, +, -, or @ to prevent formula execution when opened in Excel/Sheets. */

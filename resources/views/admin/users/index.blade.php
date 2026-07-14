@@ -18,14 +18,22 @@
     ];
     $roleHeadings = ['admin' => 'Admins', 'teacher' => 'Teachers', 'student' => 'Students'];
     $roleBadge = [
-        'admin'   => 'bg-primary-container text-on-primary',
-        'teacher' => 'bg-gold/20 text-on-gold',
-        'student' => 'bg-surface-container text-on-surface-variant',
+        'admin'       => 'bg-primary-container text-on-primary',
+        'super_admin' => 'bg-primary text-white',
+        'teacher'     => 'bg-gold/20 text-on-gold',
+        'student'     => 'bg-surface-container text-on-surface-variant',
     ];
     $roleIcon = [
-        'admin'   => 'admin_panel_settings',
-        'teacher' => 'school',
-        'student' => 'menu_book',
+        'admin'       => 'admin_panel_settings',
+        'super_admin' => 'shield_person',
+        'teacher'     => 'school',
+        'student'     => 'menu_book',
+    ];
+    $roleLabel = [
+        'admin'       => 'Admin',
+        'super_admin' => 'Super Admin',
+        'teacher'     => 'Teacher',
+        'student'     => 'Student',
     ];
 
     $reopenCreate = old('_modal') === 'create';
@@ -459,6 +467,10 @@
         isActive:     {{ old('is_active', '1') === '1' ? 'true' : 'false' }},
         avatarUrl:    '',
         avatarPreview: null,
+        currentUserId: '{{ auth()->id() }}',
+        get isSelfSuperAdmin() {
+            return this.role === 'super_admin' && String(this.id) === this.currentUserId;
+        },
         removingAvatar: false,
         errors: {
             name: '{{ addslashes($reopenEdit ? $errors->first('name') : '') }}',
@@ -705,21 +717,26 @@
                             Role <span x-show="role !== 'admin'" class="text-error normal-case tracking-normal font-normal">*</span>
                         </p>
 
-                        {{-- Admin: locked display, hidden input carries value --}}
-                        <template x-if="role === 'admin'">
+                        {{-- Admin / Super Admin: locked display, hidden input carries a fixed
+                             placeholder value — never applied server-side for either role,
+                             since UserController::update() only ever sets role_id when the
+                             target is NOT already admin-or-above (isAdmin() covers both). It
+                             exists purely to satisfy the Form Request's required/in: rule. --}}
+                        <template x-if="role === 'admin' || role === 'super_admin'">
                             <div>
                                 <div class="flex items-center gap-2 px-4 py-2.5 bg-surface-container-low
                                             border border-outline-variant/30 rounded-[16px] text-sm text-on-surface-variant">
                                     <span class="material-symbols-outlined text-[16px] text-outline shrink-0">lock</span>
-                                    <span>Admin</span>
+                                    <span x-text="role === 'super_admin' ? 'Super Admin' : 'Admin'"></span>
                                 </div>
-                                <p class="mt-1 text-[11px] text-outline">Admin role cannot be changed.</p>
+                                <p class="mt-1 text-[11px] text-outline"
+                                   x-text="(role === 'super_admin' ? 'Super Admin' : 'Admin') + ' role cannot be changed.'"></p>
                                 <input type="hidden" name="role" value="admin">
                             </div>
                         </template>
 
                         {{-- Teacher / Student: editable select --}}
-                        <template x-if="role !== 'admin'">
+                        <template x-if="role !== 'admin' && role !== 'super_admin'">
                             <div>
                                 <div class="relative">
                                     <select
@@ -744,20 +761,28 @@
                         </template>
                     </div>
 
-                    {{-- Active toggle --}}
+                    {{-- Active toggle — locked when a Super Admin is editing their own row,
+                         so they can never deactivate their own account through this form.
+                         Server-side enforcement is the real gate (UserController::update());
+                         this is defense-in-depth for the UI only. --}}
                     <div class="flex items-center justify-between py-1">
                         <div>
                             <p class="text-sm font-medium text-on-surface">Active</p>
-                            <p class="text-xs text-on-surface-variant mt-0.5">Inactive users cannot sign in.</p>
+                            <p class="text-xs text-on-surface-variant mt-0.5">
+                                <span x-show="!isSelfSuperAdmin">Inactive users cannot sign in.</span>
+                                <span x-show="isSelfSuperAdmin" x-cloak>You cannot deactivate your own account.</span>
+                            </p>
                         </div>
                         <input type="hidden" name="is_active" :value="isActive ? '1' : '0'">
                         <button
                             type="button"
-                            @click="isActive = !isActive"
-                            :class="isActive ? 'bg-gold' : 'bg-outline-variant'"
-                            class="relative inline-flex w-11 h-6 shrink-0 rounded-full cursor-pointer
+                            @click="if (!isSelfSuperAdmin) isActive = !isActive"
+                            :disabled="isSelfSuperAdmin"
+                            :class="(isActive ? 'bg-gold' : 'bg-outline-variant') + (isSelfSuperAdmin ? '' : ' cursor-pointer')"
+                            class="relative inline-flex w-11 h-6 shrink-0 rounded-full
                                    transition-colors duration-200 ease-in-out
-                                   focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2"
+                                   focus:outline-none focus:ring-2 focus:ring-primary/40 focus:ring-offset-2
+                                   disabled:opacity-50 disabled:cursor-not-allowed"
                             role="switch"
                             :aria-checked="isActive.toString()"
                             aria-label="Active status"

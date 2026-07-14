@@ -4,6 +4,8 @@
 
 @section('content')
 @php
+    use App\Helpers\ActivityLogHelper;
+
     // Fallbacks — controller will pass real values once backend is wired
     $stats ??= [
         'total_users'    => 0,
@@ -203,7 +205,8 @@
     </div>
 
     {{-- Recent Activity (1/3 width) --}}
-    <div class="h-[480px] bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden flex flex-col">
+    <div x-data="logDetailModal()"
+         class="h-[480px] bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden flex flex-col">
 
         <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30 shrink-0">
             <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
@@ -220,21 +223,52 @@
             @forelse($recentActivity ?? [] as $log)
                 @php
                     $evtType  = $log->event ?? 'updated';
+                    $cfg      = ActivityLogHelper::resolveEventConfig($evtType);
                     $evtMap   = [
-                        'created' => ['bg' => 'bg-emerald-50', 'ic' => 'text-emerald-600', 'sym' => 'add_circle'],
-                        'updated' => ['bg' => 'bg-blue-50',    'ic' => 'text-blue-600',    'sym' => 'edit'],
-                        'deleted' => ['bg' => 'bg-red-50',     'ic' => 'text-error',        'sym' => 'delete'],
+                        'created'  => ['bg' => 'bg-emerald-50', 'ic' => 'text-emerald-600'],
+                        'updated'  => ['bg' => 'bg-blue-50',    'ic' => 'text-blue-600'],
+                        'deleted'  => ['bg' => 'bg-red-50',     'ic' => 'text-error'],
+                        'restored' => ['bg' => 'bg-amber-50',   'ic' => 'text-amber-600'],
+                        'login'    => ['bg' => 'bg-violet-50',  'ic' => 'text-violet-600'],
+                        'logout'   => ['bg' => 'bg-surface-container', 'ic' => 'text-on-surface-variant'],
                     ];
-                    $evtStyle = $evtMap[$evtType] ?? ['bg' => 'bg-surface-container', 'ic' => 'text-primary', 'sym' => 'info'];
+                    $evtStyle = $evtMap[$evtType] ?? ['bg' => 'bg-surface-container', 'ic' => 'text-primary'];
+
+                    $changes  = $log->attribute_changes ?? collect();
+                    $newAttrs = (array) ($changes->get('attributes') ?? []);
+                    $oldAttrs = (array) ($changes->get('old') ?? []);
+                    $diff     = ActivityLogHelper::buildDiff($newAttrs, $oldAttrs, $evtType);
+
+                    $subjectName = $log->subject?->name ?? $log->subject?->title ?? $log->subject?->token_value ?? null;
                 @endphp
-                <li class="px-6 py-4 flex items-start gap-3 hover:bg-surface-container-low/40 transition-colors duration-200">
+                <li class="px-6 py-4 flex items-start gap-3 hover:bg-surface-container-low/40 transition-colors duration-200 cursor-pointer"
+                    @click="open(@js([
+                        'event'       => $evtType,
+                        'eventLabel'  => $cfg['label'],
+                        'eventBadge'  => $cfg['badge'],
+                        'eventIcon'   => $cfg['icon'],
+                        'subjectType' => $log->subject_type ? class_basename($log->subject_type) : null,
+                        'subjectName' => $subjectName ?? ($log->subject_id ? 'ID #' . $log->subject_id : null),
+                        'causerName'  => $log->causer?->name,
+                        'causerRole'  => $log->causer?->role?->name ? ucfirst($log->causer->role->name) : null,
+                        'timestamp'   => $log->created_at->format('d M Y, H:i:s'),
+                        'timeAgo'     => $log->created_at->diffForHumans(),
+                        'diff'        => $diff,
+                    ]))">
                     <div class="w-8 h-8 rounded-full {{ $evtStyle['bg'] }} flex items-center justify-center shrink-0 mt-0.5">
                         <span class="material-symbols-outlined {{ $evtStyle['ic'] }} text-[16px]">
-                            {{ $evtStyle['sym'] }}
+                            {{ $cfg['icon'] }}
                         </span>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <p class="text-sm text-on-surface leading-snug">{{ $log->description }}</p>
+                        <p class="text-sm text-on-surface leading-snug">
+                            @if($log->causer)
+                                <span class="font-semibold">{{ $log->causer->name }}</span>
+                            @else
+                                <span class="font-semibold text-outline italic">System</span>
+                            @endif
+                            {{ $log->description }}
+                        </p>
                         <p class="text-xs text-outline mt-1">{{ $log->created_at->diffForHumans() }}</p>
                     </div>
                 </li>
@@ -244,6 +278,8 @@
                 </li>
             @endforelse
         </ul>
+
+        @include('partials.activity-log-detail-modal')
 
     </div>
 
