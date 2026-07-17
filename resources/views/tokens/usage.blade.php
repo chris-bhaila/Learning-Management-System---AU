@@ -29,9 +29,13 @@
 
 
 {{-- ══════════════════════════════════════════════════════
-     STATE A — live token stats
+     Three distinguishable states for this page, in order of precedence:
+       A. token row exists, not revoked   — live stats (Active/Expired-by-time-or-uses)
+       B. token row exists, revoked_at set — stats still shown, but clearly marked
+          "Revoked" (with when), distinct from a natural time/uses expiry
+       C. token row doesn't exist (pruned) — history-only banner, unchanged wording
 ══════════════════════════════════════════════════════ --}}
-@if($token)
+@if($token && ! $token->isRevoked())
 @php
     $expired       = $token->isExpired();
     $usesRemaining = max(0, $token->max_uses - $token->uses_count);
@@ -91,7 +95,72 @@
 </x-card>
 
 {{-- ══════════════════════════════════════════════════════
-     STATE B — pruned token banner
+     STATE B — revoked (row still exists — distinct from a natural expiry)
+══════════════════════════════════════════════════════ --}}
+@elseif($token && $token->isRevoked())
+@php $usesRemaining = max(0, $token->max_uses - $token->uses_count); @endphp
+<x-card class="mb-6 animate-fade-up">
+    <div class="px-6 py-4 border-b border-outline-variant/20 flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[15px] text-on-surface-variant">block</span>
+            </div>
+            <p class="text-sm font-semibold text-on-surface" style="font-family: var(--font-display);">
+                Token Revoked
+            </p>
+        </div>
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0
+                     bg-surface-container text-on-surface-variant">
+            <span class="material-symbols-outlined text-[13px]">block</span>
+            Revoked
+        </span>
+    </div>
+
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {{-- Type --}}
+        <div class="flex flex-col gap-1">
+            <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wide">Type</span>
+            <span class="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-outline">
+                    {{ $token->isClassToken() ? 'group' : 'library_books' }}
+                </span>
+                {{ $token->isClassToken() ? 'Class token' : 'Course token' }}
+            </span>
+            @if($token->isCourseToken() && $token->course)
+                <span class="text-xs text-on-surface-variant truncate">{{ $token->course->title }}</span>
+            @endif
+        </div>
+
+        {{-- Revoked when — NOT the same field as "Expires"; this token was manually
+             revoked, which may have happened well before its natural expires_at. --}}
+        <div class="flex flex-col gap-1">
+            <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wide">Revoked</span>
+            <span class="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-outline">block</span>
+                {{ $token->revoked_at->diffForHumans() }}
+            </span>
+            <span class="text-xs text-on-surface-variant">{{ $token->revoked_at->format('d M Y, H:i') }}</span>
+        </div>
+
+        {{-- Uses --}}
+        <div class="flex flex-col gap-1">
+            <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wide">Usage</span>
+            <span class="text-sm font-semibold text-on-surface flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-outline">group</span>
+                {{ $token->uses_count }}/{{ $token->max_uses }} used
+            </span>
+            <span class="text-xs text-on-surface-variant">{{ $usesRemaining }} remaining (moot — revoked)</span>
+        </div>
+    </div>
+
+    <p class="px-5 pb-5 text-xs text-on-surface-variant">
+        This token was manually revoked and can no longer be used, regardless of its
+        original expiry or remaining uses.
+    </p>
+</x-card>
+
+{{-- ══════════════════════════════════════════════════════
+     STATE C — pruned token banner
 ══════════════════════════════════════════════════════ --}}
 @else
 <div class="flex items-start gap-3 px-4 py-4 mb-6 rounded-[16px] bg-surface-container

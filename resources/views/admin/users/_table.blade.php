@@ -215,10 +215,15 @@
 
                             {{-- Delete — never shown for any Super Admin row, including your own. --}}
                             @unless($isSuperAdminRow)
+                                <form id="delete-user-form-{{ $user->id }}" method="POST"
+                                      action="{{ route('admin.users.destroy', $user->id) }}" class="hidden">
+                                    @csrf
+                                    @method('DELETE')
+                                </form>
                                 <button
                                     type="button"
                                     title="Delete user"
-                                    onclick="openDeleteModal({{ $user->id }}, '{{ e($user->name) }}')"
+                                    onclick="confirmDelete({{ Js::from($user->name) }}, document.getElementById('delete-user-form-{{ $user->id }}'))"
                                     class="w-8 h-8 inline-flex items-center justify-center rounded-lg cursor-pointer
                                            text-on-surface-variant hover:bg-error-container hover:text-error
                                            transition-colors">

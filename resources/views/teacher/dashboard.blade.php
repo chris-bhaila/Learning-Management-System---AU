@@ -187,30 +187,15 @@
             <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
                 Recent Activity
             </h2>
+            <a href="{{ route('teacher.activity.index') }}"
+               class="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+                View all
+            </a>
         </div>
 
         <ul class="divide-y divide-outline-variant/20 flex-1 overflow-y-auto">
             @forelse($notifications as $log)
-                @php
-                    $evtType  = $log->event ?? 'updated';
-                    $evtMap   = [
-                        'created' => ['bg' => 'bg-emerald-50', 'ic' => 'text-emerald-600', 'sym' => 'add_circle'],
-                        'updated' => ['bg' => 'bg-blue-50',    'ic' => 'text-blue-600',    'sym' => 'edit'],
-                        'deleted' => ['bg' => 'bg-red-50',     'ic' => 'text-error',        'sym' => 'delete'],
-                    ];
-                    $evtStyle = $evtMap[$evtType] ?? ['bg' => 'bg-surface-container', 'ic' => 'text-primary', 'sym' => 'info'];
-                @endphp
-                <li class="px-6 py-4 flex items-start gap-3 hover:bg-surface-container-low/40 transition-colors duration-200">
-                    <div class="w-8 h-8 rounded-full {{ $evtStyle['bg'] }} flex items-center justify-center shrink-0 mt-0.5">
-                        <span class="material-symbols-outlined {{ $evtStyle['ic'] }} text-[16px]">
-                            {{ $evtStyle['sym'] }}
-                        </span>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <p class="text-sm text-on-surface leading-snug">{{ $log->description }}</p>
-                        <p class="text-xs text-outline mt-1">{{ $log->created_at->diffForHumans() }}</p>
-                    </div>
-                </li>
+                @include('teacher.activity._item', ['log' => $log])
             @empty
                 <li class="px-6 py-10 text-center text-sm text-outline">
                     No recent activity from your students.

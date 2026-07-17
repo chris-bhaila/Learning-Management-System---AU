@@ -31,7 +31,7 @@
             Admin Dashboard
         </h1>
         <p class="mt-1 text-sm text-on-surface-variant">
-            {{ $greeting }}, {{ auth()->user()?->name ?? 'Admin' }}. Here's what's happening on EduNest.
+            {{ $greeting }}, {{ auth()->user()?->name ?? 'Admin' }}. Here's what's happening on {{ $siteName }}.
         </p>
     </div>
     <span class="text-xs text-outline bg-surface-container px-3 py-1.5 rounded-full shrink-0">

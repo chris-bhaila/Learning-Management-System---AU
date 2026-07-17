@@ -814,54 +814,6 @@
     </div>
 </div>
 
-
-{{-- ─── Delete Confirmation Modal ─── --}}
-<div
-    id="deleteModal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="deleteModalTitle"
-    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm p-4"
->
-    <div class="bg-surface-white rounded-[20px] shadow-xl w-full max-w-sm p-6">
-        <div class="flex flex-col items-center text-center gap-3">
-            <div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center">
-                <span class="material-symbols-outlined text-error text-[22px]">warning</span>
-            </div>
-            <h3 id="deleteModalTitle"
-                class="text-lg font-semibold text-primary"
-                style="font-family: var(--font-display);">
-                Delete User?
-            </h3>
-            <p class="text-sm text-on-surface-variant leading-relaxed">
-                You are about to permanently delete
-                <strong id="deleteUserName" class="text-on-surface"></strong>.
-                This action cannot be undone.
-            </p>
-        </div>
-
-        <div class="flex gap-3 mt-6">
-            <button
-                type="button"
-                onclick="closeDeleteModal()"
-                class="flex-1 px-4 py-2.5 rounded-[24px] text-sm font-medium cursor-pointer
-                       bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors">
-                Cancel
-            </button>
-            <form id="deleteForm" method="POST" class="flex-1">
-                @csrf
-                @method('DELETE')
-                <button
-                    type="submit"
-                    class="w-full px-4 py-2.5 rounded-[24px] text-sm font-medium cursor-pointer
-                           bg-error text-white hover:opacity-90 transition-opacity">
-                    Delete
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
@@ -926,31 +878,5 @@
             detail: { id, name, email, role, isActive, avatarUrl: avatarUrl || '' }
         }));
     }
-
-    // ── Delete modal (plain JS, matching existing pattern) ────────
-    function openDeleteModal(userId, userName) {
-        document.getElementById('deleteUserName').textContent = userName;
-        document.getElementById('deleteForm').action =
-            '{{ rtrim(url("admin/users"), "/") }}/' + userId;
-        const modal = document.getElementById('deleteModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.classList.add('overflow-hidden');
-    }
-
-    function closeDeleteModal() {
-        const modal = document.getElementById('deleteModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.classList.remove('overflow-hidden');
-    }
-
-    document.getElementById('deleteModal').addEventListener('click', function (e) {
-        if (e.target === this) closeDeleteModal();
-    });
-
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeDeleteModal();
-    });
 </script>
 @endpush

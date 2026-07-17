@@ -110,10 +110,12 @@ class TokenController extends Controller
         ]);
     }
 
-    public function destroy(int $id)
+    public function revoke(int $id)
     {
         $token = $this->tokens->find($id);
-        $this->tokens->delete($token);
+        abort_if(is_null($token), 404);
+
+        $this->tokens->revoke($token);
 
         return back()->with('success', 'Token revoked.');
     }

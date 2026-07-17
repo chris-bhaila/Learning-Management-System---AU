@@ -110,13 +110,20 @@
                             <span class="material-symbols-outlined text-[13px]">bar_chart</span>
                             View usage
                         </a>
+                        @unless($expired)
                         <button type="button"
-                                onclick="confirmDelete('class token', document.getElementById('delete-token-form-{{ $token->id }}'))"
+                                onclick="confirmDestructive(
+                                    {{ Js::from('Revoke this class token?') }},
+                                    {{ Js::from('Students will no longer be able to use this token to join your class.') }},
+                                    document.getElementById('delete-token-form-{{ $token->id }}'),
+                                    'Revoke'
+                                )"
                                 class="inline-flex items-center gap-1 text-[11px] text-error
                                        hover:text-error/80 transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[13px]">delete</span>
-                            {{ $expired ? 'Delete' : 'Revoke' }}
+                            <span class="material-symbols-outlined text-[13px]">block</span>
+                            Revoke
                         </button>
+                        @endunless
                     </div>
                 </div>
             </li>
@@ -136,10 +143,10 @@
 @foreach($tokens as $token)
 <form id="delete-token-form-{{ $token->id }}"
       method="POST"
-      action="{{ route('teacher.tokens.destroy', $token->id) }}"
+      action="{{ route('teacher.tokens.revoke', $token->id) }}"
       class="hidden">
     @csrf
-    @method('DELETE')
+    @method('PATCH')
 </form>
 @endforeach
 

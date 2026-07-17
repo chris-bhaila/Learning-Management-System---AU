@@ -264,7 +264,13 @@
         </x-card>
 
         {{-- Right: Password card --}}
-        @php $hasPassword = ! is_null(auth()->user()->password); @endphp
+        @php
+            $hasPassword = ! is_null(auth()->user()->password);
+            // Permanent condition, independent of $hasPassword: once a Google account is
+            // linked, the password form is hidden for good — even for a user who had a
+            // real password before linking (e.g. an admin who later connects Google).
+            $isGoogleLinked = ! is_null(auth()->user()->google_id);
+        @endphp
         <x-card
             class="p-6 animate-fade-up h-full"
             x-data="{
@@ -310,6 +316,7 @@
                 <h2 class="text-base font-semibold text-primary" style="font-family: var(--font-display);">
                     Password
                 </h2>
+                @unless($isGoogleLinked)
                 <button type="button" x-show="!editing" @click="editing = true"
                     class="inline-flex items-center gap-1.5 px-4 py-2 bg-gold text-primary
                            text-xs font-semibold rounded-[24px] hover:bg-gold/90
@@ -317,105 +324,114 @@
                     <span class="material-symbols-outlined text-[16px]">edit</span>
                     {{ $hasPassword ? 'Change Password' : 'Set Password' }}
                 </button>
+                @endunless
             </div>
 
-            {{-- View mode --}}
-            <p x-show="!editing" x-transition class="text-sm text-on-surface-variant">
-                @if($hasPassword)
-                    ••••••••••••
-                @else
-                    No password set — you sign in with Google. Set a password to also enable email/password sign-in.
-                @endif
-            </p>
+            @if($isGoogleLinked)
+                {{-- Google-linked accounts never manage a password here, permanently —
+                     regardless of role or whether a password exists from before linking. --}}
+                <p class="text-sm text-on-surface-variant">
+                    You sign in with Google — there's no password to manage here.
+                </p>
+            @else
+                {{-- View mode --}}
+                <p x-show="!editing" x-transition class="text-sm text-on-surface-variant">
+                    @if($hasPassword)
+                        ••••••••••••
+                    @else
+                        No password set — you sign in with Google. Set a password to also enable email/password sign-in.
+                    @endif
+                </p>
 
-            {{-- Edit mode --}}
-            <form x-show="editing" x-cloak x-transition
-                  method="POST" action="{{ route('settings.password.update') }}"
-                  @submit="onSubmit" novalidate class="space-y-4">
-                @csrf
-                @method('PATCH')
+                {{-- Edit mode --}}
+                <form x-show="editing" x-cloak x-transition
+                      method="POST" action="{{ route('settings.password.update') }}"
+                      @submit="onSubmit" novalidate class="space-y-4">
+                    @csrf
+                    @method('PATCH')
 
-                @if($hasPassword)
-                <div>
-                    <label for="settings-current-password"
-                           class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                        Current Password <span class="text-error normal-case tracking-normal font-normal">*</span>
-                    </label>
-                    <input
-                        id="settings-current-password"
-                        type="password"
-                        name="current_password"
-                        x-model="currentPassword"
-                        @blur="errors.currentPassword = check(currentPassword, ['required'])"
-                        autocomplete="current-password"
-                        :class="errors.currentPassword ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
-                        class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
-                               placeholder:text-outline focus:outline-none focus:ring-1 transition-colors">
-                    <p x-show="errors.currentPassword" x-text="errors.currentPassword"
-                       class="mt-1.5 text-xs text-error" x-cloak></p>
-                </div>
-                @endif
+                    @if($hasPassword)
+                    <div>
+                        <label for="settings-current-password"
+                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                            Current Password <span class="text-error normal-case tracking-normal font-normal">*</span>
+                        </label>
+                        <input
+                            id="settings-current-password"
+                            type="password"
+                            name="current_password"
+                            x-model="currentPassword"
+                            @blur="errors.currentPassword = check(currentPassword, ['required'])"
+                            autocomplete="current-password"
+                            :class="errors.currentPassword ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
+                            class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
+                                   placeholder:text-outline focus:outline-none focus:ring-1 transition-colors">
+                        <p x-show="errors.currentPassword" x-text="errors.currentPassword"
+                           class="mt-1.5 text-xs text-error" x-cloak></p>
+                    </div>
+                    @endif
 
-                <div>
-                    <label for="settings-password"
-                           class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                        New Password <span class="text-error normal-case tracking-normal font-normal">*</span>
-                    </label>
-                    <input
-                        id="settings-password"
-                        type="password"
-                        name="password"
-                        x-model="password"
-                        @blur="errors.password = check(password, ['required', 'minLength:8'])"
-                        autocomplete="new-password"
-                        placeholder="Min. 8 characters"
-                        :class="errors.password ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
-                        class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
-                               placeholder:text-outline focus:outline-none focus:ring-1 transition-colors">
-                    <p x-show="errors.password" x-text="errors.password"
-                       class="mt-1.5 text-xs text-error" x-cloak></p>
-                </div>
+                    <div>
+                        <label for="settings-password"
+                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                            New Password <span class="text-error normal-case tracking-normal font-normal">*</span>
+                        </label>
+                        <input
+                            id="settings-password"
+                            type="password"
+                            name="password"
+                            x-model="password"
+                            @blur="errors.password = check(password, ['required', 'minLength:8'])"
+                            autocomplete="new-password"
+                            placeholder="Min. 8 characters"
+                            :class="errors.password ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
+                            class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
+                                   placeholder:text-outline focus:outline-none focus:ring-1 transition-colors">
+                        <p x-show="errors.password" x-text="errors.password"
+                           class="mt-1.5 text-xs text-error" x-cloak></p>
+                    </div>
 
-                <div>
-                    <label for="settings-password-confirm"
-                           class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
-                        Confirm New Password <span class="text-error normal-case tracking-normal font-normal">*</span>
-                    </label>
-                    <input
-                        id="settings-password-confirm"
-                        type="password"
-                        name="password_confirmation"
-                        x-model="passwordConfirm"
-                        @blur="errors.passwordConfirm = check(passwordConfirm, ['required', 'same:' + password])"
-                        autocomplete="new-password"
-                        placeholder="Re-enter password"
-                        :class="errors.passwordConfirm ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
-                        class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
-                               placeholder:text-outline focus:outline-none focus:ring-1 transition-colors">
-                    <p x-show="errors.passwordConfirm" x-text="errors.passwordConfirm"
-                       class="mt-1.5 text-xs text-error" x-cloak></p>
-                </div>
+                    <div>
+                        <label for="settings-password-confirm"
+                               class="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide mb-1.5">
+                            Confirm New Password <span class="text-error normal-case tracking-normal font-normal">*</span>
+                        </label>
+                        <input
+                            id="settings-password-confirm"
+                            type="password"
+                            name="password_confirmation"
+                            x-model="passwordConfirm"
+                            @blur="errors.passwordConfirm = check(passwordConfirm, ['required', 'same:' + password])"
+                            autocomplete="new-password"
+                            placeholder="Re-enter password"
+                            :class="errors.passwordConfirm ? 'border-error focus:ring-error focus:border-error' : 'border-outline-variant/60 focus:ring-primary focus:border-primary'"
+                            class="w-full px-4 py-2.5 bg-surface-white border rounded-[16px] text-sm
+                                   placeholder:text-outline focus:outline-none focus:ring-1 transition-colors">
+                        <p x-show="errors.passwordConfirm" x-text="errors.passwordConfirm"
+                           class="mt-1.5 text-xs text-error" x-cloak></p>
+                    </div>
 
-                <div class="flex items-center gap-3">
-                    <button type="submit" :disabled="submitting"
-                        class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
-                               text-sm font-semibold rounded-[24px] hover:bg-gold/90
-                               active:scale-[0.96] transition-all duration-150 cursor-pointer
-                               disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
-                        <span class="material-symbols-outlined text-[18px]"
-                              :class="submitting ? 'animate-spin' : ''"
-                              x-text="submitting ? 'progress_activity' : 'save'">save</span>
-                        <span x-text="submitting ? 'Saving…' : 'Save'">Save</span>
-                    </button>
-                    <button type="button" @click="cancelEdit()"
-                        class="px-4 py-2.5 border border-outline-variant/60 text-sm font-medium
-                               text-on-surface-variant rounded-[24px]
-                               hover:bg-surface-container-low hover:text-primary
-                               active:scale-[0.96] transition-all duration-150 cursor-pointer">
-                        Cancel
-                    </button>
-                </div>
-            </form>
+                    <div class="flex items-center gap-3">
+                        <button type="submit" :disabled="submitting"
+                            class="inline-flex items-center gap-2 px-5 py-2.5 bg-gold text-primary
+                                   text-sm font-semibold rounded-[24px] hover:bg-gold/90
+                                   active:scale-[0.96] transition-all duration-150 cursor-pointer
+                                   disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100">
+                            <span class="material-symbols-outlined text-[18px]"
+                                  :class="submitting ? 'animate-spin' : ''"
+                                  x-text="submitting ? 'progress_activity' : 'save'">save</span>
+                            <span x-text="submitting ? 'Saving…' : 'Save'">Save</span>
+                        </button>
+                        <button type="button" @click="cancelEdit()"
+                            class="px-4 py-2.5 border border-outline-variant/60 text-sm font-medium
+                                   text-on-surface-variant rounded-[24px]
+                                   hover:bg-surface-container-low hover:text-primary
+                                   active:scale-[0.96] transition-all duration-150 cursor-pointer">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            @endif
         </x-card>
 
     </div>

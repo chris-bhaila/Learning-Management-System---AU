@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Dashboard') — EduNest Admin</title>
+    <title>@yield('title', 'Dashboard') — {{ $siteName }} Admin</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,11 +72,11 @@
             <div class="w-9 h-9 rounded-full bg-gold flex items-center justify-center
                         font-bold text-primary text-sm shrink-0"
                  style="font-family: var(--font-display);">
-                EN
+                {{ $siteShortLabel }}
             </div>
             <div class="min-w-0 sidebar-block">
                 <p class="font-semibold text-primary text-base leading-tight truncate"
-                   style="font-family: var(--font-display);">EduNest</p>
+                   style="font-family: var(--font-display);">{{ $siteName }}</p>
                 <p class="text-[11px] text-primary/50 leading-tight">Admin Portal</p>
             </div>
         </div>
@@ -126,17 +126,11 @@
                 <span class="sidebar-label">Activity Log</span>
             </a>
 
-            <!-- <a href="{{ Route::has('admin.pages.index') ? route('admin.pages.index') : '#' }}"
-               class="nav-item {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
-                <span class="material-symbols-outlined text-[20px]">article</span>
-                Pages
-            </a>
-
-            <a href="{{ Route::has('admin.site-content.edit') ? route('admin.site-content.edit') : '#' }}"
+            <a href="{{ Route::has('admin.site-content.edit') ? route('admin.site-content.edit') : '#' }}" title="Site Content"
                class="nav-item {{ request()->routeIs('admin.site-content.*') ? 'active' : '' }}">
                 <span class="material-symbols-outlined text-[20px]">edit_note</span>
-                Site Content
-            </a> -->
+                <span class="sidebar-label">Site Content</span>
+            </a>
 
         </div>
 

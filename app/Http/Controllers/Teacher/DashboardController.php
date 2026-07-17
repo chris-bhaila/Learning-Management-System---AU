@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Helpers\TeacherActivityHelper;
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\TokenRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Activitylog\Models\Activity;
 
 class DashboardController extends Controller
 {
@@ -21,14 +20,8 @@ class DashboardController extends Controller
         $teacher      = Auth::user();
         $courses      = $this->courses->getByTeacher($teacher->id);
         $activeTokens = $this->tokens->getActiveByTeacher($teacher->id);
-        $studentIds   = $teacher->students()->pluck('users.id');
 
-        $notifications = Activity::with('causer')
-            ->whereIn('causer_id', $studentIds)
-            ->where('causer_type', User::class)
-            ->latest()
-            ->take(20)
-            ->get();
+        $notifications = TeacherActivityHelper::scopedQuery($teacher->id)->take(20)->get();
 
         $stats = [
             'total_courses'  => $courses->count(),

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sign In — EduNest</title>
+    <title>Sign In — {{ $siteName }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,8 +26,8 @@
         <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-full bg-gold flex items-center justify-center
                         font-bold text-primary text-sm shrink-0"
-                 style="font-family: var(--font-display);">EN</div>
-            <span class="font-bold text-xl text-white" style="font-family: var(--font-display);">EduNest</span>
+                 style="font-family: var(--font-display);">{{ $siteShortLabel }}</div>
+            <span class="font-bold text-xl text-white" style="font-family: var(--font-display);">{{ $siteName }}</span>
         </div>
 
         {{-- Centre copy --}}
@@ -43,7 +43,7 @@
             </h1>
 
             <p class="text-white/60 text-sm leading-relaxed max-w-sm">
-                EduNest gives educators a focused space to deliver courses,
+                {{ $siteName }} gives educators a focused space to deliver courses,
                 share materials, and track student progress — without the noise.
             </p>
 
@@ -63,7 +63,7 @@
         </div>
 
         {{-- Footer credit --}}
-        <p class="text-white/30 text-xs">© {{ date('Y') }} EduNest. Private use only.</p>
+        <p class="text-white/30 text-xs">© {{ date('Y') }} {{ $siteName }}. Private use only.</p>
 
     </div>
 
@@ -77,8 +77,8 @@
         <div class="lg:hidden flex items-center gap-3 px-6 py-5 border-b border-outline-variant/30">
             <div class="w-8 h-8 rounded-full bg-gold flex items-center justify-center
                         font-bold text-primary text-xs shrink-0"
-                 style="font-family: var(--font-display);">EN</div>
-            <span class="font-bold text-base text-primary" style="font-family: var(--font-display);">EduNest</span>
+                 style="font-family: var(--font-display);">{{ $siteShortLabel }}</div>
+            <span class="font-bold text-base text-primary" style="font-family: var(--font-display);">{{ $siteName }}</span>
         </div>
 
         {{-- Centred form area --}}
@@ -91,7 +91,7 @@
                         Welcome back
                     </h2>
                     <p class="mt-1.5 text-sm text-on-surface-variant">
-                        Sign in to continue to your EduNest portal.
+                        Sign in to continue to your {{ $siteName }} portal.
                     </p>
                 </div>
 

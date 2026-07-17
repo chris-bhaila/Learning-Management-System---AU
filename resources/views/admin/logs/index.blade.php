@@ -26,7 +26,7 @@
             Activity Log
         </h1>
         <p class="mt-1 text-sm text-on-surface-variant">
-            Full audit trail of all actions across EduNest.
+            Full audit trail of all actions across {{ $siteName }}.
         </p>
     </div>
     <span class="text-xs text-outline bg-surface-container px-3 py-1.5 rounded-full shrink-0">
@@ -333,7 +333,7 @@
                                         @if($currentEvent || $currentSubject || $currentSearch || $currentDate)
                                             Try adjusting or clearing the filters.
                                         @else
-                                            Activity will appear here as users interact with EduNest.
+                                            Activity will appear here as users interact with {{ $siteName }}.
                                         @endif
                                     </p>
                                 </div>

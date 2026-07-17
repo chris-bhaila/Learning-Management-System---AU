@@ -12,11 +12,11 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\SettingsController;
 
 // Landing page
-Route::get('/', function () {
+Route::get('/', function (\App\Repositories\Contracts\SiteContentRepositoryInterface $siteContent) {
     if (Auth::check()) {
         return redirect()->route(Auth::user()->panelRoleName() . '.dashboard');
     }
-    return view('landing');
+    return view('landing', ['content' => $siteContent->all()]);
 })->name('home');
 
 // Auth — Google OAuth (throttled: 10 requests / minute)
@@ -67,7 +67,7 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
     Route::get('/tokens/course', [Admin\TokenController::class, 'courseTokens'])->name('tokens.course');
     Route::get('/tokens/{tokenValue}/usage', [Admin\TokenController::class, 'usage'])->name('tokens.usage');
     Route::post('/tokens', [Admin\TokenController::class, 'store'])->name('tokens.store');
-    Route::delete('/tokens/{id}', [Admin\TokenController::class, 'destroy'])->name('tokens.destroy');
+    Route::patch('/tokens/{id}/revoke', [Admin\TokenController::class, 'revoke'])->name('tokens.revoke');
 
     // Course Groups
     Route::get('/groups', [Admin\CourseGroupController::class, 'index'])->name('groups.index');
@@ -78,11 +78,16 @@ Route::middleware(['auth', 'admin', 'prevent.back'])->prefix('admin')->name('adm
     // Activity Logs
     Route::get('/logs', [Admin\ActivityLogController::class, 'index'])->name('logs.index');
     Route::get('/logs/export', [Admin\ActivityLogController::class, 'export'])->name('logs.export');
+
+    // Landing page content
+    Route::get('/site-content', [Admin\SiteContentController::class, 'edit'])->name('site-content.edit');
+    Route::patch('/site-content', [Admin\SiteContentController::class, 'update'])->name('site-content.update');
 });
 
 // Teacher
 Route::middleware(['auth', 'teacher', 'prevent.back'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/dashboard', [Teacher\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/activity', [Teacher\ActivityController::class, 'index'])->name('activity.index');
 
     // Courses
     Route::get('/courses', [Teacher\CourseController::class, 'index'])->name('courses.index');
@@ -107,7 +112,7 @@ Route::middleware(['auth', 'teacher', 'prevent.back'])->prefix('teacher')->name(
     Route::get('/tokens/course', [Teacher\TokenController::class, 'courseTokens'])->name('tokens.course');
     Route::get('/tokens/{tokenValue}/usage', [Teacher\TokenController::class, 'usage'])->name('tokens.usage');
     Route::post('/tokens', [Teacher\TokenController::class, 'store'])->name('tokens.store');
-    Route::delete('/tokens/{id}', [Teacher\TokenController::class, 'destroy'])->name('tokens.destroy');
+    Route::patch('/tokens/{id}/revoke', [Teacher\TokenController::class, 'revoke'])->name('tokens.revoke');
 
     // Students
     Route::get('/students', [Teacher\StudentController::class, 'index'])->name('students.index');

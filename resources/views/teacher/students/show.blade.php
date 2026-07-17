@@ -130,16 +130,14 @@
                         $isActive    = (bool) ($enrollment?->pivot?->is_active ?? false);
                         $enrolledAt  = $enrollment?->pivot?->enrolled_at;
                     @endphp
-                    <li>
+                    <li class="flex items-center px-5 py-4 hover:bg-surface-container-low/60 transition-colors duration-100">
                         <a href="{{ route('teacher.courses.show', $course->id) }}"
-                           class="flex items-center gap-4 px-5 py-4
-                                  hover:bg-surface-container-low/60 transition-colors duration-100
-                                  cursor-pointer group">
+                           class="flex items-center gap-4 flex-1 min-w-0 cursor-pointer group">
 
                             {{-- Course icon --}}
-                            <div class="w-9 h-9 rounded-[12px] bg-primary-container shrink-0
+                            <div class="w-9 h-9 rounded-[12px] bg-primary shrink-0
                                         flex items-center justify-center">
-                                <span class="material-symbols-outlined text-[18px] text-primary">
+                                <span class="material-symbols-outlined text-[18px] text-white">
                                     menu_book
                                 </span>
                             </div>
@@ -181,6 +179,33 @@
                             </div>
 
                         </a>
+
+                        {{-- Remove from THIS course only — separate, standalone form (never nested
+                             inside the anchor above), same action already used from the course's
+                             own page. Only offered while the enrollment is active, same reasoning
+                             as "Kick from Class" above. --}}
+                        @if($isActive)
+                            <form id="remove-course-form-{{ $course->id }}" method="POST"
+                                  action="{{ route('teacher.courses.students.remove', [$course->id, $student->id]) }}"
+                                  class="hidden">
+                                @csrf
+                                @method('PATCH')
+                            </form>
+                            <button
+                                type="button"
+                                title="Remove from this course"
+                                onclick="confirmDestructive(
+                                    {{ Js::from('Remove ' . $student->name . ' from ' . $course->title . '?') }},
+                                    {{ Js::from('They will lose access to this course only — their class enrollment and other courses are unaffected.') }},
+                                    document.getElementById('remove-course-form-{{ $course->id }}'),
+                                    'Remove'
+                                )"
+                                class="shrink-0 w-8 h-8 ml-2 inline-flex items-center justify-center rounded-lg cursor-pointer
+                                       text-on-surface-variant hover:bg-error-container hover:text-error
+                                       transition-colors duration-150">
+                                <span class="material-symbols-outlined text-[16px]">person_remove</span>
+                            </button>
+                        @endif
                     </li>
                 @endforeach
             </ul>
