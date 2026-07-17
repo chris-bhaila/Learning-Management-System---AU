@@ -46,12 +46,16 @@
     {{-- ═══════════════════════════════════════════════
          SIDEBAR
     ═══════════════════════════════════════════════ --}}
+    {{-- Transition itself (transition-property/duration/timing) is defined on
+         #sidebar in app.css, not as utility classes here — that ID rule already
+         exists for the desktop collapse feature and its specificity would beat
+         any transition-* utility class placed on this element anyway. --}}
     <nav
         id="sidebar"
         class="fixed inset-y-0 left-0 z-50 w-[260px] flex flex-col
                bg-surface-white border-r border-outline-variant/30
                shadow-[4px_0px_24px_rgba(30,42,74,0.08)]
-               -translate-x-full md:translate-x-0 transition-transform duration-200"
+               -translate-x-full md:translate-x-0 opacity-0 md:opacity-100"
     >
         {{-- Desktop collapse toggle — floats on the sidebar's edge, hidden on mobile --}}
         <button type="button"
@@ -155,7 +159,8 @@
     {{-- Mobile backdrop --}}
     <div
         id="sidebar-backdrop"
-        class="fixed inset-0 z-40 bg-black/30 hidden md:hidden"
+        class="fixed inset-0 z-40 bg-black/30 md:hidden
+               opacity-0 pointer-events-none transition-opacity duration-200 ease-in-out"
         onclick="closeSidebar()"
     ></div>
 
@@ -230,14 +235,14 @@
         const backdrop = document.getElementById('sidebar-backdrop');
 
         function openSidebar() {
-            sidebar.classList.remove('-translate-x-full');
-            backdrop.classList.remove('hidden');
+            sidebar.classList.remove('-translate-x-full', 'opacity-0');
+            backdrop.classList.remove('opacity-0', 'pointer-events-none');
             document.body.classList.add('overflow-hidden');
         }
 
         function closeSidebar() {
-            sidebar.classList.add('-translate-x-full');
-            backdrop.classList.add('hidden');
+            sidebar.classList.add('-translate-x-full', 'opacity-0');
+            backdrop.classList.add('opacity-0', 'pointer-events-none');
             document.body.classList.remove('overflow-hidden');
         }
 

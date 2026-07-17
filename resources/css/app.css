@@ -72,10 +72,16 @@
     @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r bg-gold;
 }
 
-/* ─── Sidebar collapse (desktop only — mobile off-canvas behavior is
-   untouched, these rules only take effect at the md breakpoint) ───────── */
+/* ─── Sidebar collapse (desktop, width) + mobile off-canvas (translate/opacity) ───
+   This ID selector's specificity beats the Tailwind utility classes on #sidebar
+   (transition-all/duration-200/ease-in-out in the layouts), so it's the one place
+   that actually controls what animates — those utility classes on the element are
+   effectively inert and are kept off intentionally to avoid the false impression
+   they're doing something. Tailwind v4's translate utilities animate the standalone
+   `translate` CSS property, not `transform` (that was true in v3, not v4) — this
+   list must include `translate` or the mobile slide silently stops animating. */
 #sidebar {
-    transition-property: width, transform;
+    transition-property: width, translate, opacity;
     transition-duration: 200ms;
     transition-timing-function: ease-in-out;
 }
