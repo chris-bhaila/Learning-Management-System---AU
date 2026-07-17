@@ -328,10 +328,15 @@ class TeacherActivityFeedTest extends TestCase
 
         // StreamedResponse content isn't captured by getContent()/assertSee() — Laravel's
         // TestResponse::streamedContent() actually invokes the streaming callback.
+        //
+        // Export now builds a fixed-column, human-readable Description via
+        // ActivityDescriptionHelper instead of surfacing the raw description string as
+        // a column value — assert the underlying facts (who, what) still reach the CSV
+        // under the new plain-text wording, not the old literal description text.
         $export = $this->actingAs($admin)->get(route('admin.logs.export'));
         $export->assertOk();
         $csv = $export->streamedContent();
-        $this->assertStringContainsString('Student joined teacher class via class token', $csv);
-        $this->assertStringContainsString('Class token expired: max uses reached', $csv);
+        $this->assertStringContainsString("{$student->name} joined {$teacher->name}'s class", $csv);
+        $this->assertStringContainsString("Class token {$token->token_value} for {$teacher->name}'s class expired — max uses (1) reached", $csv);
     }
 }

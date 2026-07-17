@@ -79,7 +79,15 @@ class TokenController extends Controller
             abort(404);
         }
 
+        // Only per-student enrollment attempts (success or failure — the view already
+        // renders failures with a "Failed" badge via the reason property) represent "a
+        // usage" on this page. A token's own lifecycle events (expiry notification,
+        // revocation — logged by EloquentTokenRepository, description prefixed "Class/
+        // Course token …") also reference token_value but aren't a usage and must not be
+        // displayed as one here. Those events are real and intentionally kept for the
+        // teacher's notification feed — just excluded from this specific history view.
         $activities = Activity::where('properties->token_value', $tokenValue)
+            ->where('description', 'like', 'Student %')
             ->with('causer')
             ->latest()
             ->get();

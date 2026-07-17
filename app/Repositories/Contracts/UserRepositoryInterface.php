@@ -11,6 +11,17 @@ interface UserRepositoryInterface
     public function find(int $id): ?User;
     public function findByGoogleId(string $googleId): ?User;
     public function findByEmail(string $email): ?User;
+
+    /** Soft-deleted rows only, matched by email — used to detect a previously-deleted
+     *  account re-signing in via Google so it can be restored cleanly instead of
+     *  colliding with the plain (non-partial) unique constraint on users.email. */
+    public function findTrashedByEmail(string $email): ?User;
+
+    /** Clears deleted_at and applies $updates in the same call. Deliberately does NOT
+     *  touch teacher_student/course_student pivot rows — a restored account must not
+     *  silently regain stale enrollments; the student still needs a fresh token. */
+    public function restore(User $user, array $updates = []): User;
+
     public function create(array $data): User;
     public function update(User $user, array $data): User;
     public function delete(User $user): bool;

@@ -66,6 +66,27 @@ class GoogleController extends Controller
                     $updates['avatar_source'] = 'google';
                 }
                 $this->users->update($user, $updates);
+            } elseif ($trashedUser = $this->users->findTrashedByEmail($googleUser->getEmail())) {
+                // 2b. A previously-deleted account with this email — email/google_id are
+                // plain unique constraints (not partial), so a genuinely new row can never
+                // be created here; the row must be restored instead of colliding on insert.
+                // Deliberately does NOT touch teacher_student/course_student pivot rows —
+                // restoring the account must not silently resurrect stale enrollments, the
+                // student still needs a fresh token to rejoin a class/course.
+                $updates = [
+                    'google_id' => $googleUser->getId(),
+                    'name'      => $googleUser->getName(),
+                ];
+                if ($trashedUser->avatar_source !== 'upload') {
+                    $updates['avatar']        = $googleUser->getAvatar();
+                    $updates['avatar_source'] = 'google';
+                }
+                $user = $this->users->restore($trashedUser, $updates);
+
+                activity()
+                    ->causedBy($user)
+                    ->withProperties(['method' => 'google_oauth'])
+                    ->log('Restored previously-deleted account on Google sign-in');
             } else {
                 // 3. Brand-new user — create as student, no password set.
                 // Wrapped in a transaction so the welcome email is only ever queued

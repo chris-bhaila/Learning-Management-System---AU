@@ -321,9 +321,16 @@ class StudentActivityFeedTest extends TestCase
 
         $this->assertDatabaseHas('activity_log', ['description' => 'File uploaded to course']);
 
+        // Export now builds a fixed-column, human-readable Description via
+        // ActivityDescriptionHelper instead of surfacing the raw description string
+        // as a column value — assert the underlying facts (who, what, where) still
+        // reach the CSV under the new wording, not the old literal description text.
         $export = $this->actingAs($admin)->get(route('admin.logs.export'));
         $export->assertOk();
         $csv = $export->streamedContent();
-        $this->assertStringContainsString('File uploaded to course', $csv);
+        $this->assertStringContainsString($teacher->name, $csv);
+        $this->assertStringContainsString('a.pdf', $csv);
+        $this->assertStringContainsString($course->title, $csv);
+        $this->assertStringContainsString('uploaded', $csv);
     }
 }

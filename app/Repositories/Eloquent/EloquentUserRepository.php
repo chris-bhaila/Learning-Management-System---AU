@@ -26,6 +26,22 @@ class EloquentUserRepository implements UserRepositoryInterface
         return User::where('email', $email)->first();
     }
 
+    public function findTrashedByEmail(string $email): ?User
+    {
+        return User::onlyTrashed()->where('email', $email)->first();
+    }
+
+    public function restore(User $user, array $updates = []): User
+    {
+        $user->restore();
+
+        if ($updates) {
+            $user->update($updates);
+        }
+
+        return $user->fresh();
+    }
+
     public function create(array $data): User
     {
         return User::create($data);

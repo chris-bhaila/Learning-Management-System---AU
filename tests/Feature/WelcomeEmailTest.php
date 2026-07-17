@@ -235,6 +235,8 @@ class WelcomeEmailTest extends TestCase
         // Second call: the controller's catch-block recovery lookup, after the
         // create() collision — this time the winner's row genuinely exists.
         $fakeRepo->shouldReceive('findByEmail')->twice()->andReturn(null, $winner);
+        // Not a restore scenario — no soft-deleted row involved in this race.
+        $fakeRepo->shouldReceive('findTrashedByEmail')->once()->andReturn(null);
         $fakeRepo->shouldReceive('create')->once()->andReturnUsing(function () use ($role) {
             // Real insert against the real unique index — not a fabricated exception —
             // so the controller's SQLSTATE/message-based classification is genuinely exercised.
@@ -286,6 +288,7 @@ class WelcomeEmailTest extends TestCase
         $fakeRepo = Mockery::mock(\App\Repositories\Contracts\UserRepositoryInterface::class);
         $fakeRepo->shouldReceive('findByGoogleId')->once()->andReturn(null);
         $fakeRepo->shouldReceive('findByEmail')->once()->andReturn(null);
+        $fakeRepo->shouldReceive('findTrashedByEmail')->once()->andReturn(null);
         $fakeRepo->shouldReceive('create')->once()->andReturnUsing(function () use ($role) {
             return User::create([
                 'role_id'       => $role->id,
@@ -328,6 +331,7 @@ class WelcomeEmailTest extends TestCase
         $fakeRepo = Mockery::mock(\App\Repositories\Contracts\UserRepositoryInterface::class);
         $fakeRepo->shouldReceive('findByGoogleId')->andReturn(null);
         $fakeRepo->shouldReceive('findByEmail')->andReturn(null);
+        $fakeRepo->shouldReceive('findTrashedByEmail')->andReturn(null);
         $fakeRepo->shouldReceive('create')->andThrow(new \RuntimeException('Simulated DB failure during user creation'));
         $this->app->instance(\App\Repositories\Contracts\UserRepositoryInterface::class, $fakeRepo);
 

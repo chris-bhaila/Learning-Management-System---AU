@@ -16,8 +16,13 @@ class DashboardController extends Controller
     public function index()
     {
         return view('student.dashboard', [
-            'courses'       => $this->courses->getEnrolledByStudent(Auth::id()),
-            'notifications' => StudentActivityHelper::scopedQuery(Auth::id())->take(20)->get(),
+            'courses' => $this->courses->getEnrolledByStudent(Auth::id()),
+            // Capped at the query level (not just visually truncated) — 12 is the
+            // midpoint of the requested 10-15 range: enough to fill the fixed-height
+            // notifications panel plus a comfortable scroll (each row is ~72-80px, so
+            // ~6-7 are visible before scrolling), without this "at a glance" dashboard
+            // panel duplicating the full history the dedicated Activity page already covers.
+            'notifications' => StudentActivityHelper::scopedQuery(Auth::id())->take(12)->get(),
         ]);
     }
 }
