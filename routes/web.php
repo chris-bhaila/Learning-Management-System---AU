@@ -128,6 +128,7 @@ Route::middleware(['auth', 'teacher', 'prevent.back'])->prefix('teacher')->name(
 // Student
 Route::middleware(['auth', 'student', 'prevent.back'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [Student\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/activity', [Student\ActivityController::class, 'index'])->name('activity.index');
     Route::post('/enroll', [Student\EnrollmentController::class, 'store'])->middleware('throttle:10,1')->name('enroll');
     Route::get('/courses', [Student\CourseController::class, 'index'])->name('courses.index');
     Route::get('/courses/{id}', [Student\CourseController::class, 'show'])->name('courses.show');

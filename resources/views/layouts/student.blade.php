@@ -97,6 +97,16 @@
                 <span class="sidebar-label">My Courses</span>
             </a>
 
+            <p class="sidebar-block px-6 pb-1 pt-4 text-[10px] font-semibold tracking-widest text-outline uppercase">
+                Activity
+            </p>
+
+            <a href="{{ route('student.activity.index') }}" title="Activity"
+               class="nav-item {{ request()->routeIs('student.activity.*') ? 'active' : '' }}">
+                <span class="material-symbols-outlined text-[20px]">notifications</span>
+                <span class="sidebar-label">Activity</span>
+            </a>
+
         </div>
 
         {{-- Optional sidebar CTA --}}

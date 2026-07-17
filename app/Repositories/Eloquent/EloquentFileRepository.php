@@ -2,7 +2,10 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Models\Course;
 use App\Models\File;
+use App\Models\Unit;
+use App\Models\User;
 use App\Repositories\Contracts\FileRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -34,11 +37,15 @@ class EloquentFileRepository implements FileRepositoryInterface
 
     public function storeUploads(array $files, string $fileableType, int $fileableId, int $uploadedBy): void
     {
+        // Loaded once per call, not per file — same fileable/uploader for the whole batch.
+        $fileable = $fileableType::find($fileableId);
+        $uploader = User::find($uploadedBy);
+
         foreach ($files as $uploaded) {
             $filename = Str::uuid() . '.' . $uploaded->getClientOriginalExtension();
             $path     = $uploaded->storeAs('uploads', $filename, 'private');
 
-            $this->create([
+            $file = $this->create([
                 'fileable_type' => $fileableType,
                 'fileable_id'   => $fileableId,
                 'filename'      => $filename,
@@ -48,6 +55,38 @@ class EloquentFileRepository implements FileRepositoryInterface
                 'size'          => $uploaded->getSize(),
                 'uploaded_by'   => $uploadedBy,
             ]);
+
+            $this->logUpload($file, $fileable, $uploader);
         }
+    }
+
+    /** Distinct descriptions for course-level vs unit-level uploads (mirrors the
+     *  class/course split used for token notifications) — logged at the moment of a
+     *  successful upload, capturing plain scalars (file_name, file_type, teacher_name,
+     *  course_name/unit_name), never live FK lookups, so the notification stays fully
+     *  readable even after the file (or later, the course/unit) is deleted. */
+    private function logUpload(File $file, Course|Unit|null $fileable, ?User $uploader): void
+    {
+        $isUnit = $fileable instanceof Unit;
+        $course = $isUnit ? $fileable->course : $fileable;
+
+        $properties = [
+            'file_id'      => $file->id,
+            'file_name'    => $file->original_name,
+            'file_type'    => $file->mime_type,
+            'teacher_name' => $uploader?->name ?? 'Your teacher',
+            'course_id'    => $course?->id,
+            'course_name'  => $course?->title ?? 'Unknown',
+        ];
+
+        if ($isUnit) {
+            $properties['unit_id']   = $fileable->id;
+            $properties['unit_name'] = $fileable->title;
+        }
+
+        activity()
+            ->causedBy($uploader)
+            ->withProperties($properties)
+            ->log($isUnit ? 'File uploaded to unit' : 'File uploaded to course');
     }
 }

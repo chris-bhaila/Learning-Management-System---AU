@@ -130,7 +130,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-outline-variant/20">
-                    @forelse($courses as $course)
+                    @forelse($courses->take(5) as $course)
                         <tr class="hover:bg-surface-container-low/40 transition-colors duration-150">
                             <td class="px-6 py-4">
                                 <p class="font-medium text-on-surface">{{ $course->title }}</p>

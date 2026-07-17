@@ -140,6 +140,32 @@
     @endif
 </div>
 
+
+{{-- ─── Recent Activity ─── --}}
+<div class="mt-8 bg-surface-white border border-outline-variant/40 rounded-[20px] shadow-[0px_1px_4px_rgba(30,42,74,0.06)] overflow-hidden animate-fade-up">
+
+    <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
+        <h2 class="text-base font-semibold text-on-surface" style="font-family: var(--font-display);">
+            Recent Activity
+        </h2>
+        <a href="{{ route('student.activity.index') }}"
+           class="text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+            View all
+        </a>
+    </div>
+
+    <ul class="divide-y divide-outline-variant/20">
+        @forelse($notifications as $log)
+            @include('student.activity._item', ['log' => $log])
+        @empty
+            <li class="px-6 py-10 text-center text-sm text-outline">
+                No recent activity from your courses.
+            </li>
+        @endforelse
+    </ul>
+
+</div>
+
 @endsection
 
 @include('student._enroll_modal')

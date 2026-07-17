@@ -4,11 +4,10 @@
 
 @section('content')
 @php
-    $courses          ??= collect();
-    $recentCourses    ??= collect();
-    $coursesByGroup   ??= collect();
-    $ungroupedCourses ??= collect();
-    $groups           ??= collect();
+    $courses        ??= collect();
+    $recentCourses  ??= collect();
+    $coursesByGroup ??= collect();
+    $groups         ??= collect();
 @endphp
 
 <div x-data="{
@@ -231,33 +230,33 @@
     </section>
     @endforeach
 
-    {{-- ─── Ungrouped ─── --}}
-    @if($ungroupedCourses->isNotEmpty())
+    {{-- ─── All Courses ─── --}}
+    @if($courses->isNotEmpty())
     <section class="mb-6">
         <button type="button"
-                @click="toggle('ungrouped')"
+                @click="toggle('all')"
                 class="w-full flex items-center justify-between gap-3 py-3 px-1
                        border-b border-outline-variant/30 hover:border-outline-variant/60
                        transition-colors duration-150 cursor-pointer">
             <div class="flex items-center gap-2.5 min-w-0">
-                <span class="material-symbols-outlined text-[18px] text-outline shrink-0">folder_off</span>
+                <span class="material-symbols-outlined text-[18px] text-outline shrink-0">library_books</span>
                 <span class="text-sm font-semibold text-on-surface-variant truncate min-w-0"
                       style="font-family: var(--font-display);">
-                    Ungrouped
+                    All Courses
                 </span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full
                              bg-surface-container text-[11px] font-medium text-on-surface-variant shrink-0">
-                    {{ $ungroupedCourses->count() }}
+                    {{ $courses->count() }}
                 </span>
             </div>
             <span class="material-symbols-outlined text-[18px] text-outline shrink-0
                          transition-transform duration-200"
-                  :class="{ '-rotate-90': !isOpen('ungrouped') }">
+                  :class="{ '-rotate-90': !isOpen('all') }">
                 expand_more
             </span>
         </button>
 
-        <div x-show="isOpen('ungrouped')"
+        <div x-show="isOpen('all')"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0"
              x-transition:enter-end="opacity-100"
@@ -266,7 +265,7 @@
              x-transition:leave-end="opacity-0"
              class="pt-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
-                @foreach($ungroupedCourses as $course)
+                @foreach($courses as $course)
                 @php $published = $course->is_published ?? false; @endphp
                 <x-course-card
                     :course="$course"
