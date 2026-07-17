@@ -20,7 +20,8 @@ class DeactivatedUserTest extends TestCase
         $this->actingAs($teacher)->get(route('teacher.dashboard'))->assertOk();
 
         // Admin deactivates them mid-session.
-        $teacher->update(['is_active' => false]);
+        $teacher->is_active = false;
+        $teacher->save();
 
         // Next request from the SAME (still "logged in" per the session cookie) user.
         $response = $this->get(route('teacher.dashboard'));
@@ -45,7 +46,8 @@ class DeactivatedUserTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
 
-        $admin->update(['is_active' => false]);
+        $admin->is_active = false;
+        $admin->save();
 
         $response = $this->get(route('admin.dashboard'));
 
@@ -61,7 +63,8 @@ class DeactivatedUserTest extends TestCase
 
         $this->actingAs($student)->get(route('student.dashboard'))->assertOk();
 
-        $student->update(['is_active' => false]);
+        $student->is_active = false;
+        $student->save();
 
         $response = $this->get(route('student.dashboard'));
 

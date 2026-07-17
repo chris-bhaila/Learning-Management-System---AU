@@ -43,6 +43,28 @@ class WelcomeEmailTest extends TestCase
         return Role::firstOrCreate(['name' => 'student']);
     }
 
+    /** role_id is deliberately excluded from User::$fillable (privilege-sensitive —
+     *  see the model) — a raw User::create([...]) with 'role_id' in the array would
+     *  now silently drop it. This helper replicates EloquentUserRepository::create()'s
+     *  explicit-assignment pattern so these tests (which intentionally call the
+     *  Eloquent layer directly, bypassing the repository, to exercise real unique-
+     *  constraint collisions) keep setting role_id the same way production code does. */
+    private function createUser(array $data): User
+    {
+        $roleId   = $data['role_id'] ?? null;
+        $isActive = array_key_exists('is_active', $data) ? $data['is_active'] : true;
+        unset($data['role_id'], $data['is_active']);
+
+        $user = new User($data);
+        if ($roleId !== null) {
+            $user->role_id = $roleId;
+        }
+        $user->is_active = $isActive;
+        $user->save();
+
+        return $user;
+    }
+
     // ─── 1. Correct-trigger confirmation ───────────────────────────────
 
     public function test_brand_new_google_user_gets_exactly_one_welcome_email(): void
@@ -175,7 +197,7 @@ class WelcomeEmailTest extends TestCase
         Mail::fake();
         $role = $this->studentRole();
 
-        $create = fn () => User::create([
+        $create = fn () => $this->createUser([
             'role_id'       => $role->id,
             'google_id'     => 'google-race-'.uniqid(),
             'name'          => 'Race Condition',
@@ -218,7 +240,7 @@ class WelcomeEmailTest extends TestCase
         $role = $this->studentRole();
 
         // The winner: already created and already got its welcome email.
-        $winner = User::create([
+        $winner = $this->createUser([
             'role_id'       => $role->id,
             'google_id'     => 'google-race-winner',
             'name'          => 'Race Winner',
@@ -240,7 +262,7 @@ class WelcomeEmailTest extends TestCase
         $fakeRepo->shouldReceive('create')->once()->andReturnUsing(function () use ($role) {
             // Real insert against the real unique index — not a fabricated exception —
             // so the controller's SQLSTATE/message-based classification is genuinely exercised.
-            return User::create([
+            return $this->createUser([
                 'role_id'       => $role->id,
                 'google_id'     => 'google-race-loser',
                 'name'          => 'Race Loser',
@@ -276,7 +298,7 @@ class WelcomeEmailTest extends TestCase
         Mail::fake();
         $role = $this->studentRole();
 
-        User::create([
+        $this->createUser([
             'role_id'       => $role->id,
             'google_id'     => 'google-collide',
             'name'          => 'Existing Google Id Holder',
@@ -290,7 +312,7 @@ class WelcomeEmailTest extends TestCase
         $fakeRepo->shouldReceive('findByEmail')->once()->andReturn(null);
         $fakeRepo->shouldReceive('findTrashedByEmail')->once()->andReturn(null);
         $fakeRepo->shouldReceive('create')->once()->andReturnUsing(function () use ($role) {
-            return User::create([
+            return $this->createUser([
                 'role_id'       => $role->id,
                 'google_id'     => 'google-collide', // collides on google_id, NOT email
                 'name'          => 'New Signup',
@@ -365,7 +387,7 @@ class WelcomeEmailTest extends TestCase
 
         try {
             DB::transaction(function () use ($role) {
-                $user = User::create([
+                $user = $this->createUser([
                     'role_id'       => $role->id,
                     'google_id'     => 'google-rollback-1',
                     'name'          => 'Rollback Me',
@@ -406,7 +428,7 @@ class WelcomeEmailTest extends TestCase
 
         try {
             DB::transaction(function () use ($role) {
-                $user = User::create([
+                $user = $this->createUser([
                     'role_id'       => $role->id,
                     'google_id'     => 'google-rollback-2',
                     'name'          => 'Rollback Me Too',

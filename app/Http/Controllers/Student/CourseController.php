@@ -23,7 +23,7 @@ class CourseController extends Controller
 
     public function show(int $id)
     {
-        $course = $this->courses->findWithRelations($id);
+        $course = $this->courses->findWithRelationsForStudent($id);
         $this->authorize('view', $course);
 
         return view('student.courses.show', [
@@ -34,7 +34,7 @@ class CourseController extends Controller
 
     public function showUnit(int $courseId, int $unitId)
     {
-        $course = $this->courses->findWithRelations($courseId);
+        $course = $this->courses->findWithRelationsForStudent($courseId);
         $this->authorize('view', $course);
 
         $unit = $this->units->find($unitId);

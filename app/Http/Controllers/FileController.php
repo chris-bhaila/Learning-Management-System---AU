@@ -15,10 +15,25 @@ class FileController extends Controller
 
     public function store(StoreFileRequest $request)
     {
+        $fileableType = $request->validated('fileable_type');
+        $fileableId   = $request->validated('fileable_id');
+
+        // StoreFileRequest::authorize() only checks the caller's role (teacher/admin) —
+        // it has no access to the resolved model, so ownership of the SPECIFIC
+        // fileable_id must be verified here. Reuses CoursePolicy::update()/
+        // UnitPolicy::update() polymorphically (same "update" ability
+        // Teacher\TokenController::store() authorizes course tokens against) — both
+        // already encode "isAdmin() bypasses, otherwise the teacher must own it," so
+        // this is not a second, separately-maintained ownership rule.
+        $fileable = $fileableType::find($fileableId);
+        abort_if(is_null($fileable), 404);
+
+        $this->authorize('update', $fileable);
+
         $this->files->storeUploads(
             [$request->file('file')],
-            $request->validated('fileable_type'),
-            $request->validated('fileable_id'),
+            $fileableType,
+            $fileableId,
             Auth::id(),
         );
 

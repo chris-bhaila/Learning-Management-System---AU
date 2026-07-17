@@ -9,6 +9,11 @@ interface CourseRepositoryInterface
 {
     public function find(int $id): ?Course;
     public function findWithRelations(int $id): ?Course;
+
+    /** Same as findWithRelations() but never eager-loads 'group' — CourseGroups must
+     *  never reach a student-facing response at all, not just be hidden in the view.
+     *  Use this for every Student\CourseController lookup instead of the generic one. */
+    public function findWithRelationsForStudent(int $id): ?Course;
     public function create(array $data): Course;
     public function update(Course $course, array $data): Course;
     public function delete(Course $course): bool;

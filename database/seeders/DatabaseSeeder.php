@@ -22,32 +22,33 @@ class DatabaseSeeder extends Seeder
             strtolower(str_replace(' ', '', $name)) . '123'
         );
 
+        // role_id/is_active are deliberately excluded from User::$fillable (see the
+        // model) — updateOrCreate()'s mass-assigned $attributes would silently drop
+        // both, so they're set via explicit attribute assignment on the resolved row
+        // instead, same as EloquentUserRepository::create()/update().
+        $upsertUser = function (string $email, string $name, int $roleId, string $password) {
+            $user = User::firstOrNew(['email' => $email]);
+            $user->fill([
+                'name'     => $name,
+                'password' => $password,
+            ]);
+            $user->role_id   = $roleId;
+            $user->is_active = true;
+            $user->save();
+
+            return $user;
+        };
+
         // ── Super Admin (1) ──────────────────────────────────────
         // Deliberately singular — assigned once at handover, not a role admins or
         // teachers can grant to each other. There is no UI or self-service path that
         // creates a super_admin; this seeder entry is the only place one is ever created.
         // Excluded from Google OAuth (see GoogleController) and never appears in the
         // generic role-select UI (see UpdateUserRequest / StoreUserRequest).
-        User::updateOrCreate(
-            ['email' => 'superadmin@edunest.dev'],
-            [
-                'name'      => 'Sam Super',
-                'role_id'   => $roles['super_admin']->id,
-                'password'  => $password('Sam Super'),
-                'is_active' => true,
-            ]
-        );
+        $upsertUser('superadmin@edunest.dev', 'Sam Super', $roles['super_admin']->id, $password('Sam Super'));
 
         // ── Admin (1) ────────────────────────────────────────────
-        User::updateOrCreate(
-            ['email' => 'admin@edunest.dev'],
-            [
-                'name'      => 'Alex Admin',
-                'role_id'   => $roles['admin']->id,
-                'password'  => $password('Alex Admin'),
-                'is_active' => true,
-            ]
-        );
+        $upsertUser('admin@edunest.dev', 'Alex Admin', $roles['admin']->id, $password('Alex Admin'));
 
         // ── Teachers (3) ─────────────────────────────────────────
         $teachers = [
@@ -57,15 +58,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($teachers as $data) {
-            User::updateOrCreate(
-                ['email' => $data['email']],
-                [
-                    'name'      => $data['name'],
-                    'role_id'   => $roles['teacher']->id,
-                    'password'  => $password($data['name']),
-                    'is_active' => true,
-                ]
-            );
+            $upsertUser($data['email'], $data['name'], $roles['teacher']->id, $password($data['name']));
         }
 
         // ── Students (9) ─────────────────────────────────────────
@@ -82,15 +75,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($students as $data) {
-            User::updateOrCreate(
-                ['email' => $data['email']],
-                [
-                    'name'      => $data['name'],
-                    'role_id'   => $roles['student']->id,
-                    'password'  => $password($data['name']),
-                    'is_active' => true,
-                ]
-            );
+            $upsertUser($data['email'], $data['name'], $roles['student']->id, $password($data['name']));
         }
     }
 }

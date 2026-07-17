@@ -18,6 +18,17 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
+     * Note: role_id/is_active are deliberately excluded from User::$fillable (see the
+     * model) — application code can never set them via mass assignment. This factory's
+     * teacher()/student() states (and any ad-hoc ->create(['role_id' => ...]) override
+     * elsewhere in the test suite) still work unmodified: Laravel's base
+     * Factory::makeInstance() already wraps model construction in Model::unguarded(),
+     * so factory-created models were never subject to $fillable in the first place.
+     * No override needed here — this comment exists so a future $fillable change on
+     * this model doesn't get "fixed" by adding one.
+     */
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>

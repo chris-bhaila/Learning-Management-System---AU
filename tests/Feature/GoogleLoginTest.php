@@ -109,4 +109,34 @@ class GoogleLoginTest extends TestCase
             'google_id' => 'google-new-1',
         ]);
     }
+
+    /**
+     * Confirms the fix in GoogleController::callback() — previously a deactivated
+     * user signing in via Google got a "successful" redirect to their dashboard and
+     * was only caught and bounced by the global EnsureUserIsActive middleware on
+     * their NEXT request. Mirrors AuthController::login()'s existing password-path
+     * behavior: reject immediately, in the SAME response, with the same message.
+     */
+    public function test_deactivated_user_signing_in_via_google_is_logged_out_immediately_not_on_next_request(): void
+    {
+        $student = User::factory()->student()->create([
+            'email'     => 'deactivated@example.com',
+            'google_id' => 'google-deactivated-1',
+            'is_active' => false,
+        ]);
+        $this->mockGoogleUser('google-deactivated-1', 'deactivated@example.com', 'Deactivated Student');
+
+        $response = $this->get(route('auth.google.callback'));
+
+        // The whole point of the fix: rejected in THIS response, not a delayed bounce.
+        $response->assertRedirect(route('login'));
+        $response->assertSessionHas('error', 'Your account has been deactivated. Contact your administrator.');
+        $this->assertGuest();
+
+        // No lingering "signed in" activity log entry for a login that was immediately reversed.
+        $this->assertDatabaseMissing('activity_log', [
+            'causer_id'   => $student->id,
+            'description' => 'Signed in via Google',
+        ]);
+    }
 }

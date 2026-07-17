@@ -13,9 +13,6 @@
 @endsection
 
 @section('content')
-@php
-    $groupName = $course->group?->name ?? null;
-@endphp
 
 <div class="space-y-6">
 
@@ -27,13 +24,6 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-gold"></span>
                 Enrolled
             </span>
-            @if($groupName)
-                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium
-                             bg-surface-container text-on-surface-variant">
-                    <span class="material-symbols-outlined text-[14px]">folder</span>
-                    {{ $groupName }}
-                </span>
-            @endif
         </div>
         <h1 class="text-2xl font-bold text-primary leading-tight break-words"
             style="font-family: var(--font-display);">
@@ -198,19 +188,6 @@
                         </p>
                     </div>
                 </div>
-
-                {{-- Group --}}
-                @if($groupName)
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-outline text-[18px]">folder</span>
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-[10px] text-outline font-medium uppercase tracking-wide">Group</p>
-                            <p class="text-sm text-on-surface truncate">{{ $groupName }}</p>
-                        </div>
-                    </div>
-                @endif
 
                 {{-- Units count --}}
                 <div class="flex items-center gap-3">

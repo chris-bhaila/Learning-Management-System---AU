@@ -26,6 +26,17 @@ class EloquentCourseRepository implements CourseRepositoryInterface
         ])->find($id);
     }
 
+    public function findWithRelationsForStudent(int $id): ?Course
+    {
+        return Course::with([
+            'teacher',
+            'units',
+            'files',
+            'tokens'   => fn($q) => $q->where('type', 'course')->latest(),
+            'students' => fn($q) => $q->wherePivot('is_active', true)->orderBy('name'),
+        ])->find($id);
+    }
+
     public function create(array $data): Course
     {
         if (array_key_exists('description', $data)) {

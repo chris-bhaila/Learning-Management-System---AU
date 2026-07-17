@@ -18,14 +18,36 @@ class User extends Authenticatable
 
     public function getActivitylogOptions(): LogOptions
     {
+        // Explicit logOnly(), not logFillable() — role_id/is_active are deliberately
+        // NOT in $fillable (see below; they're privilege-sensitive, set only via
+        // explicit attribute assignment), but changes to them are still real audit
+        // events that must keep appearing in the automatic created/updated/deleted
+        // log exactly as before. logFillable() would silently stop tracking them the
+        // moment they left $fillable.
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly([
+                'role_id',
+                'google_id',
+                'name',
+                'email',
+                'password',
+                'avatar',
+                'avatar_path',
+                'avatar_source',
+                'is_active',
+            ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }
 
+    // role_id and is_active are deliberately excluded from $fillable — both are
+    // privilege-sensitive (role escalation / account activation) and must only ever
+    // be set via explicit attribute assignment ($user->role_id = ...; $user->save()),
+    // never via mass assignment (User::create($array) / $user->update($array) /
+    // $user->fill($array)). EloquentUserRepository::create()/update()/updateRole()
+    // are the one place this is done for application code; UserFactory bypasses this
+    // deliberately via Model::unguarded() since test/seed data has no untrusted input.
     protected $fillable = [
-        'role_id',
         'google_id',
         'name',
         'email',
@@ -33,7 +55,6 @@ class User extends Authenticatable
         'avatar',
         'avatar_path',
         'avatar_source',
-        'is_active',
     ];
 
     protected $hidden = [

@@ -42,14 +42,51 @@ class EloquentUserRepository implements UserRepositoryInterface
         return $user->fresh();
     }
 
+    /** role_id/is_active are deliberately not in User::$fillable (privilege-sensitive —
+     *  see the model). $data may still legitimately contain either (e.g. Admin\
+     *  UserController::store()'s new-account role_id/is_active, GoogleController's
+     *  new-signup role_id) — pulled out and assigned explicitly here, bypassing mass
+     *  assignment on purpose, rather than silently dropped by fill().
+     *
+     *  is_active always gets an explicit in-memory value (defaulting to true, matching
+     *  the users.is_active column default) rather than being left unset when the caller
+     *  omits it — Eloquent does not re-sync column defaults from the DB after INSERT, so
+     *  an unset attribute would read back as null (falsy) on the very instance this
+     *  method returns, not true, even though the row itself is active. GoogleController's
+     *  brand-new-signup path relies on exactly this: it never passes is_active at all. */
     public function create(array $data): User
     {
-        return User::create($data);
+        $roleId   = $data['role_id'] ?? null;
+        $isActive = array_key_exists('is_active', $data) ? $data['is_active'] : true;
+        unset($data['role_id'], $data['is_active']);
+
+        $user = new User();
+        $user->fill($data);
+
+        if ($roleId !== null) {
+            $user->role_id = $roleId;
+        }
+        $user->is_active = $isActive;
+
+        $user->save();
+
+        return $user;
     }
 
     public function update(User $user, array $data): User
     {
-        $user->update($data);
+        if (array_key_exists('role_id', $data)) {
+            $user->role_id = $data['role_id'];
+            unset($data['role_id']);
+        }
+        if (array_key_exists('is_active', $data)) {
+            $user->is_active = $data['is_active'];
+            unset($data['is_active']);
+        }
+
+        $user->fill($data);
+        $user->save();
+
         return $user->fresh();
     }
 
@@ -70,7 +107,8 @@ class EloquentUserRepository implements UserRepositoryInterface
 
     public function updateRole(User $user, int $roleId): User
     {
-        $user->update(['role_id' => $roleId]);
+        $user->role_id = $roleId;
+        $user->save();
         return $user->fresh();
     }
 

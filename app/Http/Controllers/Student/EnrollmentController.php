@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\EnrollRequest;
+use App\Models\Token;
 use App\Repositories\Contracts\CourseRepositoryInterface;
 use App\Repositories\Contracts\TokenRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class EnrollmentController extends Controller
 {
@@ -37,63 +39,55 @@ class EnrollmentController extends Controller
                 ->withInput();
         }
 
-        if ($token->isExpired()) {
-            activity()
-                ->causedBy($student)
-                ->withProperties([
-                    'token_value'  => $token->token_value,
-                    'token_type'   => $token->type,
-                    'teacher_id'   => $token->teacher_id,
-                    'teacher_name' => $token->teacher?->name ?? 'Unknown',
-                    'reason'       => 'expired',
-                ])
-                ->log('Student enrollment failed: token expired');
+        // Everything from here on re-reads the token under a row lock and stays inside
+        // one transaction — the expiry/uses_count check and the eventual incrementUses()
+        // must be atomic against a concurrent request enrolling with the same token, or
+        // two simultaneous submissions can both pass the check while uses_count is one
+        // below max_uses and both succeed, silently exceeding max_uses. lockForUpdate()
+        // makes a second concurrent request for the SAME token id block here until the
+        // first transaction commits (or rolls back) — it does not affect requests for
+        // any other token.
+        return DB::transaction(function () use ($token, $student) {
+            $token = Token::where('id', $token->id)->lockForUpdate()->first();
 
-            return back()
-                ->withErrors(['token_value' => 'That token has expired. Ask your teacher to generate a new one.'])
-                ->withInput();
-        }
-
-        $teacher = $token->teacher;
-
-        if ($token->isClassToken()) {
-            // Look up the existing row (if any) rather than a plain exists() check — a
-            // kicked student has an INACTIVE row that still exists, and must be reactivated
-            // via updateExistingPivot(), not attach() (which would create a duplicate row
-            // for the same teacher/student pair, violating the composite primary key intent).
-            $existingClassRow = $student->teachers()
-                ->where('teacher_student.teacher_id', $token->teacher_id)
-                ->first();
-
-            if ($existingClassRow && $existingClassRow->pivot->is_active) {
+            if ($token->isExpired()) {
                 activity()
                     ->causedBy($student)
                     ->withProperties([
                         'token_value'  => $token->token_value,
-                        'token_type'   => 'class',
+                        'token_type'   => $token->type,
                         'teacher_id'   => $token->teacher_id,
-                        'teacher_name' => $teacher?->name ?? 'Unknown',
-                        'reason'       => 'already_in_class',
+                        'teacher_name' => $token->teacher?->name ?? 'Unknown',
+                        'reason'       => 'expired',
                     ])
-                    ->log('Student enrollment failed: already in class');
+                    ->log('Student enrollment failed: token expired');
 
                 return back()
-                    ->withErrors(['token_value' => "You're already enrolled in {$teacher?->name}'s class."])
+                    ->withErrors(['token_value' => 'That token has expired. Ask your teacher to generate a new one.'])
                     ->withInput();
             }
 
-            if ($existingClassRow) {
-                $student->teachers()->updateExistingPivot($token->teacher_id, [
-                    'is_active'   => true,
-                    'enrolled_at' => now(),
-                ]);
-            } else {
-                $student->teachers()->attach($token->teacher_id, [
-                    'is_active'   => true,
-                    'enrolled_at' => now(),
-                ]);
+            $teacher = $token->teacher;
+
+            if ($token->isClassToken()) {
+                return $this->joinClass($token, $teacher, $student);
             }
 
+            return $this->joinCourse($token, $teacher, $student);
+        });
+    }
+
+    private function joinClass(Token $token, $teacher, $student)
+    {
+        // Look up the existing row (if any) rather than a plain exists() check — a
+        // kicked student has an INACTIVE row that still exists, and must be reactivated
+        // via updateExistingPivot(), not attach() (which would create a duplicate row
+        // for the same teacher/student pair, violating the composite primary key intent).
+        $existingClassRow = $student->teachers()
+            ->where('teacher_student.teacher_id', $token->teacher_id)
+            ->first();
+
+        if ($existingClassRow && $existingClassRow->pivot->is_active) {
             activity()
                 ->causedBy($student)
                 ->withProperties([
@@ -101,16 +95,46 @@ class EnrollmentController extends Controller
                     'token_type'   => 'class',
                     'teacher_id'   => $token->teacher_id,
                     'teacher_name' => $teacher?->name ?? 'Unknown',
+                    'reason'       => 'already_in_class',
                 ])
-                ->log('Student joined teacher class via class token');
-
-            $this->tokens->incrementUses($token);
+                ->log('Student enrollment failed: already in class');
 
             return back()
-                ->with('enroll_success', "You've joined {$teacher?->name}'s class!")
-                ->withInput(['_modal' => 'enroll']);
+                ->withErrors(['token_value' => "You're already enrolled in {$teacher?->name}'s class."])
+                ->withInput();
         }
 
+        if ($existingClassRow) {
+            $student->teachers()->updateExistingPivot($token->teacher_id, [
+                'is_active'   => true,
+                'enrolled_at' => now(),
+            ]);
+        } else {
+            $student->teachers()->attach($token->teacher_id, [
+                'is_active'   => true,
+                'enrolled_at' => now(),
+            ]);
+        }
+
+        activity()
+            ->causedBy($student)
+            ->withProperties([
+                'token_value'  => $token->token_value,
+                'token_type'   => 'class',
+                'teacher_id'   => $token->teacher_id,
+                'teacher_name' => $teacher?->name ?? 'Unknown',
+            ])
+            ->log('Student joined teacher class via class token');
+
+        $this->tokens->incrementUses($token);
+
+        return back()
+            ->with('enroll_success', "You've joined {$teacher?->name}'s class!")
+            ->withInput(['_modal' => 'enroll']);
+    }
+
+    private function joinCourse(Token $token, $teacher, $student)
+    {
         // Course token — must be enrolled in teacher's class first
         $inClass = $student->teachers()
             ->where('teacher_student.teacher_id', $token->teacher_id)

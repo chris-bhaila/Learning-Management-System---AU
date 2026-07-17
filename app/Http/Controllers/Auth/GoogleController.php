@@ -7,6 +7,7 @@ use App\Mail\WelcomeEmail;
 use App\Repositories\Contracts\RoleRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Socialite\Facades\Socialite;
@@ -24,7 +25,7 @@ class GoogleController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-    public function callback()
+    public function callback(Request $request)
     {
         $googleUser = Socialite::driver('google')->user();
 
@@ -126,6 +127,21 @@ class GoogleController extends Controller
         }
 
         Auth::login($user, true);
+
+        // Mirrors AuthController::login()'s pattern — Auth::login() has no notion of
+        // is_active. Without this, a deactivated (or just-restored-but-still-deactivated,
+        // see the restore branch above) user would get a "successful" redirect and only
+        // get bounced on their NEXT request by the global EnsureUserIsActive middleware.
+        // Checking here instead gives the same immediate, clear message the password
+        // login path already gives, rather than a confusing one-request-delayed kickout.
+        if (! $user->is_active) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->with('error', 'Your account has been deactivated. Contact your administrator.');
+        }
 
         activity()
             ->causedBy($user)
