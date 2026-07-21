@@ -36,6 +36,12 @@ class UpdateSiteContentRequest extends FormRequest
             'content.hero.cta_label'     => ['required', 'string', 'max:30'],
             'content.hero.caption'       => ['required', 'string', 'max:150'],
 
+            // Not part of the `content.*` string map — a real upload, handled
+            // separately in the controller and never passed through Arr::dot().
+            // svg excluded — SVGs can carry embedded scripts (XSS vector).
+            'hero_image'        => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:4096'],
+            'remove_hero_image' => ['nullable', 'boolean'],
+
             'content.features.eyebrow' => ['required', 'string', 'max:60'],
             'content.features.heading' => ['required', 'string', 'max:80'],
 

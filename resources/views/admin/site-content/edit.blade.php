@@ -51,28 +51,25 @@
     ];
 @endphp
 
-<div class="flex items-start justify-between gap-4 mb-6">
-    <div>
-        <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
-            Landing Page Content
-        </h1>
-        <p class="mt-1 text-sm text-on-surface-variant">
-            Edit every piece of text shown on the public landing page. Changes apply immediately — no redeploy needed.
-        </p>
-    </div>
-    <a href="{{ route('home') }}" target="_blank" rel="noopener"
-       class="shrink-0 inline-flex items-center gap-1.5 text-sm text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
-        <span class="material-symbols-outlined text-[18px]">open_in_new</span>
-        View live page
-    </a>
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-primary" style="font-family: var(--font-display);">
+        Landing Page Content
+    </h1>
+    <p class="mt-1 text-sm text-on-surface-variant">
+        Edit every piece of text shown on the public landing page. Changes apply immediately — no redeploy needed.
+    </p>
 </div>
 
 <form
     method="POST"
     action="{{ route('admin.site-content.update') }}"
+    enctype="multipart/form-data"
     x-data="{
         errors: {},
         submitting: false,
+        hasServerImage: @js(!empty($content['hero.image'] ?? null)),
+        removeImage: false,
+        imagePreview: null,
         check(value, rules) {
             const r = window.Iodine.assert(value ?? '', rules);
             return r.valid ? '' : r.error;
@@ -84,6 +81,17 @@
             el.classList.toggle('border-error', !!err);
             el.classList.toggle('border-outline-variant/60', !err);
         },
+        onImageChange(el) {
+            if (el.files && el.files[0]) {
+                this.removeImage = false;
+                this.imagePreview = URL.createObjectURL(el.files[0]);
+            }
+        },
+        clearImage(fileInput) {
+            fileInput.value = '';
+            this.imagePreview = null;
+            this.removeImage = this.hasServerImage;
+        },
         submit(e) {
             this.submitting = true;
         },
@@ -93,6 +101,69 @@
 >
     @csrf
     @method('PATCH')
+
+    <x-card class="p-6 animate-fade-up">
+        <h2 class="text-base font-semibold text-primary mb-1" style="font-family: var(--font-display);">
+            Hero Background Image
+        </h2>
+        <p class="text-xs text-on-surface-variant mb-5">
+            Shown behind the hero heading at the top of the landing page. JPEG, PNG, or WebP — max 4&nbsp;MB.
+        </p>
+
+        <div class="flex flex-col sm:flex-row gap-5 items-start">
+            @php
+                // Falls back to the same stock photo the public landing page uses
+                // when no image has been uploaded, so the preview is never blank.
+                $currentImageUrl = !empty($content['hero.image'] ?? null)
+                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($content['hero.image'])
+                    : \App\Models\SiteContent::DEFAULT_HERO_IMAGE_URL;
+            @endphp
+            <div class="w-full sm:w-64 aspect-video rounded-[16px] overflow-hidden bg-surface-container-low border border-outline-variant/60 shrink-0">
+                <img
+                    x-bind:src="removeImage ? @js(\App\Models\SiteContent::DEFAULT_HERO_IMAGE_URL) : (imagePreview || @js($currentImageUrl))"
+                    class="w-full h-full object-cover"
+                    alt="Hero background preview"
+                >
+            </div>
+
+            <div class="flex-1 min-w-0 space-y-3">
+                <div class="field-wrap">
+                    <input
+                        type="file"
+                        name="hero_image"
+                        x-ref="heroImageInput"
+                        accept="image/jpeg,image/png,image/webp"
+                        @change="onImageChange($el)"
+                        class="block w-full text-sm text-on-surface-variant cursor-pointer
+                               file:cursor-pointer file:mr-4 file:py-2.5 file:px-4 file:rounded-button
+                               file:border-0 file:text-sm file:font-semibold
+                               file:bg-primary file:text-on-primary hover:file:opacity-90 file:transition-opacity"
+                    >
+                    <p class="text-xs text-on-surface-variant mt-1.5">
+                        Recommended size: 1920&times;1080px (16:9). Other sizes are automatically cropped to fit.
+                    </p>
+                    <p class="field-error text-xs text-error mt-1 min-h-[1rem]">
+                        @error('hero_image')
+                            {{ $message }}
+                        @enderror
+                    </p>
+                </div>
+
+                <input type="hidden" name="remove_hero_image" x-bind:value="removeImage ? 1 : 0">
+
+                <button
+                    type="button"
+                    x-show="imagePreview || (hasServerImage && !removeImage)"
+                    x-cloak
+                    @click="clearImage($refs.heroImageInput)"
+                    class="inline-flex items-center gap-1.5 text-sm text-error hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                    Remove image and use the default photo
+                </button>
+            </div>
+        </div>
+    </x-card>
 
     @foreach($groups as $groupName => $fields)
         <x-card class="p-6 animate-fade-up">

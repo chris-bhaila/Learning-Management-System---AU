@@ -10,6 +10,10 @@ class SiteContent extends Model
 
     protected $fillable = ['key', 'value'];
 
+    /** Rendered wherever `hero.image` is blank — both the public landing page and
+     *  the admin preview must agree on what "no image uploaded yet" looks like. */
+    public const DEFAULT_HERO_IMAGE_URL = 'https://images.unsplash.com/photo-1606761568499-6d2451b23c66?q=80&w=1374&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D';
+
     /**
      * Every editable landing-page string, keyed the same way as the `site_content.key`
      * column, with the copy that was hardcoded in resources/views/landing.blade.php
@@ -29,6 +33,9 @@ class SiteContent extends Model
         'hero.subheading'   => "EduNest connects students directly with their instructor's courses — no marketplace noise, no subscriptions. Just structured, intentional learning.",
         'hero.cta_label'    => 'Get Started',
         'hero.caption'      => 'First login creates your student account automatically.',
+        // Empty by default — landing.blade.php falls back to the original stock photo
+        // when this is blank, so a fresh install never renders a broken background.
+        'hero.image'        => '',
 
         'features.eyebrow'  => 'What EduNest Offers',
         'features.heading'  => 'Built for real learning',
